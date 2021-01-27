@@ -1,0 +1,187 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="GPU Debug|x64">
+      <Configuration>GPU Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <VCProjectVersion>15.0</VCProjectVersion>
+    <ProjectGuid>{C3036A30-B921-4DBD-82EE-6DD83C198CB6}</ProjectGuid>
+    <RootNamespace>Runtime</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+    <ProjectName>NonUniformDSDF</ProjectName>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v142</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='GPU Debug|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v142</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v142</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="Shared">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Import Project="Dragonfly.props" />
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='GPU Debug|x64'" Label="PropertySheets">
+    <Import Project="Dragonfly.props" />
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Import Project="Dragonfly.props" />
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <LocalDebuggerEnvironment>PATH=T:\DragonflyPack\LibBin;$(RenderdocPath);%PATH%</LocalDebuggerEnvironment>
+    <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='GPU Debug|x64'">
+    <LocalDebuggerEnvironment>PATH=T:\DragonflyPack\LibBin;$(RenderdocPath);%PATH%</LocalDebuggerEnvironment>
+    <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <LocalDebuggerEnvironment>PATH=T:\DragonflyPack\LibBin;$(RenderdocPath);%PATH%</LocalDebuggerEnvironment>
+    <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
+  </PropertyGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <LibraryPath>T:\DragonflyPack\LibBin;$(SolutionDir)Dragonfly\lib\$(Configuration)\;$(LibraryPath)</LibraryPath>
+    <IncludePath>T:\DragonflyPack\includes;$(SolutionDir)Dragonfly\include;$(IncludePath)</IncludePath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='GPU Debug|x64'">
+    <LibraryPath>T:\DragonflyPack\LibBin;$(SolutionDir)Dragonfly\lib\$(Configuration)\;$(LibraryPath)</LibraryPath>
+    <IncludePath>T:\DragonflyPack\includes;$(SolutionDir)Dragonfly\include;$(IncludePath)</IncludePath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <LibraryPath>T:\DragonflyPack\LibBin;$(SolutionDir)Dragonfly\lib\$(Configuration)\;$(LibraryPath)</LibraryPath>
+    <IncludePath>T:\DragonflyPack\includes;$(SolutionDir)Dragonfly\include;$(IncludePath)</IncludePath>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <SDLCheck>true</SDLCheck>
+      <ConformanceMode>true</ConformanceMode>
+      <PreprocessorDefinitions>_AMD64_;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+    </ClCompile>
+    <Link>
+      <AdditionalDependencies>Framework.lib;SDL2.lib;SDL2main.lib;glew32.lib;opengl32.lib;SDL2_image.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <SubSystem>Console</SubSystem>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='GPU Debug|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <SDLCheck>true</SDLCheck>
+      <ConformanceMode>true</ConformanceMode>
+      <PreprocessorDefinitions>GPU_DEBUG;_AMD64_;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+    </ClCompile>
+    <Link>
+      <AdditionalDependencies>Framework.lib;SDL2.lib;SDL2main.lib;glew32.lib;opengl32.lib;SDL2_image.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <SubSystem>Console</SubSystem>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <ConformanceMode>true</ConformanceMode>
+      <PreprocessorDefinitions>_AMD64_;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+    </ClCompile>
+    <Link>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <AdditionalDependencies>Framework.lib;SDL2.lib;SDL2main.lib;glew32.lib;opengl32.lib;SDL2_image.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <SubSystem>Console</SubSystem>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="App.cpp" />
+    <ClCompile Include="main.cpp" />
+    <ClCompile Include="Utils\gpuTimer.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="App.h" />
+    <ClInclude Include="Utils\gpuTimer.h" />
+    <ClInclude Include="Utils\PerformanceTest.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Shaders\cube.frag" />
+    <None Include="Shaders\cube.vert" />
+    <None Include="Shaders\cube_solid.vert" />
+    <None Include="Shaders\flatMesh.geom" />
+    <None Include="Shaders\main_cube.glsl" />
+    <None Include="Shaders\Math\box_plane_intersection.glsl" />
+    <None Include="Shaders\Math\box_ray_intersection.glsl" />
+    <None Include="Shaders\Math\primitives.glsl" />
+    <None Include="Shaders\Math\sphere_ray_intersection.glsl" />
+    <None Include="Shaders\mesh.frag" />
+    <None Include="Shaders\mesh.vert" />
+    <None Include="Shaders\render_main.frag" />
+    <None Include="Shaders\sdf.glsl" />
+    <None Include="Shaders\SDFScenes\cube.glsl" />
+    <None Include="Shaders\SDFScenes\cuboids.glsl" />
+    <None Include="Shaders\SDFScenes\Mandelbulb.glsl" />
+    <None Include="Shaders\SDFScenes\sdf_0.glsl" />
+    <None Include="Shaders\SDFScenes\sdf_1.glsl" />
+    <None Include="Shaders\SDFScenes\sdf_2.glsl" />
+    <None Include="Shaders\SDFScenes\sdf_3.glsl" />
+    <None Include="Shaders\SDFScenes\sdf_4.glsl" />
+    <None Include="Shaders\SDFScenes\sdf_5.glsl" />
+    <None Include="Shaders\SDFScenes\sdf_6.glsl" />
+    <None Include="Shaders\SDFScenes\sdf_7.glsl" />
+    <None Include="Shaders\SDFScenes\sdf_8.glsl" />
+    <None Include="Shaders\SDFScenes\sdf_9.glsl" />
+    <None Include="Shaders\SDFScenes\sphere.glsl" />
+    <None Include="Shaders\SDFScenes\temple.glsl" />
+    <None Include="Shaders\SDFScenes\torus.glsl" />
+    <None Include="Shaders\SDFScenes\torus_pipes.glsl" />
+    <None Include="Shaders\SDF\sample3d.glsl" />
+    <None Include="Shaders\SDF\sdf0thOrder.glsl" />
+    <None Include="Shaders\SDF\sdf1stOrder.glsl" />
+    <None Include="Shaders\SDF\sdfProceduralScene.glsl" />
+    <None Include="Shaders\SDF\weightBlend.glsl" />
+    <None Include="Shaders\Shade\ambient_occlusion.glsl" />
+    <None Include="Shaders\Shade\basic_shade.glsl" />
+    <None Include="Shaders\Shade\brdf.glsl" />
+    <None Include="Shaders\common.glsl" />
+    <None Include="Shaders\uniforms.glsl" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

@@ -1,0 +1,168 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="Utils">
+      <UniqueIdentifier>{b7d09a17-4859-401c-9fa6-0ff22cdb6f42}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Utils\Timer">
+      <UniqueIdentifier>{62096d93-51ff-4b9c-b12a-e0c5c8601538}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shaders">
+      <UniqueIdentifier>{a09a2012-875f-477e-be8b-ea2ea5412d2c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shaders\Math">
+      <UniqueIdentifier>{0003d720-bdab-4e52-a7ec-6a773727e752}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shaders\Shade">
+      <UniqueIdentifier>{6a55534a-91bb-40ef-9c93-b45a88814d89}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shaders\SDFScenes">
+      <UniqueIdentifier>{1610f35d-cecc-4a3f-b5d0-71f42ac393dd}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shaders\SDF">
+      <UniqueIdentifier>{f25ad3aa-cd44-41ba-9702-90058e56d4e1}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="main.cpp" />
+    <ClCompile Include="App.cpp" />
+    <ClCompile Include="Utils\gpuTimer.cpp">
+      <Filter>Utils\Timer</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="App.h" />
+    <ClInclude Include="Utils\PerformanceTest.h">
+      <Filter>Utils\Timer</Filter>
+    </ClInclude>
+    <ClInclude Include="Utils\gpuTimer.h">
+      <Filter>Utils\Timer</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Shaders\main_cube.glsl">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Shaders\mesh.frag">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Shaders\mesh.vert">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Shaders\render_main.frag">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Shaders\cube.frag">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Shaders\cube.vert">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Shaders\cube_solid.vert">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Shaders\flatMesh.geom">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Shaders\Math\box_plane_intersection.glsl">
+      <Filter>Shaders\Math</Filter>
+    </None>
+    <None Include="Shaders\Math\box_ray_intersection.glsl">
+      <Filter>Shaders\Math</Filter>
+    </None>
+    <None Include="Shaders\Math\sphere_ray_intersection.glsl">
+      <Filter>Shaders\Math</Filter>
+    </None>
+    <None Include="Shaders\Shade\brdf.glsl">
+      <Filter>Shaders\Shade</Filter>
+    </None>
+    <None Include="Shaders\Shade\basic_shade.glsl">
+      <Filter>Shaders\Shade</Filter>
+    </None>
+    <None Include="Shaders\common.glsl">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Shaders\Shade\ambient_occlusion.glsl">
+      <Filter>Shaders\Shade</Filter>
+    </None>
+    <None Include="Shaders\sdf.glsl">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Shaders\uniforms.glsl">
+      <Filter>Shaders</Filter>
+    </None>
+    <None Include="Shaders\SDFScenes\sdf_3.glsl">
+      <Filter>Shaders\SDFScenes</Filter>
+    </None>
+    <None Include="Shaders\SDFScenes\sdf_4.glsl">
+      <Filter>Shaders\SDFScenes</Filter>
+    </None>
+    <None Include="Shaders\SDFScenes\sdf_5.glsl">
+      <Filter>Shaders\SDFScenes</Filter>
+    </None>
+    <None Include="Shaders\SDFScenes\sdf_6.glsl">
+      <Filter>Shaders\SDFScenes</Filter>
+    </None>
+    <None Include="Shaders\SDFScenes\sdf_7.glsl">
+      <Filter>Shaders\SDFScenes</Filter>
+    </None>
+    <None Include="Shaders\SDFScenes\sdf_8.glsl">
+      <Filter>Shaders\SDFScenes</Filter>
+    </None>
+    <None Include="Shaders\SDFScenes\sdf_9.glsl">
+      <Filter>Shaders\SDFScenes</Filter>
+    </None>
+    <None Include="Shaders\SDFScenes\sphere.glsl">
+      <Filter>Shaders\SDFScenes</Filter>
+    </None>
+    <None Include="Shaders\SDFScenes\temple.glsl">
+      <Filter>Shaders\SDFScenes</Filter>
+    </None>
+    <None Include="Shaders\SDFScenes\torus.glsl">
+      <Filter>Shaders\SDFScenes</Filter>
+    </None>
+    <None Include="Shaders\SDFScenes\torus_pipes.glsl">
+      <Filter>Shaders\SDFScenes</Filter>
+    </None>
+    <None Include="Shaders\SDFScenes\cube.glsl">
+      <Filter>Shaders\SDFScenes</Filter>
+    </None>
+    <None Include="Shaders\SDFScenes\cuboids.glsl">
+      <Filter>Shaders\SDFScenes</Filter>
+    </None>
+    <None Include="Shaders\SDFScenes\Mandelbulb.glsl">
+      <Filter>Shaders\SDFScenes</Filter>
+    </None>
+    <None Include="Shaders\SDFScenes\sdf_0.glsl">
+      <Filter>Shaders\SDFScenes</Filter>
+    </None>
+    <None Include="Shaders\SDFScenes\sdf_1.glsl">
+      <Filter>Shaders\SDFScenes</Filter>
+    </None>
+    <None Include="Shaders\SDFScenes\sdf_2.glsl">
+      <Filter>Shaders\SDFScenes</Filter>
+    </None>
+    <None Include="Shaders\Math\primitives.glsl">
+      <Filter>Shaders\Math</Filter>
+    </None>
+    <None Include="Shaders\SDF\weightBlend.glsl">
+      <Filter>Shaders\SDF</Filter>
+    </None>
+    <None Include="Shaders\SDF\sample3d.glsl">
+      <Filter>Shaders\SDF</Filter>
+    </None>
+    <None Include="Shaders\SDF\sdf0thOrder.glsl">
+      <Filter>Shaders\SDF</Filter>
+    </None>
+    <None Include="Shaders\SDF\sdf1stOrder.glsl">
+      <Filter>Shaders\SDF</Filter>
+    </None>
+    <None Include="Shaders\SDF\sdfProceduralScene.glsl">
+      <Filter>Shaders\SDF</Filter>
+    </None>
+  </ItemGroup>
+</Project>
