@@ -14,8 +14,6 @@ uniform int refineRoot;
 
 uniform int maxStep = 100;
 
-uniform float minStepDist;
-
 //!#include "common.glsl"
 //?#include "Math/box_ray_intersection.glsl"
 //?#include "Shade/basic_shade.glsl"
@@ -100,10 +98,10 @@ TraceResult basicSphereTrace(RayCone cone, SphereTraceDesc params)
 	float dd = sdfInside(cone.ray.Origin + ret.T * cone.ray.Direction);
 	float prevSign = dd;
 	float prevT = ret.T;
-	for (; i < params.maxiters && dd > 0 && ret.T < cone.ray.Tmax; ++i)
+	for (; i < params.maxiters && dd > params.epsilon && ret.T < cone.ray.Tmax; ++i)
 	{
 		prevT = ret.T;
-		ret.T += .995 * max(dd, minStepDist); // max chops off coners/edges if the trace steps trough
+		ret.T += dd;
 		prevSign = dd;
 		dd = sdfInside(cone.ray.Origin + ret.T * cone.ray.Direction);
 	}
