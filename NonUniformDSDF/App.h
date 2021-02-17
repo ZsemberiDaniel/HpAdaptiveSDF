@@ -3,11 +3,18 @@
 #include <Dragonfly/editor.h>		 //inlcludes most features
 #include <Dragonfly/detail/buffer.h> //will be replaced
 #include <Dragonfly/detail/vao.h>	 //will be replaced
+#include <queue>
 
 #include "Utils/gpuTimer.h"
 #include "Utils/PerformanceTest.h"
+#include "Octree/octree.h"
+#include "vector3d.h"
+#include "Structures.h"
 
 #include <vector>
+#include <numeric>
+#include <cmath>
+#include <limits>
 
 class App {
 public:
@@ -50,4 +57,8 @@ private:
 	df::ShaderProgramEditorVF sdfProgram = "SDF-Prog";
 
 	void InitShaders();
+
+	Octree<Cell> octree;
+	void constructField(Grid& grid, int maxDegree = 4, int maxLevel = 2, float errorThreshold = 1.0f);
+	void DrawOctree(df::ShaderProgramEditorVF& program, const Octree<Cell>::Node* currentNode);
 };

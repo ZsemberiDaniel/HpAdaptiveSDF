@@ -26,12 +26,18 @@
     <Filter Include="Shaders\SDF">
       <UniqueIdentifier>{f25ad3aa-cd44-41ba-9702-90058e56d4e1}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Octree">
+      <UniqueIdentifier>{0612a355-d0fb-4558-82bd-2239ab329007}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
     <ClCompile Include="App.cpp" />
     <ClCompile Include="Utils\gpuTimer.cpp">
       <Filter>Utils\Timer</Filter>
+    </ClCompile>
+    <ClCompile Include="Octree\demo.cpp">
+      <Filter>Octree</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -42,6 +48,11 @@
     <ClInclude Include="Utils\gpuTimer.h">
       <Filter>Utils\Timer</Filter>
     </ClInclude>
+    <ClInclude Include="Octree\octree.h">
+      <Filter>Octree</Filter>
+    </ClInclude>
+    <ClInclude Include="vector3d.h" />
+    <ClInclude Include="Structures.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Shaders\main_cube.glsl">
@@ -163,6 +174,9 @@
     </None>
     <None Include="Shaders\SDF\sdfProceduralScene.glsl">
       <Filter>Shaders\SDF</Filter>
+    </None>
+    <None Include="Octree\octree.hpp">
+      <Filter>Octree</Filter>
     </None>
   </ItemGroup>
 </Project>
