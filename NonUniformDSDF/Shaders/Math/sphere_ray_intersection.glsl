@@ -1,9 +1,4 @@
-//?#version 450
-
-struct Ray{
-	vec3 origin;
-	vec3 dir;
-};
+//?#include "../common.glsl"
 
 // sphere: [center.xyz, radius]
 float intersectSphere(vec4 sphere, Ray ray)

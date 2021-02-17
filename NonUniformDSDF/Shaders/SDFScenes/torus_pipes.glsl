@@ -1,7 +1,7 @@
 //?#include "../Math/primitives.glsl"
 
 // https://www.shadertoy.com/view/wlj3zV
-// bounding box corner: (-.5, -1, -1.6), size : (2, 2, 2)
+// bounding box corner: (0.2, -1, -1.6), size : (2, 2, 2)
 float sdSqCappedTorus(in vec3 p, in vec2 sc, in float ra)
 {
     p.x = abs(p.x);
