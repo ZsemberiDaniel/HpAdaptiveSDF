@@ -11,11 +11,17 @@ struct BoundingBox
 {
 	glm::vec3 min = glm::vec3();
 	glm::vec3 max = glm::vec3();
+
+	glm::vec3 size() const
+	{
+		return max - min;
+	}
 };
 
 struct Polynomial
 {
-	std::vector<double> coeffs;
+	std::vector<float> coeffs;
+	int degree;
 };
 
 struct Cell

@@ -15,6 +15,7 @@
 #include <numeric>
 #include <cmath>
 #include <limits>
+#include <iomanip>
 
 class App {
 public:
@@ -83,6 +84,6 @@ private:
 	void InitShaders();
 
 	Octree<Cell> octree;
-	void constructField(Grid& grid, int maxDegree = 4, int maxLevel = 2, float errorThreshold = 1.0f);
-	void DrawOctree(df::ShaderProgramEditorVF& program, const Octree<Cell>::Node* currentNode);
+	void constructField(Grid& grid, int maxDegree = 4, int maxLevel = 4, float errorThreshold = 0.00001f);
+	void DrawOctree(df::ShaderProgramEditorVF& program, const Octree<Cell>::Node* currentNode, int level = -1);
 };
