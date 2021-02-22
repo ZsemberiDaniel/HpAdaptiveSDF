@@ -70,14 +70,14 @@ float SDF(glm::vec3 p)
 	//return glm::length(p - glm::vec3(1)) - 0.2f;
 
 	// plane
-	return glm::abs(dot(p - glm::vec3(0, 0, 0), glm::normalize(glm::vec3(2, 1, 2))));
+	// return glm::abs(dot(p - glm::vec3(0, 0, 0), glm::normalize(glm::vec3(2, 1, 2))));
 
 	// torus
-	/*p -= glm::vec3(1);
+	p -= glm::vec3(1);
 	const float R = 0.8f;
 	const float r = 0.4f;
 	glm::vec2 q = glm::vec2(glm::length(glm::vec2(p.x, p.z)) - R, p.y);
-	return length(q) - r;*/
+	return length(q) - r;
 }
 
 /* Returns points and coefficients for Gaussian-Legendre quadratics
@@ -176,9 +176,9 @@ float shiftedNormalizedLegendre(const BoundingBox& bbox, glm::ivec3 degrees, glm
 							       - glm::vec3((bbox.max + bbox.min) / (bbox.max - bbox.min));
 	glm::vec3 shiftedNormalizedCoeff = (2.0f * glm::vec3(degrees) + 1.0f) / glm::vec3(bbox.size());
 
-	float value = (shiftedNormalizedCoeff.x) * legendref(degrees.x, shiftedNormalizedP.x);
-	value *= (shiftedNormalizedCoeff.y) * legendref(degrees.y, shiftedNormalizedP.y);
-	value *= (shiftedNormalizedCoeff.z) * legendref(degrees.z, shiftedNormalizedP.z);
+	float value = glm::sqrt(shiftedNormalizedCoeff.x) * legendref(degrees.x, shiftedNormalizedP.x);
+	value *= glm::sqrt(shiftedNormalizedCoeff.y) * legendref(degrees.y, shiftedNormalizedP.y);
+	value *= glm::sqrt(shiftedNormalizedCoeff.z) * legendref(degrees.z, shiftedNormalizedP.z);
 
 	return value;
 }
@@ -406,7 +406,7 @@ void App::constructField(Grid& grid, int maxDegree, int maxLevel, float errorThr
 			currentCell.degree++;
 			currentCell.poly  = pImprovementPoly;
 			currentCell.error = pImprovementError;
-			printPolynomial(currentCell.poly);
+			// printPolynomial(currentCell.poly);
 
 			currentCell.octreeLeaf->setValue(currentCell);
 
@@ -498,64 +498,64 @@ void App::Render()
 	Backbuffer << (const df::detail::ClearF<0>&)state.clear; // Dragonfly pls... if it is not const, it thinks it is a program
 	Backbuffer << Clear(0.1f, 0.1f, 0.1f, 1.0f);
 
-	int currentLevel = static_cast<int>(SDL_GetTicks() / 1000.0f) % 5;
-	DrawOctree(cubeWireProgram, octree.root(), currentLevel);
+	/*int currentLevel = static_cast<int>(SDL_GetTicks() / 1000.0f) % 5;
+	DrawOctree(cubeWireProgram, octree.root(), currentLevel);*/
 
-	//glm::mat4 mvp = state.cam.GetViewProj()
-	//	* glm::translate(desc.SDFCorner + state.SDFTrans)
-	//	* glm::scale(state.SDFScale * desc.SDFSize);
+	glm::mat4 mvp = state.cam.GetViewProj()
+		* glm::translate(desc.SDFCorner + state.SDFTrans)
+		* glm::scale(state.SDFScale * desc.SDFSize);
 
-	//// Draw bounding box
-	//Backbuffer
-	//	<< cubeWireProgram
-	//	<< "MVP" << mvp
-	//	<< "color" << glm::vec3(1, 1, .2);
-	//cubeWireProgram << df::NoVao(GL_LINES, 24, 0);
+	// Draw bounding box
+	Backbuffer
+		<< cubeWireProgram
+		<< "MVP" << mvp
+		<< "color" << glm::vec3(1, 1, .2);
+	cubeWireProgram << df::NoVao(GL_LINES, 24, 0);
 
-	//// Draw SDF
-	//auto& prog = sdfProgram;
-	//auto& cam = state.cam;
-	//auto& settings = state.settings;
+	// Draw SDF
+	auto& prog = sdfProgram;
+	auto& cam = state.cam;
+	auto& settings = state.settings;
 
-	//glm::vec3 modelTrans = desc.SDFCorner + state.SDFScale * desc.SDFBorder + state.SDFTrans;
-	//glm::vec3 modelScale = state.SDFScale * (desc.SDFSize - 2.0f * desc.SDFBorder);
-	//float planeDist = glm::dot(cam.GetEye(), cam.GetDir()) + cam.GetNearFarClips().x;
-	//Backbuffer << prog
-	//	<< "viewProj" << cam.GetViewProj()
-	//	<< "modelTrans" << modelTrans
-	//	<< "modelScale" << modelScale
-	//	<< "planeDist" << planeDist
-	//	<< "gInverseViewProj" << cam.GetInverseViewProj()
-	//	<< "gTanPixelAngle" << cam.GetTanPixelFow()
-	//	<< "gCameraPos" << cam.GetEye()
-	//	<< "gCameraDir" << cam.GetDir()
-	//	<< "gLightPos" << settings.gLightPos
-	//	<< "gAOMaxIters" << settings.gAOMaxIters
-	//	<< "gAOStepSize" << settings.gAOStepSize
-	//	<< "gAOStrength" << settings.gAOStrength
-	//	<< "gAmbient" << settings.gAmbient
-	//	<< "gDiffuse" << settings.gDiffuse
-	//	<< "gCookRoughness" << settings.gCookRoughness
-	//	<< "gCookIOR" << settings.gCookIOR
-	//	<< "gNormEps" << 0.01f
-	//	<< "maxStep" << settings.maxStep
-	//	<< "sdfTexSize" << desc.SDFSize
-	//	<< "sdfTexCorner" << desc.SDFCorner
-	//	<< "sdfTexBorder" << desc.SDFBorder
-	//	<< "sTranslation" << state.SDFTrans
-	//	<< "sScale" << state.SDFScale
-	//	<< "refineRoot" << (settings.refineRoot ? 1 : 0)
-	//	<< "param1" << glm::vec3(0.7, 0, 0)
-	//	<< "param2" << glm::vec3(0, 0, 0);
+	glm::vec3 modelTrans = desc.SDFCorner + state.SDFScale * desc.SDFBorder + state.SDFTrans;
+	glm::vec3 modelScale = state.SDFScale * (desc.SDFSize - 2.0f * desc.SDFBorder);
+	float planeDist = glm::dot(cam.GetEye(), cam.GetDir()) + cam.GetNearFarClips().x;
+	Backbuffer << prog
+		<< "viewProj" << cam.GetViewProj()
+		<< "modelTrans" << modelTrans
+		<< "modelScale" << modelScale
+		<< "planeDist" << planeDist
+		<< "gInverseViewProj" << cam.GetInverseViewProj()
+		<< "gTanPixelAngle" << cam.GetTanPixelFow()
+		<< "gCameraPos" << cam.GetEye()
+		<< "gCameraDir" << cam.GetDir()
+		<< "gLightPos" << settings.gLightPos
+		<< "gAOMaxIters" << settings.gAOMaxIters
+		<< "gAOStepSize" << settings.gAOStepSize
+		<< "gAOStrength" << settings.gAOStrength
+		<< "gAmbient" << settings.gAmbient
+		<< "gDiffuse" << settings.gDiffuse
+		<< "gCookRoughness" << settings.gCookRoughness
+		<< "gCookIOR" << settings.gCookIOR
+		<< "gNormEps" << 0.01f
+		<< "maxStep" << settings.maxStep
+		<< "sdfTexSize" << desc.SDFSize
+		<< "sdfTexCorner" << desc.SDFCorner
+		<< "sdfTexBorder" << desc.SDFBorder
+		<< "sTranslation" << state.SDFTrans
+		<< "sScale" << state.SDFScale
+		<< "refineRoot" << (settings.refineRoot ? 1 : 0)
+		<< "param1" << glm::vec3(0.7, 0, 0)
+		<< "param2" << glm::vec3(0, 0, 0);
 
-	//glm::vec3 dir = cam.GetDir();
-	//glm::vec3 frontVertex = glm::vec3((dir.x < 0 ? modelScale.x : 0), (dir.y < 0 ? modelScale.y : 0), (dir.z < 0 ? modelScale.z : 0));
-	//frontVertex += modelTrans;
-	//if (glm::dot(frontVertex, dir) < planeDist) // the bounding box' corner is clipped
-	//	// clip
-	//	prog << df::NoVao(GL_TRIANGLE_FAN, 6, 3);
-	//// bounding box
-	//prog << df::NoVao(GL_TRIANGLE_STRIP, 14, 9);
+	glm::vec3 dir = cam.GetDir();
+	glm::vec3 frontVertex = glm::vec3((dir.x < 0 ? modelScale.x : 0), (dir.y < 0 ? modelScale.y : 0), (dir.z < 0 ? modelScale.z : 0));
+	frontVertex += modelTrans;
+	if (glm::dot(frontVertex, dir) < planeDist) // the bounding box' corner is clipped
+		// clip
+		prog << df::NoVao(GL_TRIANGLE_FAN, 6, 3);
+	// bounding box
+	prog << df::NoVao(GL_TRIANGLE_STRIP, 14, 9);
 
 
 	GL_CHECK;

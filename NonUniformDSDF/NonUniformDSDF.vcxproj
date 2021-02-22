@@ -152,10 +152,12 @@
     <None Include="Shaders\main_cube.glsl" />
     <None Include="Shaders\Math\box_plane_intersection.glsl" />
     <None Include="Shaders\Math\box_ray_intersection.glsl" />
+    <None Include="Shaders\Math\common.glsl" />
     <None Include="Shaders\Math\primitives.glsl" />
     <None Include="Shaders\Math\sphere_ray_intersection.glsl" />
     <None Include="Shaders\mesh.frag" />
     <None Include="Shaders\mesh.vert" />
+    <None Include="Shaders\Octree\octree.glsl" />
     <None Include="Shaders\render_main.frag" />
     <None Include="Shaders\sdf.glsl" />
     <None Include="Shaders\SDFScenes\cube.glsl" />
@@ -178,6 +180,7 @@
     <None Include="Shaders\SDF\sample3d.glsl" />
     <None Include="Shaders\SDF\sdf0thOrder.glsl" />
     <None Include="Shaders\SDF\sdf1stOrder.glsl" />
+    <None Include="Shaders\SDF\sdfOctree.glsl" />
     <None Include="Shaders\SDF\sdfProceduralScene.glsl" />
     <None Include="Shaders\SDF\weightBlend.glsl" />
     <None Include="Shaders\Shade\ambient_occlusion.glsl" />

@@ -1,4 +1,4 @@
-#version 460
+#version 450
 
 uniform vec3 gCameraPos;
 uniform float gTanPixelAngle;
@@ -29,19 +29,27 @@ bool cube_main(vec3 in_vec, bool pos_or_dir, bool calc_t_min, out vec3 out_col, 
 	vec3 worldVec = in_vec;
 	if(pos_or_dir)
 		worldVec = worldVec - gCameraPos;
+
+	// constructing camera ray
 	float wVecLen = length(worldVec);
 	RayCone cone;
 	cone.ray.Direction	= worldVec / wVecLen;
 	cone.ray.Origin		= gCameraPos;
 	cone.tana			= gTanPixelAngle;
-	cone.rad			= 0;
+	cone.rad			= 0.0f;
 	cone.ray.Tmin		= wVecLen;
-	float temp_t = 0;
+
+	// construct box in which the sdf is
+	float temp_t = 0.0f;
 	Box box = Box(modelTrans + 0.5 * modelScale, 0.5 * modelScale);
 	Ray ray = Ray(cone.ray.Origin, cone.ray.Direction);
 	if(!intersectBox(box, ray, false, temp_t))
 		return false;
+
+	// intersectBox returned the maximum possible t inside box
 	cone.ray.Tmax = temp_t;
+
+	// t min calculated
 	if(calc_t_min || !pos_or_dir){
 		intersectBox(box, ray, true, temp_t);
 		cone.ray.Tmin = max(cone.ray.Tmin, temp_t);
@@ -54,6 +62,7 @@ bool cube_main(vec3 in_vec, bool pos_or_dir, bool calc_t_min, out vec3 out_col, 
 	// Basic sphere trace
 	TraceResult tret = basicSphereTrace(cone, params);
 
+	// Shading from now on
 	Material mat;
 	mat.ambient		= gAmbient;
 	mat.diffcol		= gDiffuse;

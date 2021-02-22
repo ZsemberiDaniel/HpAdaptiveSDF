@@ -29,6 +29,9 @@
     <Filter Include="Octree">
       <UniqueIdentifier>{0612a355-d0fb-4558-82bd-2239ab329007}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Shaders\Octree">
+      <UniqueIdentifier>{33277c6b-bd53-4282-bb2f-2c87033d24bb}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
@@ -177,6 +180,15 @@
     </None>
     <None Include="Octree\octree.hpp">
       <Filter>Octree</Filter>
+    </None>
+    <None Include="Shaders\Math\common.glsl">
+      <Filter>Shaders\Math</Filter>
+    </None>
+    <None Include="Shaders\Octree\octree.glsl">
+      <Filter>Shaders\Octree</Filter>
+    </None>
+    <None Include="Shaders\SDF\sdfOctree.glsl">
+      <Filter>Shaders\SDF</Filter>
     </None>
   </ItemGroup>
 </Project>
