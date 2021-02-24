@@ -103,8 +103,8 @@ protected:
     static const int aggregateSize_ = AS;
 
 private:
-    void initLeavesRecursive(Node* currNode, vector3d<T>& init, vector3d<Leaf*>& generatedLeaves, int x, int y, int z);
     // Recursive helper functions
+    void initLeavesRecursive(Node* currNode, vector3d<T>& init, vector3d<Leaf*>& generatedLeaves, int x, int y, int z);
     static int nodesRecursive(const Node* node);
 
 private:

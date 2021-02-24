@@ -83,7 +83,11 @@ private:
 
 	void InitShaders();
 
+	eltecg::ogl::ShaderStorageBuffer branchSSBO;
+	eltecg::ogl::ShaderStorageBuffer leavesSSBO;
+
 	Octree<Cell> octree;
-	void constructField(Grid& grid, int maxDegree = 4, int maxLevel = 4, float errorThreshold = 0.00001f);
+	int octreeBranchCount;
+	void constructField(Grid& grid, int maxDegree = 3, int maxLevel = 2, float errorThreshold = 0.00001f);
 	void DrawOctree(df::ShaderProgramEditorVF& program, const Octree<Cell>::Node* currentNode, int level = -1);
 };

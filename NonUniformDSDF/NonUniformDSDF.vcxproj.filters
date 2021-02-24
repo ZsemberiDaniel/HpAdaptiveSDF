@@ -56,6 +56,7 @@
     </ClInclude>
     <ClInclude Include="vector3d.h" />
     <ClInclude Include="Structures.h" />
+    <ClInclude Include="OctreeConverter.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Shaders\main_cube.glsl">

@@ -19,7 +19,7 @@ int main(int argc, char* args[])
 			app.Render();
 			app.RenderGUI();
 
-			GL_CHECK;
+			// GL_CHECK;
 		}
 	);
 	return 0;
