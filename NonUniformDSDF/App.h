@@ -86,6 +86,7 @@ private:
 	eltecg::ogl::ShaderStorageBuffer branchSSBO;
 	eltecg::ogl::ShaderStorageBuffer leavesSSBO;
 
+	Grid octreeGrid = Grid{ glm::vec3(0), 2, glm::vec3(0.5f) };
 	Octree<Cell> octree;
 	int octreeBranchCount;
 	void constructField(Grid& grid, int maxDegree = 3, int maxLevel = 2, float errorThreshold = 0.00001f);

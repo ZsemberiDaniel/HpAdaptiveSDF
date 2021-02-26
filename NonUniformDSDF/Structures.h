@@ -3,7 +3,10 @@
 struct Grid
 {
 	glm::vec3 minPos;
+	// TODO: underneath
+	// needs to be foxed to 2
 	int initialCellCount;
+	// needs to be a float
 	glm::vec3 cellSize;
 };
 

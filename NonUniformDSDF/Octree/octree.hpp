@@ -40,13 +40,13 @@ Octree<T, AS>::Octree(int size, vector3d<T>& init, vector3d<Leaf*>& generatedLea
         {
             Branch* n = nodes.front(); nodes.pop();
             
-            for (int i = 0; i < 2; i++)
+            for (int x = 0; x < 2; x++)
             {
-                for (int k = 0; k < 2; k++)
+                for (int y = 0; y < 2; y++)
                 {
-                    for (int j = 0; j < 2; j++)
+                    for (int z = 0; z < 2; z++)
                     {
-                        n->child(i, k, j, new Branch(n->layer() + 1));
+                        n->child(x, y, z, new Branch(n->layer() + 1));
                     }
                 }
             }
@@ -74,17 +74,19 @@ void Octree<T, AS>::initLeavesRecursive(Node* currNode, vector3d<T>& init, vecto
         {
             for (int j = 0; j < 2; j++)
             {
-                if (currBranch->child(i, j, k) == nullptr)
+                if (currBranch->child(i, k, j) == nullptr)
                 {
                     // int index = (2 * x + i) + size_ * (2 * y + k) + size_ * size_ * (2 * z + j);
-                    generatedLeaves(2 * x + i, 2 * y + k, 2 * z + j) = new Leaf(
-                        init(2 * x + i, 2 * y + k, 2 * z + j),
-                        currBranch->layer() + 1);
-                    currBranch->child(i, j, k, generatedLeaves(2 * x + i, 2 * y + k, 2 * z + j));
+                    generatedLeaves(2 * x + i, 2 * y + k, 2 * z + j) = 
+                        new Leaf(
+	                        init(2 * x + i, 2 * y + k, 2 * z + j),
+	                        currBranch->layer() + 1
+                        );
+                    currBranch->child(i, k, j, generatedLeaves(2 * x + i, 2 * y + k, 2 * z + j));
                 }
                 else
                 {
-                    initLeavesRecursive(currBranch->child(i, j, k), init, generatedLeaves, 2 * x + i, 2 * y + k, 2 * z + j);
+                    initLeavesRecursive(currBranch->child(i, k, j), init, generatedLeaves, 2 * x + i, 2 * y + k, 2 * z + j);
                 }
             }
         }
@@ -368,15 +370,15 @@ void Octree<T, AS>::Leaf::subdivide(vector3d<T>& init, vector3d<Leaf*>& newLeave
 {
     Branch* newBranch = new Branch(this->layer());
 
-    for (int i = 0; i < 2; i++)
+    for (int x = 0; x < 2; x++)
     {
-        for (int k = 0; k < 2; k++)
+        for (int y = 0; y < 2; y++)
         {
-            for (int j = 0; j < 2; j++)
+            for (int z = 0; z < 2; z++)
             {
                 // int index = (2 * x + i) + size_ * (2 * y + k) + size_ * size_ * (2 * z + j);
-                newLeaves(i, k, j) = new Leaf(init(i, k, j), this->layer() + 1);
-                newBranch->child(i, k, j, newLeaves(i, k, j));
+                newLeaves(x, y, z) = new Leaf(init(x, y, z), this->layer() + 1);
+                newBranch->child(x, y, z, newLeaves(x, y, z));
             }
         }
     }

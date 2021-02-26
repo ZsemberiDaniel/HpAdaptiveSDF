@@ -21,7 +21,7 @@ const int MAX_COEFF_SIZE = 286; // deg 10
 struct Polynom {
 	uint degree;
 	uint coeffCount;
-	float[MAX_COEFF_SIZE] coeffs;
+	float coeffs[MAX_COEFF_SIZE];
 };
 
 float evalPolynom(in Polynom poly, vec3 p)
@@ -41,7 +41,6 @@ float evalPolynom(in Polynom poly, vec3 p)
 
 	return ret;
 }
-
 
 uint getCoeffCount(uint degree) 
 {

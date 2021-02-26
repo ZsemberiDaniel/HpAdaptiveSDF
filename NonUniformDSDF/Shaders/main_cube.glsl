@@ -20,6 +20,15 @@ uniform int maxStep = 100;
 
 TraceResult basicSphereTrace(RayCone cone, SphereTraceDesc params);
 
+float sdfInside(vec3 p)
+{
+	vec3 texCoord = p / sdfTexSize;
+	return getSample(texCoord);
+}
+
+// TODO: delete these
+vec3 debug1(vec3 p);
+
 // returns false if the fragment should be discarded (the cube was not hit by the ray)
 // in_vec: camera direction or fragment position in world coordinates (see pos_or_dir)
 // pos_or_dir: if true in_vec is interpreted as a position, if false in_vec is a direction
@@ -56,7 +65,18 @@ bool cube_main(vec3 in_vec, bool pos_or_dir, bool calc_t_min, out vec3 out_col, 
 	}
 	if(cone.ray.Tmax <= cone.ray.Tmin)
 		return false;
-
+		
+	
+	// DEBUG START
+//	cone.ray.Origin -= sTranslation + sdfTexCorner;
+//	cone.ray.Origin /= sScale;
+//	cone.ray.Tmin /= sScale;
+//	cone.ray.Tmax /= sScale;
+//	vec3 p_temp = cone.ray.Origin + (cone.ray.Tmin + 0.01f) * cone.ray.Direction;
+//	vec3 deg1 = debug1(p_temp / sdfTexSize);
+//	out_col = deg1;
+//	return true;
+	// DEBUG END
 	SphereTraceDesc params = SphereTraceDesc(0.002, maxStep);
 
 	// Basic sphere trace
@@ -84,13 +104,8 @@ bool cube_main(vec3 in_vec, bool pos_or_dir, bool calc_t_min, out vec3 out_col, 
 
 	vec4 depth_vec = viewProj * vec4(tret.T*cone.ray.Direction + cone.ray.Origin, 1);
 	out_depth = ((depth_vec.z / depth_vec.w) + 1.0) * 0.5;
-	return true;
-}
 
-float sdfInside(vec3 p)
-{
-	vec3 texCoord = p / sdfTexSize;
-	return getSample(texCoord);
+	return true;
 }
 
 TraceResult basicSphereTrace(RayCone cone, SphereTraceDesc params)

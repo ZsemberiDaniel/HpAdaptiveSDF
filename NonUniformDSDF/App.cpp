@@ -66,19 +66,27 @@ const double gaussCoeffs1D[20][20] = {
 
 float SDF(glm::vec3 p)
 {
+	auto sdfBox = [](glm::vec3 p, glm::vec3 size)
+	{
+		glm::vec3 d = abs(p) - size;
+		return glm::min(glm::max(d.x, glm::max(d.y, d.z)), 0.0f) + glm::length(max(d, 0.0f));
+	};
+	
 	// TODO: plane, stop at 1st
 	
 	// sphere in -2, -2, -2 with radius 1
 	// return glm::length(p - glm::vec3(1)) - 0.2f;
 
 	// plane
-	return glm::abs(dot(p - glm::vec3(0, 0, 0), glm::normalize(glm::vec3(0, 1, 0))));
+	// return glm::abs(dot(p - glm::vec3(0, 0.5f, 0), glm::normalize(glm::vec3(0, 1, 0))));
+
+	return sdfBox(p, glm::vec3(1.0f, 0.3f, 1.0f));
 
 	// 2odfok
 
 	// torus
-	/*p -= glm::vec3(1);
-	const float R = 0.8f;
+	// p -= glm::vec3(1);
+	/*const float R = 0.8f;
 	const float r = 0.4f;
 	glm::vec2 q = glm::vec2(glm::length(glm::vec2(p.x, p.z)) - R, p.y);
 	return length(q) - r;*/
@@ -210,15 +218,6 @@ Polynomial fitPolynomial(const BoundingBox& bbox, int degree)
 		{
 			for (int j = 0; i + k + j <= degree; j++, m++)
 			{
-				//polynomial.coeffs[m] = evaluateGaussQuadratic(
-				//	gcp,
-				//	// p is \in [-1; 1]^3
-				//	[bbox, i, k, j](glm::vec3 p) -> float {
-				//		return SDF((bbox.min + (p * 0.5f + 0.5f)) * bbox.size()) *
-				//			shiftedNormalizedLegendre(bbox, glm::ivec3(i, k, j), p) *
-				//			bbox.size().x * bbox.size().y * bbox.size().z / 8.0f;
-				//	});
-
 				polynomial.coeffs[m] = 0.0;
 				
 				for (int n = 0; n < gcp.coeffs.size(); n++)
@@ -248,6 +247,8 @@ void printPolynomial(const Polynomial& poly)
 		{
 			for (int j = 0; i + k + j <= poly.degree; j++, m++)
 			{
+				if (glm::abs(poly.coeffs[m]) < 0.0001f) continue;
+				
 				std::cout << (i + k + j == 0 ? "" : " + ") << poly.coeffs[m];
 				if (i != 0 && i != 1) std::cout << " * Lx^" << i;
 				if (i == 1) std::cout << " * Lx";
@@ -260,6 +261,49 @@ void printPolynomial(const Polynomial& poly)
 	}
 
 	std::cout << std::endl;
+}
+
+void printOctree(Octree<Cell>::Node* node, BoundingBox currBox)
+{
+	if (node->type() == Octree<Cell>::LeafNode)
+	{
+		std::cout << "Bbox " << currBox.min.x << " " << currBox.min.y << " " << currBox.min.z << " ---> "
+			      << currBox.max.x << " " << currBox.max.y << " " << currBox.max.z << std::endl;
+		printPolynomial(static_cast<Octree<Cell>::Leaf*>(node)->value().poly);
+		std::cout << std::endl;
+	}
+	else if (node->type() == Octree<Cell>::BranchNode)
+	{
+		auto* branch = static_cast<Octree<Cell>::Branch*>(node);
+
+		for (int z = 0; z <= 1; z++)
+		{
+			for (int y = 0; y <= 1; y++)
+			{
+				for (int x = 0; x <= 1; x++)
+				{
+					int index = z * 4 + y * 2 + x;
+
+					assert(branch->child(x, y, z) == branch->child(index));
+					glm::vec3 bboxSizeHalf = currBox.size() / 2.0f;
+					
+					BoundingBox newBox;
+					newBox.min = glm::vec3(
+						currBox.min.x + (x == 0 ? 0 : bboxSizeHalf.x),
+						currBox.min.y + (y == 0 ? 0 : bboxSizeHalf.y),
+						currBox.min.z + (z == 0 ? 0 : bboxSizeHalf.z)
+					);
+					newBox.max = glm::vec3(
+						currBox.max.x - (x == 1 ? 0 : bboxSizeHalf.x),
+						currBox.max.y - (y == 1 ? 0 : bboxSizeHalf.y),
+						currBox.max.z - (z == 1 ? 0 : bboxSizeHalf.z)
+					);
+
+					printOctree(branch->child(x, y, z), newBox);
+				}
+			}
+		}
+	}
 }
 
 float estimateError(const Polynomial& polynomial)
@@ -304,9 +348,9 @@ void App::constructField(Grid& grid, int maxDegree, int maxLevel, float errorThr
 
 				const int startingDegree = 2;
 				Polynomial poly = fitPolynomial(bbox, startingDegree);
-				std::cout << "Bbox  " << bbox.min.x << " " << bbox.min.y << " " << bbox.min.z << " to "
+				/*std::cout << "Bbox  " << bbox.min.x << " " << bbox.min.y << " " << bbox.min.z << " to "
 				          << bbox.max.x << " " << bbox.max.y << " " << bbox.max.z << std::endl;
-				printPolynomial(poly);
+				printPolynomial(poly);*/
 				float currentError = estimateError(poly);
 
 				Cell cell = Cell{bbox, poly, currentError, startingDegree, 1};
@@ -370,14 +414,14 @@ void App::constructField(Grid& grid, int maxDegree, int maxLevel, float errorThr
 			// how big a subdivided cube's side is
 			float subdividedCubeSize = currentCell.bbox.size().x / 2.0f;
 
-			for (int i = 0; i < 2; i++)
+			for (int x = 0; x < 2; x++)
 			{
-				for (int k = 0; k < 2; k++)
+				for (int y = 0; y < 2; y++)
 				{
-					for (int j = 0; j < 2; j++)
+					for (int z = 0; z < 2; z++)
 					{
 						// the subdivided cubes' coord is shifted from the bigger cube's coord
-						glm::vec3 cellCoord = currentCell.bbox.min + glm::vec3(i, k, j) * glm::vec3(subdividedCubeSize);
+						glm::vec3 cellCoord = currentCell.bbox.min + glm::vec3(x, y, z) * glm::vec3(subdividedCubeSize);
 						BoundingBox bbox = BoundingBox{ cellCoord, cellCoord + glm::vec3(subdividedCubeSize) };
 
 						// polynom for new cell + making new cell
@@ -390,7 +434,7 @@ void App::constructField(Grid& grid, int maxDegree, int maxLevel, float errorThr
 
 						Cell cell = Cell{ bbox, poly, currentError, currentCell.degree, currentCell.level + 1 };
 
-						hImpSubdividedCell(i, k, j) = cell;
+						hImpSubdividedCell(x, y, z) = cell;
 					}
 				}
 			}
@@ -410,7 +454,7 @@ void App::constructField(Grid& grid, int maxDegree, int maxLevel, float errorThr
 			currentCell.degree++;
 			currentCell.poly  = pImprovementPoly;
 			currentCell.error = pImprovementError;
-			printPolynomial(currentCell.poly);
+			// printPolynomial(currentCell.poly);
 
 			currentCell.octreeLeaf->setValue(currentCell);
 
@@ -424,16 +468,16 @@ void App::constructField(Grid& grid, int maxDegree, int maxLevel, float errorThr
 			vector3d<Octree<Cell>::Leaf*> leaves(2);
 			currentCell.octreeLeaf->subdivide(hImpSubdividedCell, leaves);
 
-			for (int i = 0; i < 2; i++)
+			for (int x = 0; x < 2; x++)
 			{
-				for (int k = 0; k < 2; k++)
+				for (int y = 0; y < 2; y++)
 				{
-					for (int j = 0; j < 2; j++)
+					for (int z = 0; z < 2; z++)
 					{
-						hImpSubdividedCell(i, k, j).octreeLeaf = leaves(i, k, j);
-						pending.push(std::make_pair(hImpSubdividedCell(i, k, j).error, hImpSubdividedCell(i, k, j)));
+						hImpSubdividedCell(x, y, z).octreeLeaf = leaves(x, y, z);
+						pending.push(std::make_pair(hImpSubdividedCell(x, y, z).error, hImpSubdividedCell(x, y, z)));
 
-						error += hImpSubdividedCell(i, k, j).error;
+						error += hImpSubdividedCell(x, y, z).error;
 					}
 				}
 			}
@@ -454,17 +498,20 @@ App::App(df::Sample& s) : sam(s), noVao(GL_TRIANGLES, 3)
 	sam.AddHandlerClass(state.cam);
 
 	// testGaussPoints();
-	Grid grid = Grid{ glm::vec3(0), 2, glm::vec3(1) };
-	constructField(grid);
+	constructField(octreeGrid);
+	BoundingBox bbox;
+	bbox.min = octreeGrid.minPos;
+	bbox.max = octreeGrid.minPos + octreeGrid.cellSize * (float)octreeGrid.initialCellCount;
+	printOctree(octree.root(), bbox);
 
 	std::vector<unsigned int> branchGPU, leavesGPU;
 	packOctree(octree, branchGPU, leavesGPU, octreeBranchCount);
-	for (const auto& i : branchGPU)
+	/*for (const auto& i : branchGPU)
 		std::cout << i << '\t';
 	std::cout << std::endl;
 	for (const auto& i : leavesGPU)
 		std::cout << i << '\t';
-	std::cout << std::endl;
+	std::cout << std::endl;*/
 
 	branchSSBO.constructImmutable(branchGPU, eltecg::ogl::BufferFlags::MAP_READ_BIT);
 	leavesSSBO.constructImmutable(leavesGPU, eltecg::ogl::BufferFlags::MAP_READ_BIT);
@@ -565,6 +612,8 @@ void App::Render()
 		<< "sScale" << state.SDFScale
 		<< "refineRoot" << (settings.refineRoot ? 1 : 0)
 		<< "branchCount"<< octreeBranchCount
+		<< "octreeMinCoord" << octreeGrid.minPos
+		<< "octreeSize" << (octreeGrid.cellSize * static_cast<float>(octreeGrid.initialCellCount)).x
 		<< "param1" << glm::vec3(0.7, 0, 0)
 		<< "param2" << glm::vec3(0, 0, 0);
 
