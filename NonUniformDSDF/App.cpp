@@ -78,9 +78,9 @@ float SDF(glm::vec3 p)
 	// return glm::length(p - glm::vec3(1)) - 0.2f;
 
 	// plane
-	// return glm::abs(dot(p - glm::vec3(0, 0.5f, 0), glm::normalize(glm::vec3(0, 1, 0))));
+	return glm::abs(dot(p - glm::vec3(0, 0.5f, 0), glm::normalize(glm::vec3(4, 0, 3))));
 
-	return sdfBox(p, glm::vec3(1.0f, 0.3f, 1.0f));
+	// return sdfBox(p, glm::vec3(1.0f, 0.3f, 1.0f));
 
 	// 2odfok
 
@@ -90,77 +90,6 @@ float SDF(glm::vec3 p)
 	const float r = 0.4f;
 	glm::vec2 q = glm::vec2(glm::length(glm::vec2(p.x, p.z)) - R, p.y);
 	return length(q) - r;*/
-}
-
-/* Returns points and coefficients for Gaussian-Legendre quadratics
-*/
-GaussCoeffPoints gaussPoints(int pointCount)
-{
-	GaussCoeffPoints output;
-	if (pointCount > 20 || pointCount <= 0)
-	{
-		std::cerr << "Point count for gaussian quadratic is maximum 20 and minimum 1!" << std::endl;
-		return output;
-	}
-
-	output.points.resize(pointCount * pointCount * pointCount);
-	output.coeffs.resize(pointCount * pointCount * pointCount);
-
-	for (int i = 0, m = 0; i < pointCount; i++)
-	{
-		for (int k = 0; k < pointCount; k++)
-		{
-			for (int j = 0; j < pointCount; j++, m++)
-			{
-				output.coeffs[m] = gaussCoeffs1D[pointCount - 1][i] * 
-								   gaussCoeffs1D[pointCount - 1][k] *
-								   gaussCoeffs1D[pointCount - 1][j];
-				output.points[m] = glm::vec3(gaussPoints1D[pointCount - 1][i],
-											 gaussPoints1D[pointCount - 1][k],
-											 gaussPoints1D[pointCount - 1][j]);
-			}
-		}
-	}
-
-	return output;
-}
-
-/* Evaluates the Gaussian-Legendre quadratics for the given R^3 -> R function
-*/
-template<typename F>
-float evaluateGaussQuadratic(const GaussCoeffPoints& gcp, F function)
-{
-	float value = 0.0f;
-	for (int i = 0; i < gcp.coeffs.size(); i++)
-	{
-		value += gcp.coeffs[i] * function(gcp.points[i]);
-	}
-
-	return value;
-}
-
-void testGaussPoints() 
-{
-	GaussCoeffPoints gcp = gaussPoints(15);
-
-	auto eval = [&gcp](std::function<float(glm::vec3)> fun, float realVal) 
-	{
-		float value = 0.0f;
-		for (int i = 0; i < gcp.coeffs.size(); i++)
-		{
-			value += gcp.coeffs[i] * fun(gcp.points[i]);
-		}
-		std::cout << "Calculated by gaussian: " << value << "\tReal: " << realVal << std::endl;
-	};
-	
-	// x^2 + y^2 + z^2
-	eval([](glm::vec3 x) { return glm::dot(x, x); }, 8);
-
-	// sin(x^2) + y + z^3
-	eval([](glm::vec3 p) { return sinf(p.x * p.x) + p.y + p.z * p.z * p.z; }, 2.48215);
-
-	// sphere in (1, 1, 1) with radius 1
-	eval([](glm::vec3 p) { return glm::length(p - glm::vec3(1)) - 1; }, 7.3694);
 }
 
 float legendref(int deg, float p)
@@ -202,14 +131,12 @@ int getCoeffCount(int degree)
 
 /* Equation 5
 */
-Polynomial fitPolynomial(const BoundingBox& bbox, int degree)
+Polynomial App::fitPolynomial(const BoundingBox& bbox, int degree)
 {
 	Polynomial polynomial;
 	// taken this from the paper: n_c, section 3.3
 	polynomial.coeffs.resize(getCoeffCount(degree));
 	polynomial.degree = degree;
-
-	GaussCoeffPoints gcp = gaussPoints(4 * degree);
 
 	int m = 0;
 	for (int i = 0; i <= degree; i++)
@@ -218,18 +145,11 @@ Polynomial fitPolynomial(const BoundingBox& bbox, int degree)
 		{
 			for (int j = 0; i + k + j <= degree; j++, m++)
 			{
-				polynomial.coeffs[m] = 0.0;
-				
-				for (int n = 0; n < gcp.coeffs.size(); n++)
-				{
-					// point inside the bounding box
-					glm::vec3 p = bbox.min + (gcp.points[n] * 0.5f + 0.5f) * bbox.size();
-
-					// doing quadrature from bbox.min to bbox.max
-					polynomial.coeffs[m] += bbox.size().x * bbox.size().y * bbox.size().z / 8.0f * 
-						gcp.coeffs[n] *
-						(SDF(p) * shiftedNormalizedLegendre(bbox, glm::ivec3(i, k, j), p));
-				}
+				polynomial.coeffs[m] = quadratureEvaluator.evaluateIntegral(4 * degree,
+					[&bbox, i, k, j](glm::vec3 p)
+					{
+						return SDF(p) * shiftedNormalizedLegendre(bbox, glm::ivec3(i, k, j), p);
+					}, bbox.min, bbox.max);
 			}
 		}
 	}
@@ -493,7 +413,6 @@ App::App(df::Sample& s) : sam(s), noVao(GL_TRIANGLES, 3)
 	glEnable(GL_DEPTH_TEST);
 
 	InitShaders();
-	testGaussPoints();
 
 	sam.AddHandlerClass(state.cam);
 
@@ -530,7 +449,6 @@ void App::Update()
 
 void App::DrawOctree(df::ShaderProgramEditorVF& program, const Octree<Cell>::Node* currentNode, int level)
 {
-	
 	if (currentNode->type() == Octree<Cell>::BranchNode)
 	{
 		auto* branch = reinterpret_cast<const Octree<Cell>::Branch*>(currentNode);

@@ -17,6 +17,8 @@
 #include <limits>
 #include <iomanip>
 
+#include "QuadratureEvaluator.h"
+
 class App {
 public:
 	App(df::Sample&);
@@ -82,6 +84,9 @@ private:
 	}desc; // temp
 
 	void InitShaders();
+
+	Polynomial fitPolynomial(const BoundingBox& bbox, int degree);
+	QuadratureEvaluator quadratureEvaluator;
 
 	eltecg::ogl::ShaderStorageBuffer branchSSBO;
 	eltecg::ogl::ShaderStorageBuffer leavesSSBO;

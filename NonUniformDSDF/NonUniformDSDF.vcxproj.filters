@@ -42,6 +42,7 @@
     <ClCompile Include="Octree\demo.cpp">
       <Filter>Octree</Filter>
     </ClCompile>
+    <ClCompile Include="QuadratureEvaluator.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="App.h" />
@@ -57,6 +58,7 @@
     <ClInclude Include="vector3d.h" />
     <ClInclude Include="Structures.h" />
     <ClInclude Include="OctreeConverter.h" />
+    <ClInclude Include="QuadratureEvaluator.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Shaders\main_cube.glsl">
