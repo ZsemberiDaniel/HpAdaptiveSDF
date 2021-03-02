@@ -245,14 +245,19 @@
   <ItemGroup>
     <ClCompile Include="App.cpp" />
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="Octree\demo.cpp" />
+    <ClCompile Include="Polynomial.cpp" />
     <ClCompile Include="QuadratureEvaluator.cpp" />
     <ClCompile Include="Utils\gpuTimer.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="App.h" />
-    <ClInclude Include="OctreeConverter.h" />
+    <ClInclude Include="octreeBranch.hpp" />
+    <ClInclude Include="octreeLeaf.hpp" />
+    <ClInclude Include="octreeNode.hpp" />
+    <ClInclude Include="octreePack.hpp" />
+    <ClInclude Include="octreePrint.hpp" />
     <ClInclude Include="Octree\octree.h" />
+    <ClInclude Include="Polynomial.h" />
     <ClInclude Include="QuadratureEvaluator.h" />
     <ClInclude Include="Structures.h" />
     <ClInclude Include="Utils\gpuTimer.h" />

@@ -7,8 +7,8 @@
  * 
  * \param init a size x size x size 3D array with which the tree can be initialized.
  */
-template< typename T, int AS >
-Octree<T, AS>::Octree(int size, vector3d<T>& init, vector3d<Leaf*>& generatedLeaves)
+template< typename T, int P >
+Octree<T, P>::Octree(int size, vector3d<T>& init, vector3d<Leaf*>& generatedLeaves)
     : root_(0)
     , size_(size)
 {
@@ -59,8 +59,8 @@ Octree<T, AS>::Octree(int size, vector3d<T>& init, vector3d<Leaf*>& generatedLea
     // reached the leaves layer so add leaves to the currently lowest branches
     initLeavesRecursive(root(), init, generatedLeaves, 0, 0, 0);
 }
-template< typename T, int AS >
-void Octree<T, AS>::initLeavesRecursive(Node* currNode, vector3d<T>& init, vector3d<Leaf*>& generatedLeaves, int x, int y, int z)
+template< typename T, int P >
+void Octree<T, P>::initLeavesRecursive(Node* currNode, vector3d<T>& init, vector3d<Leaf*>& generatedLeaves, int x, int y, int z)
 {
     if (currNode == nullptr || currNode->type() == NodeType::LeafNode)
     {
@@ -99,8 +99,8 @@ void Octree<T, AS>::initLeavesRecursive(Node* currNode, vector3d<T>& init, vecto
  *
  * \param o Octree to be copied.
  */
-template< typename T, int AS >
-Octree<T, AS>::Octree(const Octree<T, AS>& o)
+template< typename T, int P >
+Octree<T, P>::Octree(const Octree<T, P>& o)
     : size_(o.size_)
 {
     if (!o.root_) {
@@ -121,48 +121,29 @@ Octree<T, AS>::Octree(const Octree<T, AS>& o)
 /**
  * Recursively deletes all nodes by following branch pointers.
  */
-template< typename T, int AS >
-Octree<T, AS>::~Octree()
+template< typename T, int P >
+Octree<T, P>::~Octree()
 {
     deleteNode(root_);
 }
 
 /**
- * Swaps the octree's contents with another's. This is a cheap operation as only
- * the root pointers are swapped, not the whole structure.
+ * Assigns to this octree the contents of octree \a o.
  */
-template< typename T, int AS >
-void Octree<T, AS>::swap(Octree<T, AS>& o)
+template< typename T, int P >
+Octree<T, P>& Octree<T, P>::operator= (Octree<T, P> o)
 {
     std::swap(root_, o.root_);
     std::swap(size_, o.size_);
-}
-
-/**
- * Assigns to this octree the contents of octree \a o.
- */
-template< typename T, int AS >
-Octree<T, AS>& Octree<T, AS>::operator= (Octree<T, AS> o)
-{
-    swap(o);
     return *this;
-}
-
-/**
- * \return Size of octree, in nodes, as specified in the constructor.
- */
-template< typename T, int AS >
-int Octree<T, AS>::size() const
-{
-    return size_;
 }
 
 /**
  * Deletes a node polymorphically. If the node is a branch node, it will delete
  * all its subtree recursively.
  */
-template< typename T, int AS >
-void Octree<T, AS>::deleteNode(Node*& node)
+template< typename T, int P >
+void Octree<T, P>::deleteNode(Node*& node)
 {
     if (node) {
         if ((node)->type() == BranchNode) {
@@ -179,8 +160,8 @@ void Octree<T, AS>::deleteNode(Node*& node)
 /**
  * \return Pointer to octree's root node.
  */
-template< typename T, int AS >
-typename Octree<T, AS>::Node*& Octree<T, AS>::root()
+template< typename T, int P >
+typename Octree<T, P>::Node*& Octree<T, P>::root()
 {
     return root_;
 }
@@ -188,207 +169,8 @@ typename Octree<T, AS>::Node*& Octree<T, AS>::root()
 /**
  * Const version of above.
  */
-template< typename T, int AS >
-const typename Octree<T, AS>::Node* Octree<T, AS>::root() const
+template< typename T, int P >
+const typename Octree<T, P>::Node* Octree<T, P>::root() const
 {
     return root_;
-}
-
-/**
- * \return Total number of nodes in the octree.
- */
-template< typename T, int AS >
-int Octree<T, AS>::nodes() const
-{
-    return nodesRecursive(root_);
-}
-
-/**
- * Helper function for nodes() method.
- */
-template< typename T, int AS >
-int Octree<T, AS>::nodesRecursive(const Node* node)
-{
-    if (!node) {
-        return 0;
-    }
-
-    int n = 1;
-    if (node->type() == BranchNode) {
-        for (int i = 0; i < 8; ++i) {
-            n += nodesRecursive(
-                reinterpret_cast<const Branch*>(node)->child(i));
-        }
-    }
-
-    return n;
-}
-
-template< typename T, int AS >
-Octree<T, AS>::Node::Node(NodeType type, int layer)
-    : type_(type), layer_(layer)
-{
-}
-
-template< typename T, int AS >
-Octree<T, AS>::Node::Node(NodeType type)
-    : type_(type)
-{
-}
-
-template< typename T, int AS >
-typename Octree<T, AS>::NodeType Octree<T, AS>::Node::type() const
-{
-    return type_;
-}
-
-template< typename T, int AS >
-Octree<T, AS>::Branch::Branch(int layer)
-    : Node(BranchNode, layer)
-{
-    memset(children, 0, sizeof(children));
-}
-
-template< typename T, int AS >
-Octree<T, AS>::Branch::Branch(const Branch& b)
-    : Node(BranchNode, b.layer(), b.parent())
-{
-    for (int i = 0; i < 8; ++i) {
-        if (b.child(i)) {
-            switch (b.child(i)->type()) {
-            case BranchNode:
-                child(i) = new Branch(
-                    *reinterpret_cast<const Branch*>(b.child(i)));
-                break;
-            case LeafNode:
-                child(i) = new Leaf(
-                    *reinterpret_cast<const Leaf*>(b.child(i)));
-                break;
-            }
-        }
-        else {
-            child(i) = 0;
-        }
-    }
-}
-
-template< typename T, int AS >
-Octree<T, AS>::Branch::~Branch()
-{
-    for (int i = 0; i < 2; ++i) {
-        for (int j = 0; j < 2; ++j) {
-            for (int k = 0; k < 2; ++k) {
-                assert(children[i][j][k] != this);
-                deleteNode(children[i][j][k]);
-            }
-        }
-    }
-}
-
-template< typename T, int AS >
-const typename Octree<T, AS>::Node* Octree<T, AS>::Branch::child(int x, int y, int z) const
-{
-    assert(x == 0 || x == 1);
-    assert(y == 0 || y == 1);
-    assert(z == 0 || z == 1);
-    return children[z][y][x];
-}
-
-
-template< typename T, int AS >
-typename Octree<T, AS>::Node* Octree<T, AS>::Branch::child(int x, int y, int z)
-{
-    assert(x == 0 || x == 1);
-    assert(y == 0 || y == 1);
-    assert(z == 0 || z == 1);
-    return children[z][y][x];
-}
-
-template< typename T, int AS >
-typename void Octree<T, AS>::Branch::child(int x, int y, int z, Node* newChild)
-{
-    assert(x == 0 || x == 1);
-    assert(y == 0 || y == 1);
-    assert(z == 0 || z == 1);
-    newChild->parent(this);
-    newChild->indexInParent = z * 4 + y * 2 + x;
-    children[z][y][x] = newChild;
-}
-
-template< typename T, int AS >
-const typename Octree<T, AS>::Node* Octree<T, AS>::Branch::child(int index) const
-{
-    assert(index >= 0 && index < 8);
-    return *(&children[0][0][0] + index);
-}
-
-template< typename T, int AS >
-typename Octree<T, AS>::Node* Octree<T, AS>::Branch::child(int index)
-{
-    assert(index >= 0 && index < 8);
-    return *(&children[0][0][0] + index);
-}
-
-template< typename T, int AS >
-typename void Octree<T, AS>::Branch::child(int index, Node* newChild)
-{
-    assert(index >= 0 && index < 8);
-    newChild->parent(this);
-    newChild->indexInParent = index;
-    *(&children[0][0][0] + index) = newChild;
-}
-
-template< typename T, int AS >
-Octree<T, AS>::Leaf::Leaf(int layer)
-    : Node(LeafNode, layer) { }
-
-template< typename T, int AS >
-Octree<T, AS>::Leaf::Leaf(const T& v, int layer)
-    : Node(LeafNode, layer)
-    , value_(v) { }
-
-template< typename T, int AS >
-const T& Octree<T, AS>::Leaf::value() const
-{
-    return value_;
-}
-
-template< typename T, int AS >
-T& Octree<T, AS>::Leaf::value()
-{
-    return value_;
-}
-
-template< typename T, int AS >
-void Octree<T, AS>::Leaf::setValue(const T& v)
-{
-    value_ = v;
-}
-
-template< typename T, int AS >
-void Octree<T, AS>::Leaf::subdivide(vector3d<T>& init, vector3d<Leaf*>& newLeaves)
-{
-    Branch* newBranch = new Branch(this->layer());
-
-    for (int x = 0; x < 2; x++)
-    {
-        for (int y = 0; y < 2; y++)
-        {
-            for (int z = 0; z < 2; z++)
-            {
-                // int index = (2 * x + i) + size_ * (2 * y + k) + size_ * size_ * (2 * z + j);
-                newLeaves(x, y, z) = new Leaf(init(x, y, z), this->layer() + 1);
-                newBranch->child(x, y, z, newLeaves(x, y, z));
-            }
-        }
-    }
-
-    if (this->parent_)
-    {
-        reinterpret_cast<Branch*>(this->parent_)->child(this->indexInParent, newBranch);
-    }
-
-    this->parent_ = nullptr;
-    this->layer_ = -1;
-    delete this;
 }

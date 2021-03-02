@@ -1,4 +1,5 @@
 #pragma once
+#include "Polynomial.h"
 
 struct Grid
 {
@@ -21,16 +22,10 @@ struct BoundingBox
 	}
 };
 
-struct Polynomial
-{
-	std::vector<float> coeffs;
-	int degree;
-};
-
 struct Cell
 {
 	BoundingBox bbox = BoundingBox{};
-	Polynomial poly = Polynomial{};
+	Polynomial poly;
 	float error = 0.0f;
 	int degree = -1;
 	int level = -1;
@@ -41,10 +36,4 @@ struct Cell
 	{
 		return false;
 	}
-};
-
-struct GaussCoeffPoints
-{
-	std::vector<float> coeffs;
-	std::vector<glm::vec3> points;
 };

@@ -39,10 +39,8 @@
     <ClCompile Include="Utils\gpuTimer.cpp">
       <Filter>Utils\Timer</Filter>
     </ClCompile>
-    <ClCompile Include="Octree\demo.cpp">
-      <Filter>Octree</Filter>
-    </ClCompile>
     <ClCompile Include="QuadratureEvaluator.cpp" />
+    <ClCompile Include="Polynomial.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="App.h" />
@@ -57,8 +55,23 @@
     </ClInclude>
     <ClInclude Include="vector3d.h" />
     <ClInclude Include="Structures.h" />
-    <ClInclude Include="OctreeConverter.h" />
     <ClInclude Include="QuadratureEvaluator.h" />
+    <ClInclude Include="Polynomial.h" />
+    <ClInclude Include="octreePack.hpp">
+      <Filter>Octree</Filter>
+    </ClInclude>
+    <ClInclude Include="octreeNode.hpp">
+      <Filter>Octree</Filter>
+    </ClInclude>
+    <ClInclude Include="octreeBranch.hpp">
+      <Filter>Octree</Filter>
+    </ClInclude>
+    <ClInclude Include="octreeLeaf.hpp">
+      <Filter>Octree</Filter>
+    </ClInclude>
+    <ClInclude Include="octreePrint.hpp">
+      <Filter>Octree</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="Shaders\main_cube.glsl">

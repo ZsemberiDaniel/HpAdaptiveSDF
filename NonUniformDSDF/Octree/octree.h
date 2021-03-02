@@ -7,7 +7,7 @@
 #include <ostream>
 #include "../vector3d.h"
 
-template< typename T, int AS = 1 >
+template< typename T, int P = 2 >
 class Octree
 {
 
@@ -51,7 +51,7 @@ public:
         void child(int x, int y, int z, Node* newChild);
         void child(int index, Node* newChild);
 
-        friend void Octree<T, AS>::deleteNode(Node*& node);
+        friend void Octree<T, P>::deleteNode(Node*& node);
 
     private:
         Branch& operator= (Branch b);
@@ -72,7 +72,7 @@ public:
         void setValue(const T& v);
         void subdivide(vector3d<T>& init, vector3d<Leaf*>& newLeaves);
 
-        friend void Octree<T, AS>::deleteNode(Node*& node);
+        friend void Octree<T, P>::deleteNode(Node*& node);
 
     private:
         ~Leaf() {};
@@ -83,35 +83,32 @@ public:
 
     Octree() { }
     Octree(int size, vector3d<T>& init, vector3d<Leaf*>& generatedLeaves);
-    Octree(const Octree<T, AS>& o);
+    Octree(const Octree<T, P>& o);
     ~Octree();
 
-    // Accessors
-    int size() const;
-
-    int nodes() const;
-
-    void swap(Octree<T, AS>& o);
-    Octree<T, AS>& operator= (Octree<T, AS> o);
+    Octree<T, P>& operator= (Octree<T, P> o);
 
     Node*& root();
     const Node* root() const;
 
     static void deleteNode(Node*& node);
 
-protected:
-    static const int aggregateSize_ = AS;
+    void packForGPU(std::vector<unsigned int>& branchGPU, std::vector<unsigned int>& leavesGPU, int& branchCount);
+    void print(glm::vec3 bboxMin, glm::vec3 bboxMax);
 
 private:
     // Recursive helper functions
     void initLeavesRecursive(Node* currNode, vector3d<T>& init, vector3d<Leaf*>& generatedLeaves, int x, int y, int z);
-    static int nodesRecursive(const Node* node);
 
-private:
     Node* root_;
     int size_;
 };
 
 #include "octree.hpp"
+#include "octreeNode.hpp"
+#include "octreeBranch.hpp"
+#include "octreeLeaf.hpp"
+#include "octreePack.hpp"
+#include "octreePrint.hpp"
 
 #endif
