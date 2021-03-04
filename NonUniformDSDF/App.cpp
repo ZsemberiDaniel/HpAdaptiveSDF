@@ -15,239 +15,10 @@ const glm::vec3 CUBE_COLORS[8] = {
 	glm::vec3(0.65, 0.36, 0.52)
 };
 
-float SDF(glm::vec3 p)
-{
-	auto sdfBox = [](glm::vec3 p, glm::vec3 size)
-	{
-		glm::vec3 d = abs(p) - size;
-		return glm::min(glm::max(d.x, glm::max(d.y, d.z)), 0.0f) + glm::length(max(d, 0.0f));
-	};
-	
-	// TODO: plane, stop at 1st
-	
-	// sphere in -2, -2, -2 with radius 1
-	// return glm::length(p - glm::vec3(1)) - 0.2f;
-
-	// plane
-	return glm::abs(dot(p - glm::vec3(0, 0.5f, 0), glm::normalize(glm::vec3(0, 1, 0))));
-
-	// return sdfBox(p, glm::vec3(1.0f, 0.3f, 1.0f));
-
-	// 2odfok
-
-	// torus
-	// p -= glm::vec3(1);
-	/*const float R = 0.8f;
-	const float r = 0.4f;
-	glm::vec2 q = glm::vec2(glm::length(glm::vec2(p.x, p.z)) - R, p.y);
-	return length(q) - r;*/
-}
-
-/* Equation 4
-*/
-float shiftedNormalizedLegendre(const BoundingBox& bbox, glm::ivec3 degrees, glm::vec3 p)
-{
-	glm::vec3 shiftedNormalizedP = 2.0f / glm::vec3(bbox.max - bbox.min) * p 
-							       - glm::vec3((bbox.max + bbox.min) / (bbox.max - bbox.min));
-	glm::vec3 shiftedNormalizedCoeff = (2.0f * glm::vec3(degrees) + 1.0f) / glm::vec3(bbox.size());
-
-	float value = (shiftedNormalizedCoeff.x) * std::legendref(degrees.x, shiftedNormalizedP.x);
-	value *= (shiftedNormalizedCoeff.y) * std::legendref(degrees.y, shiftedNormalizedP.y);
-	value *= (shiftedNormalizedCoeff.z) * std::legendref(degrees.z, shiftedNormalizedP.z);
-
-	return value;
-}
-
-/* Equation 5
-*/
-Polynomial App::fitPolynomial(const BoundingBox& bbox, int degree)
-{
-	Polynomial polynomial(degree);
-
-	int m = 0;
-	for (int i = 0; i <= degree; i++)
-	{
-		for (int k = 0; i + k <= degree; k++)
-		{
-			for (int j = 0; i + k + j <= degree; j++, m++)
-			{
-				polynomial(m) = quadratureEvaluator.evaluateIntegral(4 * degree,
-					[&bbox, i, k, j](glm::vec3 p)
-					{
-						return SDF(p) * shiftedNormalizedLegendre(bbox, glm::ivec3(i, k, j), p);
-					}, bbox.min, bbox.max);
-			}
-		}
-	}
-
-	return polynomial;
-}
-
-void App::constructField(Grid& grid, int maxDegree, int maxLevel, float errorThreshold)
-{
-	auto getCoeffCount = [](int degree) -> int
-	{
-		return (degree * degree * degree + 6 * degree * degree + 11 * degree + 6) / 6;
-	};
-	
-	vector3d<Cell> initialCells(grid.initialCellCount);
-	vector3d<Octree<Cell>::Leaf*> generatedCells(grid.initialCellCount);
-
-	float error = 0.0f;
-	// TODO: make pending a non-pair, only with the Cell and custom comparator
-	std::priority_queue< std::pair<float, Cell> > pending;
-
-	for (int x = 0; x < grid.initialCellCount; x++)
-	{
-		for (int y = 0; y < grid.initialCellCount; y++)
-		{
-			for (int z = 0; z < grid.initialCellCount; z++)
-			{
-				glm::vec3 cellCoord = grid.minPos + grid.cellSize * glm::vec3(x, y, z);
-				BoundingBox bbox = BoundingBox{ cellCoord, cellCoord + grid.cellSize };
-
-				const int startingDegree = 2;
-				Polynomial poly = fitPolynomial(bbox, startingDegree);
-				/*std::cout << "Bbox  " << bbox.min.x << " " << bbox.min.y << " " << bbox.min.z << " to "
-				          << bbox.max.x << " " << bbox.max.y << " " << bbox.max.z << std::endl;
-				printPolynomial(poly);*/
-				float currentError = poly.coefficientBasedError();
-
-				Cell cell = Cell{bbox, poly, currentError, startingDegree, 1};
-
-				error += currentError;
-
-				initialCells(x, y, z) = cell;
-			}
-		}
-	}
-	octree = Octree<Cell>(grid.initialCellCount, initialCells, generatedCells);
-	for (int x = 0; x < grid.initialCellCount; x++)
-	{
-		for (int y = 0; y < grid.initialCellCount; y++)
-		{
-			for (int z = 0; z < grid.initialCellCount; z++)
-			{
-				initialCells(x, y, z).octreeLeaf = generatedCells(x, y, z);
-				pending.push(std::make_pair(initialCells(x, y, z).error, initialCells(x, y, z)));
-			}
-		}
-	}
-
-	while (!pending.empty() && error > errorThreshold)
-	{
-		auto popped = pending.top();
-		pending.pop();
-
-		Cell& currentCell = popped.second;
-		if (currentCell.degree >= maxDegree && currentCell.level >= maxLevel) continue;
-
-		float pImprovement = -std::numeric_limits<float>::max();
-		float hImprovement = -std::numeric_limits<float>::max();
-
-		// store the changed variables for p improvement so we don't have to calculate the again to
-		// commit these changes to the octree
-		Polynomial pImprovementPoly;
-		float pImprovementError;
-
-		// same storage as above but for h improvement
-		vector3d<Cell> hImpSubdividedCell(2);
-		
-		// p-improvement
-		// estimate error when using a polynom that is a degree higher
-		if (true/*currentCell.degree < maxDegree*/)
-		{
-			pImprovementPoly = fitPolynomial(currentCell.bbox, currentCell.degree + 1);
-			pImprovementError = pImprovementPoly.coefficientBasedError();
-
-			// Equation (8), section 3.6
-			pImprovement = 1.0f / (getCoeffCount(currentCell.degree + 1) - getCoeffCount(currentCell.degree)) *
-				(currentCell.error - 8 * pImprovementError);
-		}
-
-		// h-improvement
-		// subdivide cell into 2x2x2
-		if (true/*currentCell.level < maxLevel*/)
-		{
-			// max error for subdivided cells, needed for eq. (9)
-			float maxError = -std::numeric_limits<float>::max();
-			// how big a subdivided cube's side is
-			float subdividedCubeSize = currentCell.bbox.size().x / 2.0f;
-
-			for (int x = 0; x < 2; x++)
-			{
-				for (int y = 0; y < 2; y++)
-				{
-					for (int z = 0; z < 2; z++)
-					{
-						// the subdivided cubes' coord is shifted from the bigger cube's coord
-						glm::vec3 cellCoord = currentCell.bbox.min + glm::vec3(x, y, z) * glm::vec3(subdividedCubeSize);
-						BoundingBox bbox = BoundingBox{ cellCoord, cellCoord + glm::vec3(subdividedCubeSize) };
-
-						// polynom for new cell + making new cell
-						Polynomial poly = fitPolynomial(bbox, currentCell.degree);
-						float currentError = poly.coefficientBasedError();
-						if (maxError < currentError)
-						{
-							maxError = currentError;
-						}
-
-						Cell cell = Cell{ bbox, poly, currentError, currentCell.degree, currentCell.level + 1 };
-
-						hImpSubdividedCell(x, y, z) = cell;
-					}
-				}
-			}
-
-			// equation (9), section 3.6
-			hImprovement = 1.0f / 7.0f / getCoeffCount(currentCell.degree) * (currentCell.error - 8 * maxError);
-		}
-
-		bool refineP = currentCell.degree < maxDegree && (currentCell.level == maxLevel || pImprovement > hImprovement);
-		bool refineH = currentCell.level < maxLevel   && !refineP;
-
-		// deciding in favor of p-improvement
-		if (refineP/*pImprovement >= hImprovement*/)
-		{
-			error += pImprovementError - currentCell.error;
-			
-			currentCell.degree++;
-			currentCell.poly  = pImprovementPoly;
-			currentCell.error = pImprovementError;
-			// printPolynomial(currentCell.poly);
-
-			currentCell.octreeLeaf->setValue(currentCell);
-
-			pending.push(std::make_pair(currentCell.error, currentCell));
-		}
-		// doing h-improvement otherwise
-		if (refineH/*pImprovement < hImprovement*/)
-		{
-			error -= currentCell.error;
-			
-			vector3d<Octree<Cell>::Leaf*> leaves(2);
-			currentCell.octreeLeaf->subdivide(hImpSubdividedCell, leaves);
-
-			for (int x = 0; x < 2; x++)
-			{
-				for (int y = 0; y < 2; y++)
-				{
-					for (int z = 0; z < 2; z++)
-					{
-						hImpSubdividedCell(x, y, z).octreeLeaf = leaves(x, y, z);
-						pending.push(std::make_pair(hImpSubdividedCell(x, y, z).error, hImpSubdividedCell(x, y, z)));
-
-						error += hImpSubdividedCell(x, y, z).error;
-					}
-				}
-			}
-		}
-	}
-}
-
-
 App::App(df::Sample& s) : sam(s), noVao(GL_TRIANGLES, 3)
 {
+	// TODO: resize not working
+	
 	glClearColor(0.125f, 0.25f, 0.5f, 1.0f);
 	glEnable(GL_CULL_FACE);
 	glEnable(GL_DEPTH_TEST);
@@ -256,8 +27,37 @@ App::App(df::Sample& s) : sam(s), noVao(GL_TRIANGLES, 3)
 
 	sam.AddHandlerClass(state.cam);
 
-	constructField(octreeGrid);
-	octree.print(octreeGrid.minPos, octreeGrid.minPos + octreeGrid.cellSize * (float)octreeGrid.initialCellCount);
+	auto SDF = [](glm::vec3 p) -> float
+	{
+		auto sdfBox = [](glm::vec3 p, glm::vec3 size)
+		{
+			glm::vec3 d = abs(p) - size;
+			return glm::min(glm::max(d.x, glm::max(d.y, d.z)), 0.0f) + glm::length(max(d, 0.0f));
+		};
+
+		// TODO: plane, stop at 1st
+
+		// sphere in -2, -2, -2 with radius 1
+		return glm::length(p - glm::vec3(0.5f)) - 0.4f;
+
+		// plane
+		// return dot(p - glm::vec3(0, 0, 0.5f), glm::normalize(glm::vec3(0.4f, 0, 1)));
+
+		// return sdfBox(p - glm::vec3(0.5f), glm::vec3(0.2f));
+
+		// 2odfok
+
+		// torus
+		// p -= glm::vec3(1);
+		/*const float R = 0.8f;
+		const float r = 0.4f;
+		glm::vec2 q = glm::vec2(glm::length(glm::vec2(p.x, p.z)) - R, p.y);
+		return length(q) - r;*/
+	};
+
+	OctreeGenerator::constructField<GaussPolynomialGenerator>(octree, gaussPolyGenerator, octreeConstructionParams, SDF);
+	// OctreeGenerator::constructField<LSQPolyGenerator>(octree, lsqGenerator, octreeConstructionParams, SDF);
+	octree.print(octreeConstructionParams.minPos, octreeConstructionParams.minPos + octreeConstructionParams.sizeInWorld);
 
 	std::vector<unsigned int> branchGPU, leavesGPU;
 	octree.packForGPU(branchGPU, leavesGPU, octreeBranchCount);
@@ -304,7 +104,7 @@ void App::DrawOctree(df::ShaderProgramEditorVF& program, const Octree<Cell>::Nod
 		<< "MVP" << state.cam.GetViewProj() *
 			        glm::translate(glm::vec3(leaf->value().bbox.min)) * 
 			        glm::scale(glm::vec3(leaf->value().bbox.size().x))
-		<< "color" << CUBE_COLORS[leaf->value().degree];
+		<< "color" << CUBE_COLORS[leaf->value().degree()];
 		program << df::NoVao(GL_LINES, 24, 0);
 	}
 }
@@ -315,8 +115,8 @@ void App::Render()
 	Backbuffer << (const df::detail::ClearF<0>&)state.clear; // Dragonfly pls... if it is not const, it thinks it is a program
 	Backbuffer << Clear(0.1f, 0.1f, 0.1f, 1.0f);
 
-	/*int currentLevel = static_cast<int>(SDL_GetTicks() / 1000.0f) % 5;
-	DrawOctree(cubeWireProgram, octree.root(), currentLevel);*/
+	int currentLevel = static_cast<int>(SDL_GetTicks() / 1000.0f) % 5;
+	DrawOctree(cubeWireProgram, octree.root(), -1);
 
 	glm::mat4 mvp = state.cam.GetViewProj()
 		* glm::translate(desc.SDFCorner + state.SDFTrans)
@@ -336,10 +136,14 @@ void App::Render()
 
 	glm::vec3 modelTrans = desc.SDFCorner + state.SDFScale * desc.SDFBorder + state.SDFTrans;
 	glm::vec3 modelScale = state.SDFScale * (desc.SDFSize - 2.0f * desc.SDFBorder);
+	
+	modelTrans = glm::vec3(0);
+	modelScale = glm::vec3(1);
+
 	float planeDist = glm::dot(cam.GetEye(), cam.GetDir()) + cam.GetNearFarClips().x;
 
-	branchSSBO.bindBuffer(0);
-	leavesSSBO.bindBuffer(1);
+	branchSSBO.bindBufferRange(0);
+	leavesSSBO.bindBufferRange(1);
 	Backbuffer << prog
 		<< "viewProj" << cam.GetViewProj()
 		<< "modelTrans" << modelTrans
@@ -366,10 +170,11 @@ void App::Render()
 		<< "sScale" << state.SDFScale
 		<< "refineRoot" << (settings.refineRoot ? 1 : 0)
 		<< "branchCount"<< octreeBranchCount
-		<< "octreeMinCoord" << octreeGrid.minPos
-		<< "octreeSize" << (octreeGrid.cellSize * static_cast<float>(octreeGrid.initialCellCount)).x
+		<< "octreeMinCoord" << octreeConstructionParams.minPos
+		<< "octreeSize" << octreeConstructionParams.sizeInWorld
 		<< "param1" << glm::vec3(0.7, 0, 0)
-		<< "param2" << glm::vec3(0, 0, 0);
+		<< "param2" << glm::vec3(0, 0, 0)
+		<< "time" << SDL_GetTicks() / 1000.0f;
 
 	glm::vec3 dir = cam.GetDir();
 	glm::vec3 frontVertex = glm::vec3((dir.x < 0 ? modelScale.x : 0), (dir.y < 0 ? modelScale.y : 0), (dir.z < 0 ? modelScale.z : 0));

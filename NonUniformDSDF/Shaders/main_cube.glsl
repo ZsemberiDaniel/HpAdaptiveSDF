@@ -14,6 +14,8 @@ uniform int refineRoot;
 
 uniform int maxStep = 100;
 
+uniform float time;
+
 //!#include "common.glsl"
 //?#include "Math/box_ray_intersection.glsl"
 //?#include "Shade/basic_shade.glsl"
@@ -28,6 +30,8 @@ float sdfInside(vec3 p)
 
 // TODO: delete these
 vec3 debug1(vec3 p);
+
+vec3 debugDist = vec3(1,0,0);
 
 // returns false if the fragment should be discarded (the cube was not hit by the ray)
 // in_vec: camera direction or fragment position in world coordinates (see pos_or_dir)
@@ -72,7 +76,7 @@ bool cube_main(vec3 in_vec, bool pos_or_dir, bool calc_t_min, out vec3 out_col, 
 //	cone.ray.Origin /= sScale;
 //	cone.ray.Tmin /= sScale;
 //	cone.ray.Tmax /= sScale;
-//	vec3 p_temp = cone.ray.Origin + (cone.ray.Tmin + 0.01f) * cone.ray.Direction;
+//	vec3 p_temp = cone.ray.Origin + (cone.ray.Tmin + 0.001f) * cone.ray.Direction;
 //	vec3 deg1 = debug1(p_temp / sdfTexSize);
 //	out_col = deg1;
 //	return true;
@@ -92,6 +96,18 @@ bool cube_main(vec3 in_vec, bool pos_or_dir, bool calc_t_min, out vec3 out_col, 
 	vec3 col = shade(cone, tret.T, mat);	//Gabor's tone mapping:
 	col = max(0.0.rrr, col - 0.004.rrr);
 	col = (col * (6.2f * col + 0.5f)) / (col * (6.2f * col + 1.7f) + 0.06f);
+
+//	if(debugDist.x < 0) debugDist = vec3(-debugDist.x, 0, 0);
+//	else debugDist = vec3(0,debugDist.x, 0);
+		
+	// col = 10*debugDist;
+	// NORMAL VECTOR
+//	vec3 pp = cone.ray.Origin + tret.T * cone.ray.Direction;
+//	vec2 h = vec2(0.01, 0);
+//	col = vec3(sdf(pp + h.xyy) - sdf(pp - h.xyy),
+//				sdf(pp + h.yxy) - sdf(pp - h.yxy),
+//				sdf(pp + h.yyx) - sdf(pp - h.yyx))/2/h.x;
+//	col *= -1;
 
 	if(bool(tret.flags & (1<<0))){
 		// tmax reached
@@ -128,6 +144,8 @@ TraceResult basicSphereTrace(RayCone cone, SphereTraceDesc params)
 		ret.T += dd;
 		prevSign = dd;
 		dd = sdfInside(cone.ray.Origin + ret.T * cone.ray.Direction);
+		// dd = max(0.0f, (dd - 0.05f) / 25.0f);
+		debugDist = dd.xxx;
 	}
 
 	if (refineRoot == 1 && prevSign > 0 && dd < 0)

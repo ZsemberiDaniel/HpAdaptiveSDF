@@ -8,7 +8,7 @@
 Polynomial::Polynomial(int _degree) :
 	degree(_degree)
 {
-	coeffs.resize(calculateCoeffCount());
+	coeffs.resize(calculateCoeffCount(), 0.0f);
 }
 
 Polynomial::Polynomial(const Polynomial& poly) :
@@ -20,7 +20,7 @@ Polynomial::Polynomial(const Polynomial& poly) :
 Polynomial& Polynomial::operator=(const Polynomial& poly)
 {
 	degree = poly.degree;
-	coeffs.resize(calculateCoeffCount());
+	coeffs.resize(calculateCoeffCount(), 0.0f);
 	coeffs = poly.coeffs;
 
 	return *this;
@@ -88,6 +88,16 @@ float& Polynomial::operator()(int i)
 }
 
 const float& Polynomial::operator()(int i) const
+{
+	return coeffs[i];
+}
+
+float& Polynomial::operator[](int i)
+{
+	return coeffs[i];
+}
+
+const float& Polynomial::operator[](int i) const
 {
 	return coeffs[i];
 }

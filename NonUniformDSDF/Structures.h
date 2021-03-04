@@ -1,15 +1,5 @@
 #pragma once
-#include "Polynomial.h"
-
-struct Grid
-{
-	glm::vec3 minPos;
-	// TODO: underneath
-	// needs to be foxed to 2
-	int initialCellCount;
-	// needs to be a float
-	glm::vec3 cellSize;
-};
+#include "Math/Polynomial.h"
 
 struct BoundingBox
 {
@@ -27,10 +17,17 @@ struct Cell
 	BoundingBox bbox = BoundingBox{};
 	Polynomial poly;
 	float error = 0.0f;
-	int degree = -1;
-	int level = -1;
 	Octree<Cell>::Leaf* octreeLeaf = nullptr;
 
+	int level() const
+	{
+		return octreeLeaf->layer();
+	}
+
+	int degree() const
+	{
+		return poly.getDegree();
+	}
 
 	bool operator< (const Cell& cell) const
 	{

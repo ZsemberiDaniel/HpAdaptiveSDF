@@ -1,5 +1,3 @@
-
-
 template< typename T, int P >
 Octree<T, P>::Branch::Branch(int layer)
     : Node(BranchNode, layer)

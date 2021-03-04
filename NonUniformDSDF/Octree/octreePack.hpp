@@ -75,6 +75,13 @@ inline void Octree<Cell, 2>::packForGPU(std::vector<unsigned int>& branchGPU, st
     branchGPU.resize(branches.size() * (BR_SIZE));
     leavesGPU.clear();
 
+    glm::vec3 dir = glm::normalize(glm::vec3(2, 3, 4)) / 2.0f;
+    Polynomial poly(1);
+    poly(0) = 0;
+    poly(1) = dir.z;
+    poly(2) = dir.y;
+    poly(3) = dir.x;
+
     // make leaves gpu storage and free up malloced memory
     for (int i = 0; i < leaves.size(); i++)
     {
@@ -82,18 +89,48 @@ inline void Octree<Cell, 2>::packForGPU(std::vector<unsigned int>& branchGPU, st
         leaves[i]->indexInGPUArray = leavesGPU.size();
 
         leavesGPU.push_back(leaves[i]->level);
-        leavesGPU.push_back(leaves[i]->value->degree);
+        leavesGPU.push_back(leaves[i]->value->degree());
+        // leavesGPU.push_back(1);
+
+       /* int coeffCount = poly.coeffCount();
+        for (int k = 0; k < coeffCount; k += 2)
+        {
+
+            glm::vec2 coeffVec2 = glm::vec2(0.0f);
+            if (k + 0 < coeffCount) coeffVec2.x = poly(k + 0);
+            if (k + 1 < coeffCount) coeffVec2.y = poly(k + 1);
+
+            leavesGPU.push_back(glm::packSnorm2x16(coeffVec2));
+        }*/
 
         int coeffCount = leaves[i]->value->poly.coeffCount();
-        for (int k = 0; k < coeffCount; k += 4)
+        for (int k = 0; k < coeffCount; k += 2)
         {
-            glm::vec4 coeffVec4 = glm::vec4(0.0f);
-            if (4 * k + 0 < coeffCount) coeffVec4.x = leaves[i]->value->poly(4 * k + 0);
-            if (4 * k + 1 < coeffCount) coeffVec4.y = leaves[i]->value->poly(4 * k + 1);
-            if (4 * k + 2 < coeffCount) coeffVec4.z = leaves[i]->value->poly(4 * k + 2);
-            if (4 * k + 3 < coeffCount) coeffVec4.w = leaves[i]->value->poly(4 * k + 3);
+            /*glm::vec4 coeffVec4 = glm::vec4(0.0f);
+            if (k + 0 < coeffCount) coeffVec4.x = leaves[i]->value->poly(k + 0);
+            if (k + 1 < coeffCount) coeffVec4.y = leaves[i]->value->poly(k + 1);
+            if (k + 2 < coeffCount) coeffVec4.z = leaves[i]->value->poly(k + 2);
+            if (k + 3 < coeffCount) coeffVec4.w = leaves[i]->value->poly(k + 3);
+        	
+            // DEBUG START
+            coeffVec4.x = std::round(coeffVec4.x * 1000.0f) / 1000.0f;
+            coeffVec4.y = std::round(coeffVec4.y * 1000.0f) / 1000.0f;
+            coeffVec4.z = std::round(coeffVec4.z * 1000.0f) / 1000.0f;
+            coeffVec4.w = std::round(coeffVec4.w * 1000.0f) / 1000.0f;
+            // DEBUG END
+        	
+            leavesGPU.push_back(glm::packSnorm4x8(coeffVec4));*/
 
-            leavesGPU.push_back(glm::packSnorm4x8(coeffVec4));
+            glm::vec2 coeffVec2 = glm::vec2(0.0f);
+            if (k + 0 < coeffCount) coeffVec2.x = leaves[i]->value->poly(k + 0);
+            if (k + 1 < coeffCount) coeffVec2.y = leaves[i]->value->poly(k + 1);
+
+            // DEBUG START
+            //coeffVec2.x = std::round(coeffVec2.x * 1000.0f) / 1000.0f;
+            // coeffVec2.y = std::round(coeffVec2.y * 1000.0f) / 1000.0f;
+        	// DEBUG END
+
+            leavesGPU.push_back(glm::packSnorm2x16(coeffVec2));
         }
     }
 

@@ -17,14 +17,14 @@ float legendref(int deg, float p)
 	return b;
 }
 
-const int MAX_COEFF_SIZE = 286; // deg 10
+const int MAX_COEFF_SIZE = 90; // deg 6
 struct Polynom {
 	uint degree;
 	uint coeffCount;
 	float coeffs[MAX_COEFF_SIZE];
 };
 
-float evalPolynom(in Polynom poly, vec3 p)
+float evalPolynom(in Polynom poly, vec3 p, vec3 bboxSize)
 {
 	float ret = 0.0f;
 
@@ -34,7 +34,10 @@ float evalPolynom(in Polynom poly, vec3 p)
 		{
 			for (int j = 0; i + k + j <= poly.degree; j++, m++)
 			{
-				ret += poly.coeffs[m] * legendref(i, p.x) * legendref(k, p.y) * legendref(j, p.z);
+				vec3 a = sqrt((2.0f * vec3(i, k, j) + 1.0f) / bboxSize);
+				// a = vec3(1);
+				ret += poly.coeffs[m] * legendref(i, p.x) * legendref(k, p.y) * legendref(j, p.z) *
+					a.x * a.y * a.z;
 			}
 		}
 	}

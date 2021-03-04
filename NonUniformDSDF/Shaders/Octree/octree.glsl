@@ -54,13 +54,17 @@ Leaf getLeaf(in uint leafIndexInArray)
 	poly.degree = l_leaves[leafIndexInArray + 1];
 	poly.coeffCount = getCoeffCount(poly.degree);
 
-	for (int i = 0; i < poly.coeffCount; i += 4)
+	for (int i = 0; i < poly.coeffCount; i += 2)
 	{
-		vec4 coeffs = unpackSnorm4x8(l_leaves[leafIndexInArray + 2 + i / 4]);
-		poly.coeffs[4 * i + 0] = coeffs.x;
-		poly.coeffs[4 * i + 1] = coeffs.y;
-		poly.coeffs[4 * i + 2] = coeffs.z;
-		poly.coeffs[4 * i + 3] = coeffs.w;
+//		vec4 coeffs = unpackSnorm4x8(l_leaves[leafIndexInArray + 2 + i / 4]);
+//		poly.coeffs[i + 0] = coeffs.x;
+//		poly.coeffs[i + 1] = coeffs.y;
+//		poly.coeffs[i + 2] = coeffs.z;
+//		poly.coeffs[i + 3] = coeffs.w;
+
+		vec2 coeffs = unpackSnorm2x16(l_leaves[leafIndexInArray + 2 + i / 2]);
+		poly.coeffs[i + 0] = coeffs.x;
+		poly.coeffs[i + 1] = coeffs.y;
 	}
 
 	leaf.poly = poly;
@@ -71,6 +75,7 @@ Leaf getLeaf(in uint leafIndexInArray)
 Leaf searchForLeaf(vec3 p, out vec3 boxMin, out vec3 boxMax)
 {
 	vec3 localP = p;
+	// last element is the root
 	uint currentBranchId = branchCount - 1;
 
 	boxMin = vec3(0);
@@ -80,7 +85,7 @@ Leaf searchForLeaf(vec3 p, out vec3 boxMin, out vec3 boxMax)
 	{
 		Branch br = getBranch(currentBranchId);
 
-		vec3 boxSize = boxMax - boxMin;
+		vec3 halfBoxSize = (boxMax - boxMin) / 2.0f;
 		// int pointerId = int(localP.z >= 0.5f) * 4 + int(localP.y >= 0.5f) * 2 + int(localP.x >= 0.5f);
 		int pointerId = 0;
 		if (localP.z >= 0.5f) 
@@ -88,11 +93,11 @@ Leaf searchForLeaf(vec3 p, out vec3 boxMin, out vec3 boxMax)
 			localP.z -= 0.5f;
 			pointerId += 4;
 
-			boxMin.z += boxSize.z / 2.0f;
+			boxMin.z += halfBoxSize.z;
 		}
 		else
 		{
-			boxMax.z -= boxSize.z / 2.0f;
+			boxMax.z -= halfBoxSize.z;
 		}
 
 		if (localP.y >= 0.5f) 
@@ -100,11 +105,11 @@ Leaf searchForLeaf(vec3 p, out vec3 boxMin, out vec3 boxMax)
 			localP.y -= 0.5f;
 			pointerId += 2;
 
-			boxMin.y += boxSize.y / 2.0f;
+			boxMin.y += halfBoxSize.y;
 		}
 		else
 		{
-			boxMax.y -= boxSize.y / 2.0f;
+			boxMax.y -= halfBoxSize.y;
 		}
 
 		if (localP.x >= 0.5f) 
@@ -112,11 +117,11 @@ Leaf searchForLeaf(vec3 p, out vec3 boxMin, out vec3 boxMax)
 			localP.x -= 0.5f;
 			pointerId += 1;
 
-			boxMin.x += boxSize.x / 2.0f;
+			boxMin.x += halfBoxSize.x;
 		}
 		else
 		{
-			boxMax.x -= boxSize.x / 2.0f;
+			boxMax.x -= halfBoxSize.x;
 		}
 
 

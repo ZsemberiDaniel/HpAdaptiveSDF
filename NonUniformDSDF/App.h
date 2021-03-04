@@ -10,14 +10,12 @@
 #include "Octree/octree.h"
 #include "vector3d.h"
 #include "Structures.h"
+#include "Math/GaussPolynomialGenerator.h"
+#include "Math/LSQPolyGenerator.h"
+#include "Math/PolynomialGenerator.h"
 
-#include <vector>
-#include <numeric>
-#include <cmath>
-#include <limits>
-#include <iomanip>
-
-#include "QuadratureEvaluator.h"
+#include "Math/Polynomial.h"
+#include "Octree/octreeGenerator.h"
 
 class App {
 public:
@@ -35,7 +33,6 @@ public:
 //	bool HandleMouseUp(const SDL_MouseButtonEvent&);
 //	bool HandleMouseWheel(const SDL_MouseWheelEvent&);
 //	void HandleResize(int, int);
-
 private:
 	df::Sample& sam;
 	df::NoVao noVao;
@@ -65,7 +62,7 @@ private:
 			glm::vec3 gCookIOR = glm::vec3(2.0f, 2.0f, 2.0f);
 
 			int maxStep = 40;
-			bool refineRoot = false;
+			bool refineRoot = true;
 		} settings;
 	} state;
 
@@ -78,22 +75,23 @@ private:
 
 	df::ShaderProgramEditorVF sdfProgram = "SDF-Prog"; // temp
 	struct Desc {
-		glm::vec3 SDFCorner = glm::vec3(0.2, -1, -1.6);
-		glm::vec3 SDFSize = glm::vec3(2);
+		// TODO: move to SD field attributes, border can be removed
+		glm::vec3 SDFCorner = glm::vec3(0);
+		glm::vec3 SDFSize = glm::vec3(1);
 		glm::vec3 SDFBorder = glm::vec3(0.01f);
 	}desc; // temp
 
 	void InitShaders();
 
-	Polynomial fitPolynomial(const BoundingBox& bbox, int degree);
-	QuadratureEvaluator quadratureEvaluator;
+	OctreeGenerator::ConstructionParameters octreeConstructionParams;
+	GaussPolynomialGenerator gaussPolyGenerator;
+	LSQPolyGenerator lsqGenerator;
 
 	eltecg::ogl::ShaderStorageBuffer branchSSBO;
 	eltecg::ogl::ShaderStorageBuffer leavesSSBO;
 
-	Grid octreeGrid = Grid{ glm::vec3(0), 2, glm::vec3(0.5f) };
+	// TODO: make it unque pointer
 	Octree<Cell> octree;
 	int octreeBranchCount;
-	void constructField(Grid& grid, int maxDegree = 3, int maxLevel = 2, float errorThreshold = 0.00001f);
 	void DrawOctree(df::ShaderProgramEditorVF& program, const Octree<Cell>::Node* currentNode, int level = -1);
 };

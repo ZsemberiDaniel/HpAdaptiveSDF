@@ -32,6 +32,12 @@
     <Filter Include="Shaders\Octree">
       <UniqueIdentifier>{33277c6b-bd53-4282-bb2f-2c87033d24bb}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Math">
+      <UniqueIdentifier>{9ef9cf6b-d3be-44a9-90d3-9029323210cf}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Eigen">
+      <UniqueIdentifier>{46e01e3c-7178-4cbb-8338-02088952746e}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
@@ -39,8 +45,12 @@
     <ClCompile Include="Utils\gpuTimer.cpp">
       <Filter>Utils\Timer</Filter>
     </ClCompile>
-    <ClCompile Include="QuadratureEvaluator.cpp" />
-    <ClCompile Include="Polynomial.cpp" />
+    <ClCompile Include="Math\Polynomial.cpp">
+      <Filter>Math</Filter>
+    </ClCompile>
+    <ClCompile Include="Math\QuadratureEvaluator.cpp">
+      <Filter>Math</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="App.h" />
@@ -55,22 +65,38 @@
     </ClInclude>
     <ClInclude Include="vector3d.h" />
     <ClInclude Include="Structures.h" />
-    <ClInclude Include="QuadratureEvaluator.h" />
-    <ClInclude Include="Polynomial.h" />
-    <ClInclude Include="octreePack.hpp">
+    <ClInclude Include="Octree\octreeBranch.hpp">
       <Filter>Octree</Filter>
     </ClInclude>
-    <ClInclude Include="octreeNode.hpp">
+    <ClInclude Include="Octree\octreeLeaf.hpp">
       <Filter>Octree</Filter>
     </ClInclude>
-    <ClInclude Include="octreeBranch.hpp">
+    <ClInclude Include="Octree\octreeNode.hpp">
       <Filter>Octree</Filter>
     </ClInclude>
-    <ClInclude Include="octreeLeaf.hpp">
+    <ClInclude Include="Octree\octreePack.hpp">
       <Filter>Octree</Filter>
     </ClInclude>
-    <ClInclude Include="octreePrint.hpp">
+    <ClInclude Include="Octree\octreePrint.hpp">
       <Filter>Octree</Filter>
+    </ClInclude>
+    <ClInclude Include="Math\Polynomial.h">
+      <Filter>Math</Filter>
+    </ClInclude>
+    <ClInclude Include="Math\QuadratureEvaluator.h">
+      <Filter>Math</Filter>
+    </ClInclude>
+    <ClInclude Include="Octree\octreeGenerator.h">
+      <Filter>Octree</Filter>
+    </ClInclude>
+    <ClInclude Include="Math\GaussPolynomialGenerator.h">
+      <Filter>Math</Filter>
+    </ClInclude>
+    <ClInclude Include="Math\PolynomialGenerator.h">
+      <Filter>Math</Filter>
+    </ClInclude>
+    <ClInclude Include="Math\LSQPolyGenerator.h">
+      <Filter>Math</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -205,6 +231,93 @@
     </None>
     <None Include="Shaders\SDF\sdfOctree.glsl">
       <Filter>Shaders\SDF</Filter>
+    </None>
+    <None Include="Eigen\Cholesky">
+      <Filter>Eigen</Filter>
+    </None>
+    <None Include="Eigen\CholmodSupport">
+      <Filter>Eigen</Filter>
+    </None>
+    <None Include="Eigen\Core">
+      <Filter>Eigen</Filter>
+    </None>
+    <None Include="Eigen\Dense">
+      <Filter>Eigen</Filter>
+    </None>
+    <None Include="Eigen\Eigen">
+      <Filter>Eigen</Filter>
+    </None>
+    <None Include="Eigen\Eigenvalues">
+      <Filter>Eigen</Filter>
+    </None>
+    <None Include="Eigen\Geometry">
+      <Filter>Eigen</Filter>
+    </None>
+    <None Include="Eigen\Householder">
+      <Filter>Eigen</Filter>
+    </None>
+    <None Include="Eigen\IterativeLinearSolvers">
+      <Filter>Eigen</Filter>
+    </None>
+    <None Include="Eigen\Jacobi">
+      <Filter>Eigen</Filter>
+    </None>
+    <None Include="Eigen\LU">
+      <Filter>Eigen</Filter>
+    </None>
+    <None Include="Eigen\MetisSupport">
+      <Filter>Eigen</Filter>
+    </None>
+    <None Include="Eigen\OrderingMethods">
+      <Filter>Eigen</Filter>
+    </None>
+    <None Include="Eigen\PardisoSupport">
+      <Filter>Eigen</Filter>
+    </None>
+    <None Include="Eigen\PaStiXSupport">
+      <Filter>Eigen</Filter>
+    </None>
+    <None Include="Eigen\QR">
+      <Filter>Eigen</Filter>
+    </None>
+    <None Include="Eigen\QtAlignedMalloc">
+      <Filter>Eigen</Filter>
+    </None>
+    <None Include="Eigen\Sparse">
+      <Filter>Eigen</Filter>
+    </None>
+    <None Include="Eigen\SparseCholesky">
+      <Filter>Eigen</Filter>
+    </None>
+    <None Include="Eigen\SparseCore">
+      <Filter>Eigen</Filter>
+    </None>
+    <None Include="Eigen\SparseLU">
+      <Filter>Eigen</Filter>
+    </None>
+    <None Include="Eigen\SparseQR">
+      <Filter>Eigen</Filter>
+    </None>
+    <None Include="Eigen\SPQRSupport">
+      <Filter>Eigen</Filter>
+    </None>
+    <None Include="Eigen\StdDeque">
+      <Filter>Eigen</Filter>
+    </None>
+    <None Include="Eigen\StdList">
+      <Filter>Eigen</Filter>
+    </None>
+    <None Include="Eigen\StdVector">
+      <Filter>Eigen</Filter>
+    </None>
+    <None Include="Eigen\SuperLUSupport">
+      <Filter>Eigen</Filter>
+    </None>
+    <None Include="Eigen\SVD">
+      <Filter>Eigen</Filter>
+    </None>
+    <None Include="Eigen\UmfPackSupport">
+      <Filter>Eigen</Filter>
     </None>
   </ItemGroup>
 </Project>
