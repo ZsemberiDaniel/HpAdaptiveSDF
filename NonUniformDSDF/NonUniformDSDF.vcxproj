@@ -263,6 +263,11 @@
     <ClInclude Include="Octree\octreeNode.hpp" />
     <ClInclude Include="Octree\octreePack.hpp" />
     <ClInclude Include="Octree\octreePrint.hpp" />
+    <ClInclude Include="SDF\SDFBase.h" />
+    <ClInclude Include="SDF\SDFHeader.h" />
+    <ClInclude Include="SDF\SDFPlane.h" />
+    <ClInclude Include="SDF\SDFSphere.h" />
+    <ClInclude Include="SDF\SDFTorus.h" />
     <ClInclude Include="Structures.h" />
     <ClInclude Include="Utils\gpuTimer.h" />
     <ClInclude Include="Utils\PerformanceTest.h" />

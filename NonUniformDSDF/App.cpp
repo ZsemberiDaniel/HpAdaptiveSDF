@@ -1,7 +1,5 @@
 #include "App.h"
 
-#include <glm/gtx/transform.hpp>
-
 using namespace df;
 
 const glm::vec3 CUBE_COLORS[8] = {
@@ -17,65 +15,111 @@ const glm::vec3 CUBE_COLORS[8] = {
 
 App::App(df::Sample& s) : sam(s), noVao(GL_TRIANGLES, 3)
 {
-	// TODO: resize not working
-	
 	glClearColor(0.125f, 0.25f, 0.5f, 1.0f);
 	glEnable(GL_CULL_FACE);
 	glEnable(GL_DEPTH_TEST);
 
-	InitShaders();
+	CompileShaders();
 
 	sam.AddHandlerClass(state.cam);
 
-	auto SDF = [](glm::vec3 p) -> float
-	{
-		auto sdfBox = [](glm::vec3 p, glm::vec3 size)
-		{
-			glm::vec3 d = abs(p) - size;
-			return glm::min(glm::max(d.x, glm::max(d.y, d.z)), 0.0f) + glm::length(max(d, 0.0f));
-		};
+	CalculateOctreeSendToGPU();
 
-		// TODO: plane, stop at 1st
-
-		// sphere in -2, -2, -2 with radius 1
-		return glm::length(p - glm::vec3(0.5f)) - 0.4f;
-
-		// plane
-		// return dot(p - glm::vec3(0, 0, 0.5f), glm::normalize(glm::vec3(0.4f, 0, 1)));
-
-		// return sdfBox(p - glm::vec3(0.5f), glm::vec3(0.2f));
-
-		// 2odfok
-
-		// torus
-		// p -= glm::vec3(1);
-		/*const float R = 0.8f;
-		const float r = 0.4f;
-		glm::vec2 q = glm::vec2(glm::length(glm::vec2(p.x, p.z)) - R, p.y);
-		return length(q) - r;*/
-	};
-
-	OctreeGenerator::constructField<GaussPolynomialGenerator>(octree, gaussPolyGenerator, octreeConstructionParams, SDF);
-	// OctreeGenerator::constructField<LSQPolyGenerator>(octree, lsqGenerator, octreeConstructionParams, SDF);
-	octree.print(octreeConstructionParams.minPos, octreeConstructionParams.minPos + octreeConstructionParams.sizeInWorld);
-
-	std::vector<unsigned int> branchGPU, leavesGPU;
-	octree.packForGPU(branchGPU, leavesGPU, octreeBranchCount);
-	/*for (const auto& i : branchGPU)
-		std::cout << i << '\t';
-	std::cout << std::endl;
-	for (const auto& i : leavesGPU)
-		std::cout << i << '\t';
-	std::cout << std::endl;*/
-
-	branchSSBO.constructImmutable(branchGPU, eltecg::ogl::BufferFlags::MAP_READ_BIT);
-	leavesSSBO.constructImmutable(leavesGPU, eltecg::ogl::BufferFlags::MAP_READ_BIT);
+	// Not working either:
+	// CalculateOctreeSendToGPU();
 
 	GL_CHECK;
 }
 
+void App::CalculateOctreeSendToGPU()
+{
+	state.activeApproxType().cpuConstruction(this);
+	octree.print(state.octreeConstructionParams.minPos, state.octreeConstructionParams.minPos + state.octreeConstructionParams.sizeInWorld);
+
+	std::vector<unsigned int> branchGPU, leavesGPU;
+	octree.packForGPU(branchGPU, leavesGPU, octreeBranchCount);
+
+	if (branchSSBOPoi != 0)
+	{
+		glDeleteBuffers(1, &branchSSBOPoi);
+	}
+	glGenBuffers(1, &branchSSBOPoi);
+
+	//bool newlyCreated = false;
+	//if (branchSSBOPoi == 0)
+	//{
+	//	glGenBuffers(1, &branchSSBOPoi);
+	//	newlyCreated = true;
+	//}
+	
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, branchSSBOPoi);
+	int bufferSize = branchGPU.size() * sizeof(unsigned int);
+	glBufferStorage(GL_SHADER_STORAGE_BUFFER, bufferSize, (GLvoid*)branchGPU.data(), GL_MAP_READ_BIT);
+	// glBufferData(GL_SHADER_STORAGE_BUFFER, bufferSize, (GLvoid*)branchGPU.data(), GL_STATIC_READ);
+
+	//if (newlyCreated)
+	//{
+	//	glBufferData(GL_SHADER_STORAGE_BUFFER, bufferSize, (GLvoid*)branchGPU.data(), GL_STATIC_READ);
+	//}
+	//else
+	//{
+	//	glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, bufferSize, (GLvoid*)branchGPU.data());
+	//}
+	
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+	glFlush(); glFinish();
+
+
+	if (leavesSSBOPoi != 0)
+	{
+		glDeleteBuffers(1, &leavesSSBOPoi);
+	}
+	glGenBuffers(1, &leavesSSBOPoi);
+
+	//newlyCreated = false;
+	//if (leavesSSBOPoi == 0)
+	//{
+	//	glGenBuffers(1, &leavesSSBOPoi);
+	//	newlyCreated = true;
+	//}
+	
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, leavesSSBOPoi);
+	bufferSize = leavesGPU.size() * sizeof(unsigned int);
+	glBufferStorage(GL_SHADER_STORAGE_BUFFER, bufferSize, (GLvoid*)leavesGPU.data(), GL_MAP_READ_BIT);
+	// glBufferData(GL_SHADER_STORAGE_BUFFER, bufferSize, (GLvoid*)leavesGPU.data(), GL_STATIC_READ);
+
+	//if (newlyCreated)
+	//{
+	//	glBufferData(GL_SHADER_STORAGE_BUFFER, bufferSize, (GLvoid*)leavesGPU.data(), GL_STATIC_READ);
+	//}
+	//else
+	//{
+	//	glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, bufferSize, (GLvoid*)leavesGPU.data());
+	//}
+	
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+	glFlush(); glFinish();
+	// glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+	// glMemoryBarrier(GL_ALL_BARRIER_BITS);
+	// glMemoryBarrierByRegion(GL_SHADER_STORAGE_BARRIER_BIT);
+	
+	//branchSSBO = std::make_unique<eltecg::ogl::ShaderStorageBuffer>();
+	// branchSSBO->constructImmutable(branchGPU, eltecg::ogl::BufferFlags::MAP_READ_BIT);
+	//branchSSBO = std::make_unique<eltecg::ogl::ShaderStorageBuffer>();
+	//branchSSBO->constructImmutable(branchGPU, eltecg::ogl::BufferFlags::MAP_READ_BIT);
+	//branchSSBO->constructMutable(branchGPU, GL_STATIC_READ);
+	//leavesSSBO = std::make_unique<eltecg::ogl::ShaderStorageBuffer>();
+	//leavesSSBO->constructImmutable(leavesGPU, eltecg::ogl::BufferFlags::MAP_READ_BIT);
+	//leavesSSBO->constructMutable(leavesGPU, GL_STATIC_READ);
+}
+
+
 App::~App()
 {
+	for (auto sdf: state.sdfs)
+	{
+		delete sdf;
+	}
 }
 
 void App::Update()
@@ -112,38 +156,39 @@ void App::DrawOctree(df::ShaderProgramEditorVF& program, const Octree<Cell>::Nod
 void App::Render()
 {
 	// Clear backbuffer
-	Backbuffer << (const df::detail::ClearF<0>&)state.clear; // Dragonfly pls... if it is not const, it thinks it is a program
 	Backbuffer << Clear(0.1f, 0.1f, 0.1f, 1.0f);
-
-	int currentLevel = static_cast<int>(SDL_GetTicks() / 1000.0f) % 5;
-	DrawOctree(cubeWireProgram, octree.root(), -1);
 
 	glm::mat4 mvp = state.cam.GetViewProj()
 		* glm::translate(desc.SDFCorner + state.SDFTrans)
 		* glm::scale(state.SDFScale * desc.SDFSize);
 
-	// Draw bounding box
-	Backbuffer
-		<< cubeWireProgram
-		<< "MVP" << mvp
-		<< "color" << glm::vec3(1, 1, .2);
-	cubeWireProgram << df::NoVao(GL_LINES, 24, 0);
+	// Draw grid of octree
+	if (state.drawOctreeGrid)
+	{
+		DrawOctree(cubeWireProgram, octree.root(), state.drawOctreeLevel);
+
+		// Draw bounding box
+		Backbuffer
+			<< cubeWireProgram
+			<< "MVP" << mvp
+			<< "color" << glm::vec3(1, 1, .2);
+		cubeWireProgram << df::NoVao(GL_LINES, 24, 0);
+	}
 
 	//// Draw SDF
 	auto& prog = sdfProgram;
 	auto& cam = state.cam;
 	auto& settings = state.settings;
 
-	glm::vec3 modelTrans = desc.SDFCorner + state.SDFScale * desc.SDFBorder + state.SDFTrans;
-	glm::vec3 modelScale = state.SDFScale * (desc.SDFSize - 2.0f * desc.SDFBorder);
-	
-	modelTrans = glm::vec3(0);
-	modelScale = glm::vec3(1);
+	glm::vec3 modelTrans = glm::vec3(0);
+	glm::vec3 modelScale = glm::vec3(1);
 
 	float planeDist = glm::dot(cam.GetEye(), cam.GetDir()) + cam.GetNearFarClips().x;
 
-	branchSSBO.bindBufferRange(0);
-	leavesSSBO.bindBufferRange(1);
+	/*branchSSBO->bindBufferRange(0);
+	leavesSSBO->bindBufferRange(1);*/
+	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, branchSSBOPoi);
+	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, leavesSSBOPoi);
 	Backbuffer << prog
 		<< "viewProj" << cam.GetViewProj()
 		<< "modelTrans" << modelTrans
@@ -170,8 +215,8 @@ void App::Render()
 		<< "sScale" << state.SDFScale
 		<< "refineRoot" << (settings.refineRoot ? 1 : 0)
 		<< "branchCount"<< octreeBranchCount
-		<< "octreeMinCoord" << octreeConstructionParams.minPos
-		<< "octreeSize" << octreeConstructionParams.sizeInWorld
+		<< "octreeMinCoord" << state.octreeConstructionParams.minPos
+		<< "octreeSize" << state.octreeConstructionParams.sizeInWorld
 		<< "param1" << glm::vec3(0.7, 0, 0)
 		<< "param2" << glm::vec3(0, 0, 0)
 		<< "time" << SDL_GetTicks() / 1000.0f;
@@ -186,7 +231,6 @@ void App::Render()
 
 	prog << df::NoVao(GL_TRIANGLE_STRIP, 14, 9);
 
-
 	GL_CHECK;
 }
 
@@ -194,10 +238,74 @@ void App::RenderGUI()
 {
 	if (!state.enableGUI) return;
 	sdfProgram.Render();
-	state.cam.RenderUI();
 
-	ImGui::SliderFloat3("corner", &desc.SDFCorner.x, -5, 5);
-	ImGui::SliderFloat3("size", &desc.SDFSize.x, .5, 5);
+	ImGui::SetNextWindowSize({ 600,400 }, ImGuiCond_FirstUseEver);
+	if (ImGui::Begin("Program settings"))
+	{
+		// Scene Settings
+		if (ImGui::Button("Recalculate octree"))
+		{
+			CalculateOctreeSendToGPU();
+			// CompileShaders();
+		}
+		if (ImGui::Button("Recenter camera"))
+		{
+			SceneCameraRecenter();
+		}
+		if (ImGui::Button("Recenter light source"))
+		{
+			SceneLightToCamera();
+		}
+
+		if (ImGui::BeginCombo("ApproxType", state.activeApproxType().name.c_str()))
+		{
+			for (int n = 0; n < state.approxTypes.size(); n++)
+			{
+				bool is_selected = n == state.activeApproxTypeIndex;
+
+				if (ImGui::Selectable(state.approxTypes[n].name.c_str(), is_selected))
+					state.activeApproxTypeIndex = n;
+
+				if (is_selected)
+					ImGui::SetItemDefaultFocus();
+			}
+			ImGui::EndCombo();
+		}
+		ImGui::Dummy(ImVec2(0.0f, 20.0f));
+
+		
+		// Drawing octree attributes
+		ImGui::Checkbox("Draw octree grid", &state.drawOctreeGrid);
+		if (state.drawOctreeGrid)
+		{
+			ImGui::DragInt("Show level", &state.drawOctreeLevel, 1, -1, state.octreeConstructionParams.maxLevel);
+			if (ImGui::IsItemHovered())
+				ImGui::SetTooltip("-1 = all levels. 0 = upper most level. Increasing for lower levels.");
+		}
+		ImGui::Dummy(ImVec2(0.0f, 20.0f));
+
+		
+		// SDF settings
+		if (ImGui::BeginCombo("##combo", currentSdf()->name().c_str()))
+		{
+			for (int n = 0; n < state.sdfs.size(); n++)
+			{
+				bool is_selected = n == state.activeSDFIndex;
+
+				if (ImGui::Selectable(state.sdfs[n]->name().c_str(), is_selected))
+					state.activeSDFIndex = n;
+
+				if (is_selected)
+					ImGui::SetItemDefaultFocus();
+			}
+			ImGui::EndCombo();
+		}
+
+		currentSdf()->renderGUI();
+	}
+	ImGui::End();
+	
+	ImGui::ShowDemoWindow();
 }
 
 bool App::HandleKeyDown(const SDL_KeyboardEvent& key)
@@ -211,8 +319,41 @@ bool App::HandleKeyDown(const SDL_KeyboardEvent& key)
 	return false;
 }
 
-void App::InitShaders()
+
+/* Writes the given values in the map to a glsl file as define directives, the key of the map being
+the identifier and the value being the token-string.
+*/
+void writeDefines(std::map<std::string, std::string> defines, std::string path = "Shaders/defines.glsl")
 {
+	std::ofstream out(path);
+	if (!out.is_open())
+	{
+		std::cout << "Could not open defines file!" << std::endl;
+	}
+	for (auto const& define : defines)
+	{
+		out << "#define " << define.first << " " << define.second << "\n";
+	}
+
+	out.close();
+}
+
+/* Called before the compile step
+*/
+void App::CompilePreprocess()
+{
+	std::map<std::string, std::string> defines{
+		// which type of evalutaion to use for the polynomials
+		{ "evalPolynom", state.activeApproxType().shaderEvalFunctionName }
+	};
+	
+	writeDefines(defines);
+}
+
+void App::CompileShaders()
+{
+	CompilePreprocess();
+	
 	std::cout << "Compiling cube wire program...  ";
 	cubeWireProgram
 		<< "Shaders/cube.vert"_vs
@@ -237,6 +378,7 @@ void App::InitShaders()
 
 	std::cout << "Compiling sdf trace program...  ";
 	sdfProgram
+		<< "Shaders/defines.glsl"_fs
 		<< "Shaders/Math/box_plane_intersection.glsl"_vs
 		<< "Shaders/cube_solid.vert"_vs
 
@@ -252,16 +394,9 @@ void App::InitShaders()
 		<< "Shaders/main_cube.glsl"_fs
 		<< "Shaders/sdf.glsl"_fs
 		<< "Shaders/Math/primitives.glsl"_fs
-//		<< "Shaders/SDF/weightBlend.glsl"_fs
 		<< "Shaders/SDF/sample3d.glsl"_fs
 
 		<< "Shaders/SDF/sdfOctree.glsl"_fs
-		// << "Shaders/SDFScenes/torus_pipes.glsl"_fs
-		// << "Shaders/SDF/sdfProceduralScene.glsl"_fs
-//
-// 
-//		<< "Shaders/SDF/sdf0thOrder.glsl"_fs
-//		<< "Shaders/SDF/sdf1stOrder.glsl"_fs
 		
 		<< LinkProgram;
 	std::cout << sdfProgram.GetErrors();

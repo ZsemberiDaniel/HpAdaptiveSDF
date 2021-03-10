@@ -9,7 +9,7 @@ class GaussPolynomialGenerator : public PolynomialGenerator
 {
 public:
 	template<typename sdf>
-	Polynomial fitPolynomial(const BoundingBox& bbox, int degree, sdf sdfFunction);
+	Polynomial fitPolynomial(const BoundingBox& bbox, int degree, sdf& sdfFunction);
 
 private:
 	QuadratureEvaluator quadratureEvaluator;
@@ -29,7 +29,7 @@ private:
 
 /* Equation 5 */
 template<typename sdf>
-Polynomial GaussPolynomialGenerator::fitPolynomial(const BoundingBox& bbox, int degree, sdf sdfFunction)
+Polynomial GaussPolynomialGenerator::fitPolynomial(const BoundingBox& bbox, int degree, sdf& sdfFunction)
 {
 	Polynomial polynomial(degree);
 

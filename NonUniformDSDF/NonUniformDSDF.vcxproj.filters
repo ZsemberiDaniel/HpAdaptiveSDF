@@ -38,6 +38,9 @@
     <Filter Include="Eigen">
       <UniqueIdentifier>{46e01e3c-7178-4cbb-8338-02088952746e}</UniqueIdentifier>
     </Filter>
+    <Filter Include="SDF">
+      <UniqueIdentifier>{4f7b6ae6-f110-4ebf-a1fa-341390bbee72}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
@@ -97,6 +100,21 @@
     </ClInclude>
     <ClInclude Include="Math\LSQPolyGenerator.h">
       <Filter>Math</Filter>
+    </ClInclude>
+    <ClInclude Include="SDF\SDFBase.h">
+      <Filter>SDF</Filter>
+    </ClInclude>
+    <ClInclude Include="SDF\SDFTorus.h">
+      <Filter>SDF</Filter>
+    </ClInclude>
+    <ClInclude Include="SDF\SDFHeader.h">
+      <Filter>SDF</Filter>
+    </ClInclude>
+    <ClInclude Include="SDF\SDFSphere.h">
+      <Filter>SDF</Filter>
+    </ClInclude>
+    <ClInclude Include="SDF\SDFPlane.h">
+      <Filter>SDF</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

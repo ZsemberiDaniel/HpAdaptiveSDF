@@ -8,7 +8,7 @@ int main(int argc, char* args[])
 //	df::Camera cam;								// Implements a camera event class with handles
 //	sam.AddHandlerClass(cam, 5);				// class callbacks will be called to change its state
 	sam.AddHandlerClass<df::ImGuiHandler>(10);	// static handle functions only
-
+	
 	App app(sam);
 	sam.AddHandlerClass(app, 5);
 
@@ -19,7 +19,7 @@ int main(int argc, char* args[])
 			app.Render();
 			app.RenderGUI();
 
-			// GL_CHECK;
+			GL_CHECK;
 		}
 	);
 	return 0;

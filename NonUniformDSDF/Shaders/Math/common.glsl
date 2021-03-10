@@ -24,7 +24,7 @@ struct Polynom {
 	float coeffs[MAX_COEFF_SIZE];
 };
 
-float evalPolynom(in Polynom poly, vec3 p, vec3 bboxSize)
+float evalPolynom_normLagrange(in Polynom poly, vec3 p, vec3 bboxSize)
 {
 	float ret = 0.0f;
 
@@ -38,6 +38,43 @@ float evalPolynom(in Polynom poly, vec3 p, vec3 bboxSize)
 				// a = vec3(1);
 				ret += poly.coeffs[m] * legendref(i, p.x) * legendref(k, p.y) * legendref(j, p.z) *
 					a.x * a.y * a.z;
+			}
+		}
+	}
+
+	return ret;
+}
+
+float evalPolynom_lagrange(in Polynom poly, vec3 p, vec3 bboxSize)
+{
+	float ret = 0.0f;
+
+	for (int i = 0, m = 0; i <= poly.degree; i++)
+	{
+		for (int k = 0; i + k <= poly.degree; k++)
+		{
+			for (int j = 0; i + k + j <= poly.degree; j++, m++)
+			{
+				ret += poly.coeffs[m] * legendref(i, p.x) * legendref(k, p.y) * legendref(j, p.z);
+			}
+		}
+	}
+
+	return ret;
+}
+
+
+float evalPolynom_monomial(in Polynom poly, vec3 p, vec3 bboxSize)
+{
+	float ret = 0.0f;
+
+	for (int i = 0, m = 0; i <= poly.degree; i++)
+	{
+		for (int k = 0; i + k <= poly.degree; k++)
+		{
+			for (int j = 0; i + k + j <= poly.degree; j++, m++)
+			{
+				ret += poly.coeffs[m] * pow(p.x, i) * pow(p.y, k) * pow(p.z, j);
 			}
 		}
 	}

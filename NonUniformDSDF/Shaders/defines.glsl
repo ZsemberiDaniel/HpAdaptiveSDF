@@ -1,0 +1,1 @@
+#define evalPolynom evalPolynom_lagrange

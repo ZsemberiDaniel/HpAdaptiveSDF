@@ -21,11 +21,11 @@ public:
 	};
 
 	template<typename generator, typename sdf>
-	static void constructField(Octree<Cell>& octree, generator& polynomialGenerator, const ConstructionParameters& params, sdf sdfFunction);
+	static void constructField(Octree<Cell>& octree, generator& polynomialGenerator, const ConstructionParameters& params, sdf& sdfFunction);
 };
 
 template<typename generator, typename sdf>
-void OctreeGenerator::constructField(Octree<Cell>& octree, generator& polynomialGenerator, const ConstructionParameters& params, sdf sdfFunction)
+void OctreeGenerator::constructField(Octree<Cell>& octree, generator& polynomialGenerator, const ConstructionParameters& params, sdf& sdfFunction)
 {
 	const int initialCellCount = 2;
 	float gridCellSize = params.sizeInWorld / initialCellCount;
@@ -50,7 +50,7 @@ void OctreeGenerator::constructField(Octree<Cell>& octree, generator& polynomial
 				glm::vec3 cellCoord = params.minPos + gridCellSize * glm::vec3(x, y, z);
 				BoundingBox bbox = BoundingBox{ cellCoord, cellCoord + gridCellSize };
 
-				const int startingDegree = 1;
+				const int startingDegree = 2;
 				Polynomial poly = polynomialGenerator.fitPolynomial<sdf>(bbox, startingDegree, sdfFunction);
 				float currentError = poly.coefficientBasedError();
 

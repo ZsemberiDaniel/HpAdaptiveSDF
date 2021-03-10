@@ -36,7 +36,7 @@ public:
 	}
 	
 	template<typename sdf>
-	Polynomial fitPolynomial(const BoundingBox& bbox, int degree, sdf sdfFunction);
+	Polynomial fitPolynomial(const BoundingBox& bbox, int degree, sdf& sdfFunction);
 
 private:
 	int maxDegree;
@@ -94,7 +94,7 @@ private:
 };
 
 template<typename sdf>
-Polynomial LSQPolyGenerator::fitPolynomial(const BoundingBox& bbox, int degree, sdf sdfFunction)
+Polynomial LSQPolyGenerator::fitPolynomial(const BoundingBox& bbox, int degree, sdf& sdfFunction)
 {
 	Polynomial polynomial(degree);
 
