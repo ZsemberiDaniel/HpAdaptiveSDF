@@ -14,9 +14,7 @@ readonly layout(std430, binding = 0) buffer branches
 const int BR_SIZE = 1 + 8;
 uniform int branchCount = -1;
 
-uniform vec3 octreeMinCoord = vec3(0);
-uniform float octreeSize = 1;
-
+uniform float coeffCompressAmount;
 readonly layout(std430, binding = 1) buffer leaves
 {
 	uint l_leaves[]; // level in octree; degree; (coeffs1, coeffs2, ...); ...;
@@ -63,8 +61,8 @@ Leaf getLeaf(in uint leafIndexInArray)
 //		poly.coeffs[i + 3] = coeffs.w;
 
 		vec2 coeffs = unpackSnorm2x16(l_leaves[leafIndexInArray + 2 + i / 2]);
-		poly.coeffs[i + 0] = coeffs.x;
-		poly.coeffs[i + 1] = coeffs.y;
+		poly.coeffs[i + 0] = coeffs.x * coeffCompressAmount;
+		poly.coeffs[i + 1] = coeffs.y * coeffCompressAmount;
 	}
 
 	leaf.poly = poly;
@@ -88,7 +86,7 @@ Leaf searchForLeaf(vec3 p, out vec3 boxMin, out vec3 boxMax)
 		vec3 halfBoxSize = (boxMax - boxMin) / 2.0f;
 		// int pointerId = int(localP.z >= 0.5f) * 4 + int(localP.y >= 0.5f) * 2 + int(localP.x >= 0.5f);
 		int pointerId = 0;
-		if (localP.z >= 0.5f) 
+		if (localP.z > 0.5f) 
 		{
 			localP.z -= 0.5f;
 			pointerId += 4;
@@ -100,7 +98,7 @@ Leaf searchForLeaf(vec3 p, out vec3 boxMin, out vec3 boxMax)
 			boxMax.z -= halfBoxSize.z;
 		}
 
-		if (localP.y >= 0.5f) 
+		if (localP.y > 0.5f) 
 		{
 			localP.y -= 0.5f;
 			pointerId += 2;
@@ -112,7 +110,7 @@ Leaf searchForLeaf(vec3 p, out vec3 boxMin, out vec3 boxMax)
 			boxMax.y -= halfBoxSize.y;
 		}
 
-		if (localP.x >= 0.5f) 
+		if (localP.x > 0.5f) 
 		{
 			localP.x -= 0.5f;
 			pointerId += 1;

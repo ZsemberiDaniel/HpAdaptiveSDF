@@ -1,4 +1,5 @@
-#pragma once
+#ifndef QUADRATUREEVALUATOR_H
+#define QUADRATUREEVALUATOR_H
 #include <utility>
 #include <vector>
 #include <glm/vec3.hpp>
@@ -82,9 +83,11 @@ float QuadratureEvaluator::evaluateIntegral(int pointCount, F function, glm::vec
 {
 	if (pointCount > maxPointCount || pointCount <= 0)
 	{
-		std::cerr << "Point count for gaussian quadratic is maximum " << maxPointCount << " and minimum 1!" << std::endl;
-		return 0.0f;
+		std::cerr << "Point count for gaussian quadratic is maximum " << maxPointCount << " and minimum 1! Point count may be capped!" << std::endl;
+		if (pointCount <= 0) return 0.0f;
 	}
+
+	pointCount = std::min(pointCount, maxPointCount);
 
 	glm::vec3 intervalSize = intervalEnding - intervalStarting;
 	float value = 0.0f;
@@ -98,3 +101,4 @@ float QuadratureEvaluator::evaluateIntegral(int pointCount, F function, glm::vec
 
 	return value * intervalSize.x * intervalSize.y * intervalSize.z / 8.0f;
 }
+#endif

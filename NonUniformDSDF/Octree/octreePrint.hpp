@@ -1,3 +1,5 @@
+#ifndef OCTREEPRINT_H
+#define OCTREEPRINT_H
 
 template<typename T, int P>
 void Octree<T, P>::print(glm::vec3 bboxMin, glm::vec3 bboxMax)
@@ -5,18 +7,18 @@ void Octree<T, P>::print(glm::vec3 bboxMin, glm::vec3 bboxMax)
 	std::cout << "Not yet implemented for this octree. See octreePrint.hpp!" << std::endl;
 }
 
-inline void printOctree(Octree<Cell>::Node* node, glm::vec3 bboxMin, glm::vec3 bboxMax)
+inline void printOctree(std::shared_ptr<Octree<Cell>::Node>& node, glm::vec3 bboxMin, glm::vec3 bboxMax)
 {
 	if (node->type() == Octree<Cell>::LeafNode)
 	{
 		std::cout << "Bbox " << bboxMin.x << " " << bboxMin.y << " " << bboxMin.z << " ---> "
 			<< bboxMax.x << " " << bboxMax.y << " " << bboxMax.z << std::endl;
-		static_cast<Octree<Cell>::Leaf*>(node)->value().poly.print();
+		std::dynamic_pointer_cast<Octree<Cell>::Leaf>(node)->value().poly.print();
 		std::cout << std::endl;
 	}
 	else if (node->type() == Octree<Cell>::BranchNode)
 	{
-		auto* branch = static_cast<Octree<Cell>::Branch*>(node);
+		std::shared_ptr<Octree<Cell>::Branch> branch = std::dynamic_pointer_cast<Octree<Cell>::Branch>(node);
 
 		for (int z = 0; z <= 1; z++)
 		{
@@ -40,7 +42,8 @@ inline void printOctree(Octree<Cell>::Node* node, glm::vec3 bboxMin, glm::vec3 b
 						bboxMax.z - (z == 1 ? 0 : bboxSizeHalf.z)
 					);
 
-					printOctree(branch->child(x, y, z), newBboxMin, newBboxmax);
+					std::shared_ptr<Octree<Cell>::Node> ch = branch->child(x, y, z);
+					printOctree(ch, newBboxMin, newBboxmax);
 				}
 			}
 		}
@@ -52,3 +55,4 @@ inline void Octree<Cell, 2>::print(glm::vec3 bboxMin, glm::vec3 bboxMax)
 {
 	printOctree(root(), bboxMin, bboxMax);
 }
+#endif

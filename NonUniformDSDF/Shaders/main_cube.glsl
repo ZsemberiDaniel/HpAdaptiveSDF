@@ -15,6 +15,7 @@ uniform int refineRoot;
 uniform int maxStep = 100;
 
 uniform float time;
+uniform float epsilon = 0.002f;
 
 //!#include "common.glsl"
 //?#include "Math/box_ray_intersection.glsl"
@@ -22,6 +23,7 @@ uniform float time;
 
 TraceResult basicSphereTrace(RayCone cone, SphereTraceDesc params);
 
+uniform float octreeSize;
 float sdfInside(vec3 p)
 {
 	vec3 texCoord = p / sdfTexSize;
@@ -69,7 +71,6 @@ bool cube_main(vec3 in_vec, bool pos_or_dir, bool calc_t_min, out vec3 out_col, 
 	}
 	if(cone.ray.Tmax <= cone.ray.Tmin)
 		return false;
-		
 	
 	// DEBUG START
 //	cone.ray.Origin -= sTranslation + sdfTexCorner;
@@ -81,7 +82,7 @@ bool cube_main(vec3 in_vec, bool pos_or_dir, bool calc_t_min, out vec3 out_col, 
 //	out_col = deg1;
 //	return true;
 	// DEBUG END
-	SphereTraceDesc params = SphereTraceDesc(0.002, maxStep);
+	SphereTraceDesc params = SphereTraceDesc(epsilon, maxStep);
 
 	// Basic sphere trace
 	TraceResult tret = basicSphereTrace(cone, params);
@@ -99,15 +100,17 @@ bool cube_main(vec3 in_vec, bool pos_or_dir, bool calc_t_min, out vec3 out_col, 
 
 //	if(debugDist.x < 0) debugDist = vec3(-debugDist.x, 0, 0);
 //	else debugDist = vec3(0,debugDist.x, 0);
-		
 	// col = 10*debugDist;
+
 	// NORMAL VECTOR
-//	vec3 pp = cone.ray.Origin + tret.T * cone.ray.Direction;
-//	vec2 h = vec2(0.01, 0);
-//	col = vec3(sdf(pp + h.xyy) - sdf(pp - h.xyy),
-//				sdf(pp + h.yxy) - sdf(pp - h.yxy),
-//				sdf(pp + h.yyx) - sdf(pp - h.yyx))/2/h.x;
-//	col *= -1;
+#ifdef SHOW_NORMALS
+	vec3 pp = cone.ray.Origin + tret.T * cone.ray.Direction;
+	vec2 h = vec2(0.0001, 0);
+	col = vec3(sdf(pp + h.xyy) - sdf(pp - h.xyy),
+				sdf(pp + h.yxy) - sdf(pp - h.yxy),
+				sdf(pp + h.yyx) - sdf(pp - h.yyx))/2/h.x;
+	col = col * 0.5f + 0.5f;
+#endif
 
 	if(bool(tret.flags & (1<<0))){
 		// tmax reached
@@ -124,7 +127,7 @@ bool cube_main(vec3 in_vec, bool pos_or_dir, bool calc_t_min, out vec3 out_col, 
 	return true;
 }
 
-TraceResult basicSphereTrace(RayCone cone, SphereTraceDesc params)
+TraceResult basicSphereTrace(in RayCone cone, SphereTraceDesc params)
 {
 	// trace in local model coordinates
 	cone.ray.Origin -= sTranslation + sdfTexCorner;
@@ -187,3 +190,4 @@ TraceResult basicSphereTrace(RayCone cone, SphereTraceDesc params)
 	return ret;
 
 }
+

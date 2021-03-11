@@ -1,4 +1,5 @@
-#pragma once
+#ifndef LSQPOLYGENERATOR_H
+#define LSQPOLYGENERATOR_H
 
 #include <iostream>
 #include "PolynomialGenerator.h"
@@ -8,7 +9,7 @@
 class LSQPolyGenerator : public PolynomialGenerator
 {
 public:
-	LSQPolyGenerator(int pointCount = 5, int maxDegree = 5)
+	LSQPolyGenerator(int pointCount = 3, int maxDegree = 5)
 		: maxDegree(maxDegree)
 	{
 		if (pointCount < 2)
@@ -113,3 +114,4 @@ Polynomial LSQPolyGenerator::fitPolynomial(const BoundingBox& bbox, int degree, 
 
 	return polynomial;
 }
+#endif

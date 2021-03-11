@@ -1,4 +1,8 @@
+#ifndef OCTREE_HPP
+#define OCTREE_HPP
+
 #include <cstring>
+#include <queue>
 
 /**
  * \param size Size of octree, in nodes. Should be a power of two. For example,
@@ -8,9 +12,8 @@
  * \param init a size x size x size 3D array with which the tree can be initialized.
  */
 template< typename T, int P >
-Octree<T, P>::Octree(int size, vector3d<T>& init, vector3d<Leaf*>& generatedLeaves)
+Octree<T, P>::Octree(int size, vector3d<T>& init, vector3d<std::shared_ptr<Leaf>>& generatedLeaves)
     : root_(0)
-    , size_(size)
 {
     // Make sure size is power of two.
     assert(((size - 1) & size) == 0);
@@ -20,25 +23,25 @@ Octree<T, P>::Octree(int size, vector3d<T>& init, vector3d<Leaf*>& generatedLeav
 
     if (size <= 1) 
     {
-        root_ = new Leaf(0);
+        root_ = std::make_shared<Leaf>(0);
         return;
     }
     else 
     {
-        root_ = new Branch(0);
+        root_ = std::make_shared<Branch>(0);
     }
 
     // push the branch nodes into a queue and take them out to add children to them
     // while we reach the leaves layer
-    std::queue<Branch*> nodes;
-    nodes.push(reinterpret_cast<Branch*>(root_));
+    std::queue<std::shared_ptr<Branch>> nodes;
+    nodes.push(std::dynamic_pointer_cast<Branch>(root_));
 
     int layerAt = 0;
     while (size > 2)
     {
         while (nodes.front()->layer() == layerAt)
         {
-            Branch* n = nodes.front(); nodes.pop();
+            std::shared_ptr<Branch> n = nodes.front(); nodes.pop();
             
             for (int x = 0; x < 2; x++)
             {
@@ -46,7 +49,7 @@ Octree<T, P>::Octree(int size, vector3d<T>& init, vector3d<Leaf*>& generatedLeav
                 {
                     for (int z = 0; z < 2; z++)
                     {
-                        n->child(x, y, z, new Branch(n->layer() + 1));
+                        n->child(x, y, z, std::static_pointer_cast<Node>(std::make_shared<Branch>(n->layer() + 1)));
                     }
                 }
             }
@@ -60,14 +63,14 @@ Octree<T, P>::Octree(int size, vector3d<T>& init, vector3d<Leaf*>& generatedLeav
     initLeavesRecursive(root(), init, generatedLeaves, 0, 0, 0);
 }
 template< typename T, int P >
-void Octree<T, P>::initLeavesRecursive(Node* currNode, vector3d<T>& init, vector3d<Leaf*>& generatedLeaves, int x, int y, int z)
+void Octree<T, P>::initLeavesRecursive(std::shared_ptr<Node>& currNode, vector3d<T>& init, vector3d<std::shared_ptr<Leaf>>& generatedLeaves, int x, int y, int z)
 {
     if (currNode == nullptr || currNode->type() == NodeType::LeafNode)
     {
         return;
     }
 
-    Branch* currBranch = reinterpret_cast<Branch*>(currNode);
+    std::shared_ptr<Branch> currBranch = std::dynamic_pointer_cast<Branch>(currNode);
     for (int i = 0; i < 2; i++)
     {
         for (int k = 0; k < 2; k++)
@@ -78,7 +81,7 @@ void Octree<T, P>::initLeavesRecursive(Node* currNode, vector3d<T>& init, vector
                 {
                     // int index = (2 * x + i) + size_ * (2 * y + k) + size_ * size_ * (2 * z + j);
                     generatedLeaves(2 * x + i, 2 * y + k, 2 * z + j) = 
-                        new Leaf(
+                        std::make_shared<Leaf>(
 	                        init(2 * x + i, 2 * y + k, 2 * z + j),
 	                        currBranch->layer() + 1
                         );
@@ -86,7 +89,8 @@ void Octree<T, P>::initLeavesRecursive(Node* currNode, vector3d<T>& init, vector
                 }
                 else
                 {
-                    initLeavesRecursive(currBranch->child(i, k, j), init, generatedLeaves, 2 * x + i, 2 * y + k, 2 * z + j);
+                    auto child = currBranch->child(i, k, j);
+                    initLeavesRecursive(child, init, generatedLeaves, 2 * x + i, 2 * y + k, 2 * z + j);
                 }
             }
         }
@@ -101,20 +105,14 @@ void Octree<T, P>::initLeavesRecursive(Node* currNode, vector3d<T>& init, vector
  */
 template< typename T, int P >
 Octree<T, P>::Octree(const Octree<T, P>& o)
-    : size_(o.size_)
 {
-    if (!o.root_) {
-        root_ = 0;
+    if (!o.root_) 
+    {
+        root_ = nullptr;
     }
-    else {
-        switch (o.root_->type()) {
-        case BranchNode:
-            root_ = new Branch(*reinterpret_cast<Branch*>(o.root_));
-            break;
-        case LeafNode:
-            root_ = new Leaf(*reinterpret_cast<Leaf*>(o.root_));
-            break;
-        }
+    else 
+    {
+		root_ = o.root_;
     }
 }
 
@@ -122,46 +120,26 @@ Octree<T, P>::Octree(const Octree<T, P>& o)
  * Recursively deletes all nodes by following branch pointers.
  */
 template< typename T, int P >
-Octree<T, P>::~Octree()
-{
-    deleteNode(root_);
-}
+Octree<T, P>::~Octree() = default;
 
 /**
  * Assigns to this octree the contents of octree \a o.
  */
 template< typename T, int P >
-Octree<T, P>& Octree<T, P>::operator= (Octree<T, P> o)
+Octree<T, P>& Octree<T, P>::operator= (const Octree<T, P>& o)
 {
-    std::swap(root_, o.root_);
-    std::swap(size_, o.size_);
-    return *this;
-}
-
-/**
- * Deletes a node polymorphically. If the node is a branch node, it will delete
- * all its subtree recursively.
- */
-template< typename T, int P >
-void Octree<T, P>::deleteNode(Node*& node)
-{
-    if (node) {
-        if ((node)->type() == BranchNode) {
-            delete reinterpret_cast<Branch*>(node);
-        }
-        else {
-            assert((node)->type() == LeafNode);
-            delete reinterpret_cast<Leaf*>(node);
-        }
-        // *node = nullptr;
+    if (this != &o) // not a self-assignment
+    {
+        root_ = o.root_;
     }
+    return *this;
 }
 
 /**
  * \return Pointer to octree's root node.
  */
 template< typename T, int P >
-typename Octree<T, P>::Node*& Octree<T, P>::root()
+std::shared_ptr<typename Octree<T, P>::Node>& Octree<T, P>::root()
 {
     return root_;
 }
@@ -170,7 +148,8 @@ typename Octree<T, P>::Node*& Octree<T, P>::root()
  * Const version of above.
  */
 template< typename T, int P >
-const typename Octree<T, P>::Node* Octree<T, P>::root() const
+const std::shared_ptr<typename Octree<T, P>::Node> Octree<T, P>::root() const
 {
     return root_;
 }
+#endif

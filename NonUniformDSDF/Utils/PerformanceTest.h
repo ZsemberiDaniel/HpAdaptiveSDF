@@ -1,4 +1,5 @@
-#pragma once
+#ifndef PERFORMANCETEST_H
+#define PERFORMANCETEST_H
 
 #include <vector>
 
@@ -82,3 +83,4 @@ PerformanceTest::Results PerformanceTest::getResults()
 		frames, avg, dev, min, max
 	};
 }
+#endif

@@ -1,4 +1,5 @@
 #include <Dragonfly/editor.h>		 //inlcludes most features
+#include <string>
 
 #include "App.h"
 

@@ -246,14 +246,18 @@
     <ClCompile Include="App.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Math\Polynomial.cpp" />
+    <ClCompile Include="Math\PolynomialsBase.cpp" />
     <ClCompile Include="Math\QuadratureEvaluator.cpp" />
+    <ClCompile Include="Octree\SaveableOctree.cpp" />
     <ClCompile Include="Utils\gpuTimer.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="App.h" />
+    <ClInclude Include="constants.h" />
     <ClInclude Include="Math\GaussPolynomialGenerator.h" />
     <ClInclude Include="Math\LSQPolyGenerator.h" />
     <ClInclude Include="Math\Polynomial.h" />
+    <ClInclude Include="Math\PolynomialBases.h" />
     <ClInclude Include="Math\PolynomialGenerator.h" />
     <ClInclude Include="Math\QuadratureEvaluator.h" />
     <ClInclude Include="Octree\octree.h" />
@@ -263,9 +267,14 @@
     <ClInclude Include="Octree\octreeNode.hpp" />
     <ClInclude Include="Octree\octreePack.hpp" />
     <ClInclude Include="Octree\octreePrint.hpp" />
+    <ClInclude Include="Octree\SaveableOctree.h" />
+    <ClInclude Include="SDF\SDFCube.h" />
+    <ClInclude Include="SDF\SDFHeatmapVisualizer.h" />
+    <ClInclude Include="SDF\SDFModel1.h" />
     <ClInclude Include="SDF\SDFBase.h" />
     <ClInclude Include="SDF\SDFHeader.h" />
     <ClInclude Include="SDF\SDFPlane.h" />
+    <ClInclude Include="SDF\SDFPrimitives.h" />
     <ClInclude Include="SDF\SDFSphere.h" />
     <ClInclude Include="SDF\SDFTorus.h" />
     <ClInclude Include="Structures.h" />
@@ -307,6 +316,7 @@
     <None Include="Shaders\cube.frag" />
     <None Include="Shaders\cube.vert" />
     <None Include="Shaders\cube_solid.vert" />
+    <None Include="Shaders\Evaluate\sdfDifference.comp" />
     <None Include="Shaders\flatMesh.geom" />
     <None Include="Shaders\main_cube.glsl" />
     <None Include="Shaders\Math\box_plane_intersection.glsl" />

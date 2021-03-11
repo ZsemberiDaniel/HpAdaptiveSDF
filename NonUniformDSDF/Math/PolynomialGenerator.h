@@ -1,4 +1,6 @@
-#pragma once
+#ifndef POLYNOMIALGENERATOR_H
+#define POLYNOMIALGENERATOR_H
+#include "../Structures.h"
 #include "../Math/Polynomial.h"
 
 class PolynomialGenerator
@@ -11,3 +13,4 @@ public:
 		return p;
 	}
 };
+#endif

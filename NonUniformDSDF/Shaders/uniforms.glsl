@@ -16,9 +16,7 @@ uniform vec3 modelTrans;
 uniform vec3 sdfTexSize;
 // outer bouinding box min corner in model coordinates
 uniform vec3 sdfTexCorner;
-
-// bouinding box border width
-uniform vec3 sdfTexBorder;
+uniform vec3 sdfTexBorder = vec3(0);
 
 // the usual proj*view matrix
 uniform mat4 viewProj;

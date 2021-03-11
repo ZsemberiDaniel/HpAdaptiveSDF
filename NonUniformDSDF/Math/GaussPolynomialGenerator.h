@@ -1,4 +1,5 @@
-#pragma once
+#ifndef GAUSSPOLYNOMIALGENERATOR_H
+#define GAUSSPOLYNOMIALGENERATOR_H
 
 #include "PolynomialGenerator.h"
 #include "../Structures.h"
@@ -52,3 +53,4 @@ Polynomial GaussPolynomialGenerator::fitPolynomial(const BoundingBox& bbox, int 
 
 	return polynomial;
 }
+#endif

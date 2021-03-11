@@ -1,4 +1,5 @@
-#pragma once
+#ifndef POLYNOMIAL_H
+#define POLYNOMIAL_H
 #include <vector>
 #include <glm/vec3.hpp>
 #include <cmath>
@@ -29,6 +30,12 @@ public:
 	// Prints the the coefficients of the polynomial that are > epsilon
 	void print(float epsilon = 0.0000001f) const;
 
+	// the highest valued coefficient
+	float coeffMaxValue() const
+	{
+		return *std::max_element(coeffs.begin(), coeffs.end());
+	}
+
 	static int calculateCoeffCount(int degree)
 	{
 		return (degree * degree * degree + 6 * degree * degree + 11 * degree + 6) / 6;
@@ -44,4 +51,4 @@ private:
 		return calculateCoeffCount(degree);
 	}
 };
-
+#endif

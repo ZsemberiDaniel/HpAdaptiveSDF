@@ -1,3 +1,6 @@
+#ifndef OCTREEBRANCH_H
+#define OCTREEBRANCH_H
+
 template< typename T, int P >
 Octree<T, P>::Branch::Branch(int layer)
     : Node(BranchNode, layer)
@@ -5,44 +8,32 @@ Octree<T, P>::Branch::Branch(int layer)
     memset(children, 0, sizeof(children));
 }
 
+
 template< typename T, int P >
 Octree<T, P>::Branch::Branch(const Branch& b)
-    : Node(BranchNode, b.layer(), b.parent())
+    : Node(b)
 {
-    for (int i = 0; i < 8; ++i) {
-        if (b.child(i)) {
-            switch (b.child(i)->type()) {
-            case BranchNode:
-                child(i) = new Branch(
-                    *reinterpret_cast<const Branch*>(b.child(i)));
-                break;
-            case LeafNode:
-                child(i) = new Leaf(
-                    *reinterpret_cast<const Leaf*>(b.child(i)));
-                break;
-            }
-        }
-        else {
-            child(i) = 0;
-        }
-    }
+	for (int i = 0; i < 8; i++)
+	{
+        this->child(i, b.child(i));
+	}
 }
 
 template< typename T, int P >
-Octree<T, P>::Branch::~Branch()
+typename Octree<T, P>::Branch& Octree<T, P>::Branch::operator= (const Branch& b)
 {
-    for (int i = 0; i < 2; ++i) {
-        for (int j = 0; j < 2; ++j) {
-            for (int k = 0; k < 2; ++k) {
-                assert(children[i][j][k] != this);
-                deleteNode(children[i][j][k]);
-            }
-        }
+    if (this == &b) return *this;
+    Node::operator=(b);
+
+    for (int i = 0; i < 8; i++) {
+        this->child(i, b.child(i));
     }
+
+    return *this;
 }
 
 template< typename T, int P >
-const typename Octree<T, P>::Node* Octree<T, P>::Branch::child(int x, int y, int z) const
+const std::shared_ptr<typename Octree<T, P>::Node> Octree<T, P>::Branch::child(int x, int y, int z) const
 {
     assert(x == 0 || x == 1);
     assert(y == 0 || y == 1);
@@ -52,7 +43,7 @@ const typename Octree<T, P>::Node* Octree<T, P>::Branch::child(int x, int y, int
 
 
 template< typename T, int P >
-typename Octree<T, P>::Node* Octree<T, P>::Branch::child(int x, int y, int z)
+typename std::shared_ptr<typename Octree<T, P>::Node> Octree<T, P>::Branch::child(int x, int y, int z)
 {
     assert(x == 0 || x == 1);
     assert(y == 0 || y == 1);
@@ -61,35 +52,36 @@ typename Octree<T, P>::Node* Octree<T, P>::Branch::child(int x, int y, int z)
 }
 
 template< typename T, int P >
-void Octree<T, P>::Branch::child(int x, int y, int z, Node* newChild)
+void Octree<T, P>::Branch::child(int x, int y, int z, std::shared_ptr<Node> newChild)
 {
     assert(x == 0 || x == 1);
     assert(y == 0 || y == 1);
     assert(z == 0 || z == 1);
-    newChild->parent(this);
+    newChild->parent(std::dynamic_pointer_cast<Branch>(this->shared_from_this()));
     newChild->indexInParent = z * 4 + y * 2 + x;
-    children[z][y][x] = newChild;
+    std::swap(children[z][y][x], newChild);
 }
 
 template< typename T, int P >
-const typename Octree<T, P>::Node* Octree<T, P>::Branch::child(int index) const
+const std::shared_ptr<typename Octree<T, P>::Node> Octree<T, P>::Branch::child(int index) const
 {
     assert(index >= 0 && index < 8);
     return *(&children[0][0][0] + index);
 }
 
 template< typename T, int P >
-typename Octree<T, P>::Node* Octree<T, P>::Branch::child(int index)
+std::shared_ptr<typename Octree<T, P>::Node> Octree<T, P>::Branch::child(int index)
 {
     assert(index >= 0 && index < 8);
     return *(&children[0][0][0] + index);
 }
 
 template< typename T, int P >
-void Octree<T, P>::Branch::child(int index, Node* newChild)
+void Octree<T, P>::Branch::child(int index, std::shared_ptr<Node> newChild)
 {
     assert(index >= 0 && index < 8);
-    newChild->parent(this);
+    newChild->parent(std::dynamic_pointer_cast<Branch>(this->shared_from_this()));
     newChild->indexInParent = index;
-    *(&children[0][0][0] + index) = newChild;
+    newChild.swap(*(&children[0][0][0] + index));
 }
+#endif

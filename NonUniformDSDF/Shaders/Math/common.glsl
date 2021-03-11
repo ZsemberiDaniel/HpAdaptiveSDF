@@ -1,5 +1,7 @@
 //?#version 450
 
+//?#include "../defines.glsl"
+
 float legendref(int deg, float p)
 {
 	if (deg == 0) return 1;
@@ -17,7 +19,6 @@ float legendref(int deg, float p)
 	return b;
 }
 
-const int MAX_COEFF_SIZE = 90; // deg 6
 struct Polynom {
 	uint degree;
 	uint coeffCount;

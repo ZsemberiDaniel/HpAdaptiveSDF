@@ -1,11 +1,10 @@
-#pragma once
+#ifndef OCTREEGENERATOR_H
+#define OCTREEGENERATOR_H
 #include <iostream>
 
 #include "../Structures.h"
 #include "octree.h"
-#include <queue>
 
-#include "../Math/PolynomialGenerator.h"
 #include "../Math/Polynomial.h"
 
 class OctreeGenerator
@@ -21,11 +20,11 @@ public:
 	};
 
 	template<typename generator, typename sdf>
-	static void constructField(Octree<Cell>& octree, generator& polynomialGenerator, const ConstructionParameters& params, sdf& sdfFunction);
+	static void constructField(std::unique_ptr<Octree<Cell>>& octree, generator& polynomialGenerator, const ConstructionParameters& params, sdf& sdfFunction);
 };
 
 template<typename generator, typename sdf>
-void OctreeGenerator::constructField(Octree<Cell>& octree, generator& polynomialGenerator, const ConstructionParameters& params, sdf& sdfFunction)
+void OctreeGenerator::constructField(std::unique_ptr<Octree<Cell>>& octree, generator& polynomialGenerator, const ConstructionParameters& params, sdf& sdfFunction)
 {
 	const int initialCellCount = 2;
 	float gridCellSize = params.sizeInWorld / initialCellCount;
@@ -36,10 +35,11 @@ void OctreeGenerator::constructField(Octree<Cell>& octree, generator& polynomial
 	};
 
 	vector3d<Cell> initialCells(initialCellCount);
-	vector3d<Octree<Cell>::Leaf*> generatedCells(initialCellCount);
+	vector3d<std::shared_ptr<Octree<Cell>::Leaf>> generatedCells(initialCellCount);
 
 	float error = 0.0f;
-	std::priority_queue< Cell, std::vector<Cell>, decltype(queueCellCompare) > pending(queueCellCompare);
+	// std::priority_queue< Cell, std::vector<Cell>, decltype(queueCellCompare) > pending(queueCellCompare);
+	std::vector<Cell> pendingVector;
 
 	for (int x = 0; x < initialCellCount; x++)
 	{
@@ -62,7 +62,7 @@ void OctreeGenerator::constructField(Octree<Cell>& octree, generator& polynomial
 			}
 		}
 	}
-	octree = Octree<Cell>(initialCellCount, initialCells, generatedCells);
+	octree = std::make_unique<Octree<Cell>>(initialCellCount, initialCells, generatedCells);
 	for (int x = 0; x < initialCellCount; x++)
 	{
 		for (int y = 0; y < initialCellCount; y++)
@@ -70,15 +70,22 @@ void OctreeGenerator::constructField(Octree<Cell>& octree, generator& polynomial
 			for (int z = 0; z < initialCellCount; z++)
 			{
 				initialCells(x, y, z).octreeLeaf = generatedCells(x, y, z);
-				pending.push(initialCells(x, y, z));
+				
+				pendingVector.push_back(initialCells(x, y, z));
+				std::push_heap(pendingVector.begin(), pendingVector.end(), queueCellCompare);
+				// pending.push(initialCells(x, y, z));
 			}
 		}
 	}
 
-	while (!pending.empty() && error > params.errorThreshold)
+	int step = 0;
+	while (!pendingVector.empty() && error > params.errorThreshold)
 	{
-		auto popped = pending.top();
-		pending.pop();
+		/*auto popped = pending.top();
+		pending.pop();*/
+		std::pop_heap(pendingVector.begin(), pendingVector.end(), queueCellCompare);
+		auto popped = pendingVector.back();
+		pendingVector.pop_back();
 
 		Cell& currentCell = popped;
 		if (currentCell.degree() >= params.maxDegree && currentCell.level() >= params.maxLevel) continue;
@@ -156,14 +163,16 @@ void OctreeGenerator::constructField(Octree<Cell>& octree, generator& polynomial
 
 			currentCell.octreeLeaf->setValue(currentCell);
 
-			pending.push(currentCell);
+			// pending.push(currentCell);
+			pendingVector.push_back(currentCell);
+			std::push_heap(pendingVector.begin(), pendingVector.end(), queueCellCompare);
 		}
 		// doing h-improvement otherwise
 		if (refineH/*pImprovement < hImprovement*/)
 		{
 			error -= currentCell.error;
 
-			vector3d<Octree<Cell>::Leaf*> leaves(2);
+			vector3d<std::shared_ptr<Octree<Cell>::Leaf>> leaves(2);
 			currentCell.octreeLeaf->subdivide(hImpSubdividedCell, leaves);
 
 			for (int x = 0; x < 2; x++)
@@ -173,12 +182,27 @@ void OctreeGenerator::constructField(Octree<Cell>& octree, generator& polynomial
 					for (int z = 0; z < 2; z++)
 					{
 						hImpSubdividedCell(x, y, z).octreeLeaf = leaves(x, y, z);
-						pending.push(hImpSubdividedCell(x, y, z));
+						
+						// pending.push(hImpSubdividedCell(x, y, z));
+						pendingVector.push_back(hImpSubdividedCell(x, y, z));
+						std::push_heap(pendingVector.begin(), pendingVector.end(), queueCellCompare);
 
 						error += hImpSubdividedCell(x, y, z).error;
 					}
 				}
 			}
 		}
+
+		// recalculate every 1000 step for precision
+		step = (step + 1) % 1000;
+		if (step == 0)
+		{
+			error = 0.0f;
+			for (auto& cell : pendingVector)
+			{
+				error += cell.error;
+			}
+		}
 	}
 }
+#endif

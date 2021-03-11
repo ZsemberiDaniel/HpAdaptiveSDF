@@ -1,0 +1,70 @@
+#version 450
+
+//?#include "../SDF/sdfOctree.glsl"
+
+layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
+
+layout(rgba32f, binding = 0) restrict writeonly uniform image2D sdfValueXSlice;
+layout(rgba32f, binding = 1) restrict writeonly uniform image2D sdfValueYSlice;
+layout(rgba32f, binding = 2) restrict writeonly uniform image2D sdfValueZSlice;
+
+layout(rgba32f, binding = 3) restrict writeonly uniform image2D sdfErrorXSlice;
+layout(rgba32f, binding = 4) restrict writeonly uniform image2D sdfErrorYSlice;
+layout(rgba32f, binding = 5) restrict writeonly uniform image2D sdfErrorZSlice;
+
+readonly layout(std430, binding = 3) buffer sdfDiscreteValues
+{
+	float sdfDiscValues[];
+};
+
+uniform int heatMapSize;
+uniform int xSliceId;
+uniform int ySliceId;
+uniform int zSliceId;
+uniform float maxSDFValue;
+uniform int renderDiff;
+uniform float diffMultiplier;
+
+float getSDFValue(in ivec3 p)
+{
+	 return sdfDiscValues[p.x * heatMapSize * heatMapSize + p.y * heatMapSize + p.z];
+}
+
+void main()
+{
+	ivec2 pixel = ivec2(gl_GlobalInvocationID.xy);
+
+	ivec3 sliceXCoord = ivec3(xSliceId, pixel.x, pixel.y);
+	ivec3 sliceYCoord = ivec3(pixel.x, ySliceId, pixel.y);
+	ivec3 sliceZCoord = ivec3(pixel.x, pixel.y, zSliceId);
+
+	vec3 normalizedSDF = vec3(getSDFValue(sliceXCoord), getSDFValue(sliceYCoord), getSDFValue(sliceZCoord)) / maxSDFValue;
+
+	imageStore(sdfValueXSlice, pixel, vec4(normalizedSDF.x > 0 ? normalizedSDF.x : 0.0f, 0.0f, normalizedSDF.x < 0 ? abs(normalizedSDF.x) : 0.0f, 1.0f));
+	imageStore(sdfValueYSlice, pixel, vec4(normalizedSDF.y > 0 ? normalizedSDF.y : 0.0f, 0.0f, normalizedSDF.y < 0 ? abs(normalizedSDF.y) : 0.0f, 1.0f));
+	imageStore(sdfValueZSlice, ivec2(pixel.x, heatMapSize - pixel.y - 1), vec4(normalizedSDF.z > 0 ? normalizedSDF.z : 0.0f, 0.0f, normalizedSDF.z < 0 ? abs(normalizedSDF.z) : 0.0f, 1.0f));
+	
+	vec3 pXSlice = sliceXCoord / (heatMapSize - 1.0f);
+	vec3 pYSlice = sliceYCoord / (heatMapSize - 1.0f);
+	vec3 pZSlice = sliceZCoord / (heatMapSize - 1.0f);
+	float xOxtreeSDV = getSample(pXSlice) / maxSDFValue;
+	float yOxtreeSDV = getSample(pYSlice) / maxSDFValue;
+	float zOxtreeSDV = getSample(pZSlice) / maxSDFValue;
+
+	if (renderDiff != 0)
+	{
+		float xDiff = (xOxtreeSDV - normalizedSDF.x) * maxSDFValue * diffMultiplier;
+		float yDiff = (yOxtreeSDV - normalizedSDF.y) * maxSDFValue * diffMultiplier;
+		float zDiff = (zOxtreeSDV - normalizedSDF.z) * maxSDFValue * diffMultiplier;
+
+		imageStore(sdfErrorXSlice, pixel, vec4(xDiff > 0 ? xDiff : 0.0f, 0.0f, xDiff < 0 ? abs(xDiff) : 0.0f, 1.0f));
+		imageStore(sdfErrorYSlice, pixel, vec4(yDiff > 0 ? yDiff : 0.0f, 0.0f, yDiff < 0 ? abs(yDiff) : 0.0f, 1.0f));
+		imageStore(sdfErrorZSlice, ivec2(pixel.x, heatMapSize - pixel.y - 1), vec4(zDiff > 0 ? zDiff : 0.0f, 0.0f, zDiff < 0 ? abs(zDiff) : 0.0f, 1.0f));
+	}
+	else
+	{
+		imageStore(sdfErrorXSlice, pixel, vec4(xOxtreeSDV > 0 ? xOxtreeSDV : 0.0f, 0.0f, xOxtreeSDV < 0 ? abs(xOxtreeSDV) : 0.0f, 1.0f));
+		imageStore(sdfErrorYSlice, pixel, vec4(yOxtreeSDV > 0 ? yOxtreeSDV : 0.0f, 0.0f, yOxtreeSDV < 0 ? abs(yOxtreeSDV) : 0.0f, 1.0f));
+		imageStore(sdfErrorZSlice, ivec2(pixel.x, heatMapSize - pixel.y - 1), vec4(zOxtreeSDV > 0 ? zOxtreeSDV : 0.0f, 0.0f, zOxtreeSDV < 0 ? abs(zOxtreeSDV) : 0.0f, 1.0f));
+	}
+}

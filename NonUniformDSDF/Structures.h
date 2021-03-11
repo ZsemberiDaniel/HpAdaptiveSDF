@@ -1,5 +1,8 @@
-#pragma once
+#ifndef STRUCTURES_H
+#define STRUCTURES_H
+
 #include "Math/Polynomial.h"
+#include "Octree/octree.h"
 
 struct BoundingBox
 {
@@ -17,7 +20,7 @@ struct Cell
 	BoundingBox bbox = BoundingBox{};
 	Polynomial poly;
 	float error = 0.0f;
-	Octree<Cell>::Leaf* octreeLeaf = nullptr;
+	std::shared_ptr<Octree<Cell>::Leaf> octreeLeaf = nullptr;
 
 	int level() const
 	{
@@ -34,3 +37,4 @@ struct Cell
 		return false;
 	}
 };
+#endif

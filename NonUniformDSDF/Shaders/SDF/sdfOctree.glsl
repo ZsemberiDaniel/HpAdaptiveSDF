@@ -6,7 +6,7 @@
 
 vec3 debug1(vec3 p)
 {
-	// return p;
+	return p;
 	vec3 leafBoxMin, leafBoxMax;
 	int a;
 	Leaf leaf = searchForLeaf(p, leafBoxMin, leafBoxMax);
@@ -15,24 +15,13 @@ vec3 debug1(vec3 p)
 	// return leafBoxMax;
 	// return shiftedP;
 	// return vec3(shiftedP * 2.0f - 1.0f);
-	return vec3(evalPolynom(leaf.poly, shiftedP * 2.0f - 1.0f, (leafBoxMax - leafBoxMin)));
+	// return vec3(evalPolynom(leaf.poly, shiftedP * 2.0f - 1.0f, (leafBoxMax - leafBoxMin)));
 	// return vec3(leaf.level / 10.0f);
 }
 
 float getSample(vec3 p)
 {
-//	const float R = 0.8f;
-//	const float r = 0.4f;
-//	vec2 q = vec2(length(vec2(p.x, p.z)) - R, p.y);
-//	return length(q) - r;
-
-	// return length(p) - 1.0f;
-//	Leaf l = getLeaf(0);
-//	return evalPolynom(l.poly, p * 2.0f - 1.0f, vec3(1));
-
-
 	vec3 leafBoxMin, leafBoxMax;
-	int a;
 	Leaf leaf = searchForLeaf(p, leafBoxMin, leafBoxMax);
 	vec3 shiftedP = (p - leafBoxMin) / (leafBoxMax - leafBoxMin);
 	// cool:

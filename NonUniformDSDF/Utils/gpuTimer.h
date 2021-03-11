@@ -1,4 +1,5 @@
-#pragma once
+#ifndef GPUTIMER_H
+#define GPUTIMER_H
 
 /*
 
@@ -34,3 +35,4 @@ private:
 	bool		m_firstUse;
 };
 
+#endif

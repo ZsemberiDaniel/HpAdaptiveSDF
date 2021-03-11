@@ -1,4 +1,11 @@
-#pragma once
+#ifndef APP_H
+#define APP_H
+
+#include <Dragonfly/editor.h>		 //inlcludes most features
+#include <Dragonfly/detail/vao.h>	 //will be replaced
+#include <queue>
+#include <fstream>
+
 
 #include <Dragonfly/editor.h>		 //inlcludes most features
 #include <Dragonfly/detail/buffer.h> //will be replaced
@@ -14,10 +21,14 @@
 #include "Math/LSQPolyGenerator.h"
 #include "Math/PolynomialGenerator.h"
 #include "Math/Polynomial.h"
+#include "Math/PolynomialBases.h"
 #include "Octree/octreeGenerator.h"
 #include "SDF/SDFHeader.h"
 #include <fstream>
 #include <glm/gtx/transform.hpp>
+#include "Octree/SaveableOctree.h"
+#include "SDF/SDFHeatmapVisualizer.h"
+#include "constants.h"
 
 
 class App {
@@ -46,89 +57,39 @@ private:
 	df::ShaderProgramEditorVF cubeWireProgram = "Cube-Wire-Prog";
 	df::ShaderProgramEditorVF meshProgram = "Mesh-Prog";
 	df::ShaderProgramEditorVGF flatMeshProgram = "FlatMesh-Prog";
-
-	df::ShaderProgramEditorVF sdfProgram = "SDF-Prog"; // temp
-	struct Desc {
-		// TODO: move to SD field attributes, border can be removed
-		glm::vec3 SDFCorner = glm::vec3(0);
-		glm::vec3 SDFSize = glm::vec3(1);
-		glm::vec3 SDFBorder = glm::vec3(0.01f);
-	}desc; // temp
-
+	df::ShaderProgramEditorVF* sdfProgram = nullptr;
+	
 	void CompilePreprocess();
 	void CompileShaders();
 
 	void CalculateOctreeSendToGPU();
+
+	std::shared_ptr<SDFHeatmapVisualizer> heatmapVisualizer;
+	std::shared_ptr<SaveableOctree> currOctree;
+
 	
-	GaussPolynomialGenerator gaussPolyGenerator;
-	LSQPolyGenerator lsqGenerator;
+	void DrawOctree(df::ShaderProgramEditorVF& program, const std::shared_ptr<Octree<Cell>::Node>& currentNode, int level = -1);
 
-	std::unique_ptr<eltecg::ogl::ShaderStorageBuffer> branchSSBO;
-	GLuint branchSSBOPoi = 0, leavesSSBOPoi = 0;
-	std::unique_ptr<eltecg::ogl::ShaderStorageBuffer> leavesSSBO;
-
-	// TODO: make it unque pointer
-	Octree<Cell> octree;
-	int octreeBranchCount;
-	void DrawOctree(df::ShaderProgramEditorVF& program, const Octree<Cell>::Node* currentNode, int level = -1);
+	glm::ivec3 errorHeatmapSlice;
 
 
-
-
-	struct PolynomialBase
-	{
-		int id;
-		std::string name;
-		std::string shaderEvalFunctionName;
-		std::function<void(App*)> cpuConstruction;
-	};
 	struct ProgramState {
-		std::vector<SDFBase*> sdfs = {
-			new SDFTorus(),
-			new SDFSphere(),
-			new SDFPlane()
-		};
-		int activeSDFIndex = 0;
+		int activeSDFIndex = 1;
+		SDFBase* activeSDF() { return sdfs[activeSDFIndex]; }
 
-		std::vector<PolynomialBase> approxTypes = {
-			PolynomialBase {
-				0,
-				"Gauss Quadrature - normalized Legendre",
-				"evalPolynom_normLagrange",
-				 [](App* app)
-				 {
-					 OctreeGenerator::constructField<GaussPolynomialGenerator>(
-						 app->octree, 
-						 app->gaussPolyGenerator, 
-						 app->state.octreeConstructionParams, 
-						 *app->currentSdf());
-				 }
-			},
-			PolynomialBase {
-				1,
-				"LSQ - Legendre",
-				"evalPolynom_lagrange",
-				 [](App* app)
-				 {
-					 OctreeGenerator::constructField<LSQPolyGenerator>(
-						 app->octree, 
-						 app->lsqGenerator, 
-						 app->state.octreeConstructionParams, 
-						 *app->currentSdf());
-				 }
-			}
-		};
-		int activeApproxTypeIndex = 1;
+		int activeApproxTypeIndex = 0;
 		PolynomialBase activeApproxType() { return approxTypes[activeApproxTypeIndex]; }
 
 		df::Camera cam;
+		bool printOctree = false;
 		bool enableGUI = true;
+		bool showNormals = false;
 		bool drawOctreeGrid = false;
 		int drawOctreeLevel = -1; // which level to draw: -1 for all, 0 for first and increasing for lower levels
 
 		// placement
-		float SDFScale = 1.0f;
-		glm::vec3 SDFTrans = glm::vec3(0);
+		float SDFScale() { return activeSDF()->worldSize(); }
+		glm::vec3 SDFTrans() { return activeSDF()->worldMinPos();  }
 
 		struct RenderSettings {
 			glm::vec3 gLightPos = glm::vec3(10, 66, -200);
@@ -142,22 +103,24 @@ private:
 			glm::vec3 gCookRoughness = glm::vec3(31, 31, 31) / 255.f;
 			glm::vec3 gCookIOR = glm::vec3(2.0f, 2.0f, 2.0f);
 
+			float stepEpsilon = 0.002f;
 			int maxStep = 40;
-			bool refineRoot = true;
+			bool refineRoot = false;
 		} settings;
 
-		OctreeGenerator::ConstructionParameters octreeConstructionParams = {
-			glm::vec3(0), // min corner pos in world DO NOT CHANGE, changed dynamically
-			1.0f, // size in world DO NOT CHANGE, changed dynamically
+		OctreeGenerator::ConstructionParameters constructionParams = {
+			glm::vec3(0),
+			1.0f,
 
 			3, // maxDegree
-			2, // maxLevel
-			0.005f // errorThreshold
+			3, //maxLevel
+			0.05f // errorThreshold
 		};
 	} state;
 
-	SDFBase* currentSdf() { return state.sdfs[state.activeSDFIndex]; }
-
 	void SceneCameraRecenter() { state.cam.SetView(glm::vec3(5), glm::vec3(0), glm::vec3(0, 1, 0)); }
 	void SceneLightToCamera() { state.settings.gLightPos = state.cam.GetEye(); }
+	void PrintCurrentOctree() { currOctree->printOctree(); }
 };
+
+#endif

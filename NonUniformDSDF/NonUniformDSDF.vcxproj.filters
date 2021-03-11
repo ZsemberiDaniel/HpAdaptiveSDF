@@ -41,6 +41,9 @@
     <Filter Include="SDF">
       <UniqueIdentifier>{4f7b6ae6-f110-4ebf-a1fa-341390bbee72}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Shaders\Evaluate">
+      <UniqueIdentifier>{287b4e09-7470-4eb5-ab59-054ce40fda32}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
@@ -52,6 +55,12 @@
       <Filter>Math</Filter>
     </ClCompile>
     <ClCompile Include="Math\QuadratureEvaluator.cpp">
+      <Filter>Math</Filter>
+    </ClCompile>
+    <ClCompile Include="Octree\SaveableOctree.cpp">
+      <Filter>Octree</Filter>
+    </ClCompile>
+    <ClCompile Include="Math\PolynomialsBase.cpp">
       <Filter>Math</Filter>
     </ClCompile>
   </ItemGroup>
@@ -116,6 +125,25 @@
     <ClInclude Include="SDF\SDFPlane.h">
       <Filter>SDF</Filter>
     </ClInclude>
+    <ClInclude Include="SDF\SDFModel1.h">
+      <Filter>SDF</Filter>
+    </ClInclude>
+    <ClInclude Include="SDF\SDFPrimitives.h">
+      <Filter>SDF</Filter>
+    </ClInclude>
+    <ClInclude Include="SDF\SDFCube.h">
+      <Filter>SDF</Filter>
+    </ClInclude>
+    <ClInclude Include="Octree\SaveableOctree.h">
+      <Filter>Octree</Filter>
+    </ClInclude>
+    <ClInclude Include="Math\PolynomialBases.h">
+      <Filter>Math</Filter>
+    </ClInclude>
+    <ClInclude Include="SDF\SDFHeatmapVisualizer.h">
+      <Filter>SDF</Filter>
+    </ClInclude>
+    <ClInclude Include="constants.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Shaders\main_cube.glsl">
@@ -336,6 +364,9 @@
     </None>
     <None Include="Eigen\UmfPackSupport">
       <Filter>Eigen</Filter>
+    </None>
+    <None Include="Shaders\Evaluate\sdfDifference.comp">
+      <Filter>Shaders\Evaluate</Filter>
     </None>
   </ItemGroup>
 </Project>

@@ -18,136 +18,55 @@ App::App(df::Sample& s) : sam(s), noVao(GL_TRIANGLES, 3)
 	glClearColor(0.125f, 0.25f, 0.5f, 1.0f);
 	glEnable(GL_CULL_FACE);
 	glEnable(GL_DEPTH_TEST);
-
+	
+	CalculateOctreeSendToGPU();
 	CompileShaders();
 
 	sam.AddHandlerClass(state.cam);
 
-	CalculateOctreeSendToGPU();
-
-	// Not working either:
-	// CalculateOctreeSendToGPU();
 
 	GL_CHECK;
 }
 
 void App::CalculateOctreeSendToGPU()
 {
-	state.activeApproxType().cpuConstruction(this);
-	octree.print(state.octreeConstructionParams.minPos, state.octreeConstructionParams.minPos + state.octreeConstructionParams.sizeInWorld);
+	std::cout << state.activeApproxTypeIndex << std::endl;
+	currOctree = std::make_shared<SaveableOctree>(state.activeSDFIndex, state.activeApproxTypeIndex, state.constructionParams);
+	heatmapVisualizer = std::make_shared<SDFHeatmapVisualizer>(currOctree);
 
-	std::vector<unsigned int> branchGPU, leavesGPU;
-	octree.packForGPU(branchGPU, leavesGPU, octreeBranchCount);
-
-	if (branchSSBOPoi != 0)
-	{
-		glDeleteBuffers(1, &branchSSBOPoi);
-	}
-	glGenBuffers(1, &branchSSBOPoi);
-
-	//bool newlyCreated = false;
-	//if (branchSSBOPoi == 0)
-	//{
-	//	glGenBuffers(1, &branchSSBOPoi);
-	//	newlyCreated = true;
-	//}
-	
-	glBindBuffer(GL_SHADER_STORAGE_BUFFER, branchSSBOPoi);
-	int bufferSize = branchGPU.size() * sizeof(unsigned int);
-	glBufferStorage(GL_SHADER_STORAGE_BUFFER, bufferSize, (GLvoid*)branchGPU.data(), GL_MAP_READ_BIT);
-	// glBufferData(GL_SHADER_STORAGE_BUFFER, bufferSize, (GLvoid*)branchGPU.data(), GL_STATIC_READ);
-
-	//if (newlyCreated)
-	//{
-	//	glBufferData(GL_SHADER_STORAGE_BUFFER, bufferSize, (GLvoid*)branchGPU.data(), GL_STATIC_READ);
-	//}
-	//else
-	//{
-	//	glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, bufferSize, (GLvoid*)branchGPU.data());
-	//}
-	
-	glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
-	glFlush(); glFinish();
-
-
-	if (leavesSSBOPoi != 0)
-	{
-		glDeleteBuffers(1, &leavesSSBOPoi);
-	}
-	glGenBuffers(1, &leavesSSBOPoi);
-
-	//newlyCreated = false;
-	//if (leavesSSBOPoi == 0)
-	//{
-	//	glGenBuffers(1, &leavesSSBOPoi);
-	//	newlyCreated = true;
-	//}
-	
-	glBindBuffer(GL_SHADER_STORAGE_BUFFER, leavesSSBOPoi);
-	bufferSize = leavesGPU.size() * sizeof(unsigned int);
-	glBufferStorage(GL_SHADER_STORAGE_BUFFER, bufferSize, (GLvoid*)leavesGPU.data(), GL_MAP_READ_BIT);
-	// glBufferData(GL_SHADER_STORAGE_BUFFER, bufferSize, (GLvoid*)leavesGPU.data(), GL_STATIC_READ);
-
-	//if (newlyCreated)
-	//{
-	//	glBufferData(GL_SHADER_STORAGE_BUFFER, bufferSize, (GLvoid*)leavesGPU.data(), GL_STATIC_READ);
-	//}
-	//else
-	//{
-	//	glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, bufferSize, (GLvoid*)leavesGPU.data());
-	//}
-	
-	glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
-	glFlush(); glFinish();
-	// glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
-	// glMemoryBarrier(GL_ALL_BARRIER_BITS);
-	// glMemoryBarrierByRegion(GL_SHADER_STORAGE_BARRIER_BIT);
-	
-	//branchSSBO = std::make_unique<eltecg::ogl::ShaderStorageBuffer>();
-	// branchSSBO->constructImmutable(branchGPU, eltecg::ogl::BufferFlags::MAP_READ_BIT);
-	//branchSSBO = std::make_unique<eltecg::ogl::ShaderStorageBuffer>();
-	//branchSSBO->constructImmutable(branchGPU, eltecg::ogl::BufferFlags::MAP_READ_BIT);
-	//branchSSBO->constructMutable(branchGPU, GL_STATIC_READ);
-	//leavesSSBO = std::make_unique<eltecg::ogl::ShaderStorageBuffer>();
-	//leavesSSBO->constructImmutable(leavesGPU, eltecg::ogl::BufferFlags::MAP_READ_BIT);
-	//leavesSSBO->constructMutable(leavesGPU, GL_STATIC_READ);
+	if (state.printOctree) PrintCurrentOctree();
 }
 
 
-App::~App()
-{
-	for (auto sdf: state.sdfs)
-	{
-		delete sdf;
-	}
-}
+App::~App(){}
 
 void App::Update()
 {
 	state.cam.Update();
 }
 
-void App::DrawOctree(df::ShaderProgramEditorVF& program, const Octree<Cell>::Node* currentNode, int level)
+void App::DrawOctree(df::ShaderProgramEditorVF& program, const std::shared_ptr<Octree<Cell>::Node>& currentNode, int level)
 {
 	if (currentNode->type() == Octree<Cell>::BranchNode)
 	{
-		auto* branch = reinterpret_cast<const Octree<Cell>::Branch*>(currentNode);
+		auto branch = std::dynamic_pointer_cast<const Octree<Cell>::Branch>(currentNode);
 		for (int i = 0; i < 8; i++)
 		{
-			DrawOctree(program, branch->child(i), level);
+			const std::shared_ptr<Octree<Cell>::Node> ch = branch->child(i);
+			DrawOctree(program, ch, level);
 		}
 	}
 	else
 	{
 		assert(currentNode->type() == Octree<Cell>::LeafNode);
 		
-		auto* leaf = reinterpret_cast<const Octree<Cell>::Leaf*>(currentNode);
+		auto leaf = std::dynamic_pointer_cast<const Octree<Cell>::Leaf>(currentNode);
 		if (level != -1 && leaf->layer() != level) return;
 
 		df::Backbuffer << program
 		<< "MVP" << state.cam.GetViewProj() *
-			        glm::translate(glm::vec3(leaf->value().bbox.min)) * 
-			        glm::scale(glm::vec3(leaf->value().bbox.size().x))
+			        glm::translate(glm::vec3(leaf->value().bbox.min) / currOctree->getConstructionParams().sizeInWorld) * 
+			        glm::scale(glm::vec3(leaf->value().bbox.size().x) / currOctree->getConstructionParams().sizeInWorld)
 		<< "color" << CUBE_COLORS[leaf->value().degree()];
 		program << df::NoVao(GL_LINES, 24, 0);
 	}
@@ -158,21 +77,24 @@ void App::Render()
 	// Clear backbuffer
 	Backbuffer << Clear(0.1f, 0.1f, 0.1f, 1.0f);
 
-	glm::mat4 mvp = state.cam.GetViewProj()
-		* glm::translate(desc.SDFCorner + state.SDFTrans)
-		* glm::scale(state.SDFScale * desc.SDFSize);
+	if (currOctree == nullptr) return;
+
+	glm::mat4 mvp = state.cam.GetViewProj();
 
 	// Draw grid of octree
 	if (state.drawOctreeGrid)
 	{
-		DrawOctree(cubeWireProgram, octree.root(), state.drawOctreeLevel);
+		DrawOctree(cubeWireProgram, currOctree->getOctree()->root(), state.drawOctreeLevel);
 
-		// Draw bounding box
-		Backbuffer
-			<< cubeWireProgram
-			<< "MVP" << mvp
-			<< "color" << glm::vec3(1, 1, .2);
-		cubeWireProgram << df::NoVao(GL_LINES, 24, 0);
+		if (state.drawOctreeLevel != -1)
+		{
+			// Draw bounding box
+			Backbuffer
+				<< cubeWireProgram
+				<< "MVP" << mvp
+				<< "color" << glm::vec3(1, 1, .2);
+			cubeWireProgram << df::NoVao(GL_LINES, 24, 0);
+		}
 	}
 
 	//// Draw SDF
@@ -185,17 +107,14 @@ void App::Render()
 
 	float planeDist = glm::dot(cam.GetEye(), cam.GetDir()) + cam.GetNearFarClips().x;
 
-	/*branchSSBO->bindBufferRange(0);
-	leavesSSBO->bindBufferRange(1);*/
-	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, branchSSBOPoi);
-	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, leavesSSBOPoi);
-	Backbuffer << prog
+	currOctree->SetOctreeUniforms(*prog);
+	Backbuffer << *prog
 		<< "viewProj" << cam.GetViewProj()
 		<< "modelTrans" << modelTrans
 		<< "modelScale" << modelScale
 		<< "planeDist" << planeDist
 		<< "gInverseViewProj" << cam.GetInverseViewProj()
-		<< "gTanPixelAngle" << cam.GetTanPixelFow()
+		// << "gTanPixelAngle" << cam.GetTanPixelFow()
 		<< "gCameraPos" << cam.GetEye()
 		<< "gCameraDir" << cam.GetDir()
 		<< "gLightPos" << settings.gLightPos
@@ -206,30 +125,23 @@ void App::Render()
 		<< "gDiffuse" << settings.gDiffuse
 		<< "gCookRoughness" << settings.gCookRoughness
 		<< "gCookIOR" << settings.gCookIOR
-		<< "gNormEps" << 0.01f
+		<< "gNormEps" << glm::vec3(0.01f)
 		<< "maxStep" << settings.maxStep
-		<< "sdfTexSize" << desc.SDFSize
-		<< "sdfTexCorner" << desc.SDFCorner
-		<< "sdfTexBorder" << desc.SDFBorder
-		<< "sTranslation" << state.SDFTrans
-		<< "sScale" << state.SDFScale
-		<< "refineRoot" << (settings.refineRoot ? 1 : 0)
-		<< "branchCount"<< octreeBranchCount
-		<< "octreeMinCoord" << state.octreeConstructionParams.minPos
-		<< "octreeSize" << state.octreeConstructionParams.sizeInWorld
-		<< "param1" << glm::vec3(0.7, 0, 0)
-		<< "param2" << glm::vec3(0, 0, 0)
-		<< "time" << SDL_GetTicks() / 1000.0f;
+		<< "refineRoot" << (state.settings.refineRoot ? 1 : 0)
+		<< "epsilon" << state.settings.stepEpsilon;
+
+
+	GL_CHECK;
 
 	glm::vec3 dir = cam.GetDir();
 	glm::vec3 frontVertex = glm::vec3((dir.x < 0 ? modelScale.x : 0), (dir.y < 0 ? modelScale.y : 0), (dir.z < 0 ? modelScale.z : 0));
 	frontVertex += modelTrans;
 	if (glm::dot(frontVertex, dir) < planeDist) // the bounding box' corner is clipped
 		// clip
-		prog << df::NoVao(GL_TRIANGLE_FAN, 6, 3);
+		*prog << df::NoVao(GL_TRIANGLE_FAN, 6, 3);
 	// bounding box
 
-	prog << df::NoVao(GL_TRIANGLE_STRIP, 14, 9);
+	*prog << df::NoVao(GL_TRIANGLE_STRIP, 14, 9);
 
 	GL_CHECK;
 }
@@ -237,33 +149,81 @@ void App::Render()
 void App::RenderGUI()
 {
 	if (!state.enableGUI) return;
-	sdfProgram.Render();
+	sdfProgram->Render();
 
 	ImGui::SetNextWindowSize({ 600,400 }, ImGuiCond_FirstUseEver);
 	if (ImGui::Begin("Program settings"))
 	{
 		// Scene Settings
-		if (ImGui::Button("Recalculate octree"))
+		if (ImGui::Button("Recalculate octree", ImVec2(450, 20)))
 		{
 			CalculateOctreeSendToGPU();
-			// CompileShaders();
+			CompileShaders();
 		}
-		if (ImGui::Button("Recenter camera"))
+		if (ImGui::Button("Recenter camera", ImVec2(450, 20)))
 		{
 			SceneCameraRecenter();
 		}
-		if (ImGui::Button("Recenter light source"))
+		if (ImGui::Button("Recenter light source", ImVec2(450, 20)))
 		{
 			SceneLightToCamera();
 		}
+		ImGui::Dummy(ImVec2(0.0f, 20.0f));
+
+		// ### Debug settings
+		if (ImGui::CollapsingHeader("Debug settings"))
+		{
+			// SetOctreeUniforms(*state.activeSDF()->heatmapsProgram());
+			heatmapVisualizer->renderToGUI(errorHeatmapSlice.x, errorHeatmapSlice.y, errorHeatmapSlice.z);
+			ImGui::DragInt3("Error heatmap slice", &errorHeatmapSlice.x, 0.5f, 0, ERROR_HEATMAP_SIZE - 1);
+
+			// Drawing octree attributes
+			ImGui::Checkbox("Draw octree grid", &state.drawOctreeGrid);
+			if (state.drawOctreeGrid)
+			{
+				ImGui::DragInt("Show level", &state.drawOctreeLevel, 0.1f, -1, state.constructionParams.maxLevel);
+				if (ImGui::IsItemHovered())
+					ImGui::SetTooltip("-1 = all levels. 0 = upper most level. Increasing for lower levels.");
+			}
+
+			if (ImGui::Checkbox("Show surface normals", &state.showNormals))
+			{
+				CompileShaders();
+			}
+
+			if (ImGui::Checkbox("Print octree", &state.printOctree))
+			{
+				if (state.printOctree)
+				{
+					PrintCurrentOctree();
+				}
+			}
+		}
+
+		if (ImGui::CollapsingHeader("Render settings"))
+		{
+			ImGui::Checkbox("Refine root", &state.settings.refineRoot);
+			ImGui::InputInt("Max step", &state.settings.maxStep);
+			ImGui::InputFloat("Epsilon to surface", &state.settings.stepEpsilon, 0, 0, "%.7f");
+		}
+
+		// Construction settings
+		if (ImGui::CollapsingHeader("Construction settings"))
+		{
+			ImGui::DragInt("Max degree", &state.constructionParams.maxDegree, 0.3f, 2, 10);
+			ImGui::DragInt("Max level", &state.constructionParams.maxLevel, 0.3f, 2, 10);
+			ImGui::DragFloat("Error threshold", &state.constructionParams.errorThreshold, 0.000005f, 0.0000001f, 1.0f, "%.7f");
+		}
+		ImGui::Dummy(ImVec2(0.0f, 20.0f));
+
 
 		if (ImGui::BeginCombo("ApproxType", state.activeApproxType().name.c_str()))
 		{
-			for (int n = 0; n < state.approxTypes.size(); n++)
+			for (int n = 0; n < sizeof(approxTypes) / sizeof(PolynomialBase); n++)
 			{
 				bool is_selected = n == state.activeApproxTypeIndex;
 
-				if (ImGui::Selectable(state.approxTypes[n].name.c_str(), is_selected))
+				if (ImGui::Selectable(approxTypes[n].name.c_str(), is_selected))
 					state.activeApproxTypeIndex = n;
 
 				if (is_selected)
@@ -271,28 +231,15 @@ void App::RenderGUI()
 			}
 			ImGui::EndCombo();
 		}
-		ImGui::Dummy(ImVec2(0.0f, 20.0f));
-
-		
-		// Drawing octree attributes
-		ImGui::Checkbox("Draw octree grid", &state.drawOctreeGrid);
-		if (state.drawOctreeGrid)
-		{
-			ImGui::DragInt("Show level", &state.drawOctreeLevel, 1, -1, state.octreeConstructionParams.maxLevel);
-			if (ImGui::IsItemHovered())
-				ImGui::SetTooltip("-1 = all levels. 0 = upper most level. Increasing for lower levels.");
-		}
-		ImGui::Dummy(ImVec2(0.0f, 20.0f));
-
 		
 		// SDF settings
-		if (ImGui::BeginCombo("##combo", currentSdf()->name().c_str()))
+		if (ImGui::BeginCombo("##combo", state.activeSDF()->name().c_str()))
 		{
-			for (int n = 0; n < state.sdfs.size(); n++)
+			for (int n = 0; n < sdfs.size(); n++)
 			{
 				bool is_selected = n == state.activeSDFIndex;
 
-				if (ImGui::Selectable(state.sdfs[n]->name().c_str(), is_selected))
+				if (ImGui::Selectable(sdfs[n]->name().c_str(), is_selected))
 					state.activeSDFIndex = n;
 
 				if (is_selected)
@@ -301,11 +248,11 @@ void App::RenderGUI()
 			ImGui::EndCombo();
 		}
 
-		currentSdf()->renderGUI();
+		state.activeSDF()->renderGUI();
 	}
 	ImGui::End();
 	
-	ImGui::ShowDemoWindow();
+	// ImGui::ShowDemoWindow();
 }
 
 bool App::HandleKeyDown(const SDL_KeyboardEvent& key)
@@ -344,8 +291,15 @@ void App::CompilePreprocess()
 {
 	std::map<std::string, std::string> defines{
 		// which type of evalutaion to use for the polynomials
-		{ "evalPolynom", state.activeApproxType().shaderEvalFunctionName }
+		{ "evalPolynom", state.activeApproxType().shaderEvalFunctionName },
+
+		{ "MAX_COEFF_SIZE", std::to_string(Polynomial::calculateCoeffCount(currOctree->getConstructionParams().maxLevel) + 1) }
 	};
+
+	if (state.showNormals)
+	{
+		defines["SHOW_NORMALS"] = "";
+	}
 	
 	writeDefines(defines);
 }
@@ -377,7 +331,10 @@ void App::CompileShaders()
 	std::cout << flatMeshProgram.GetErrors();
 
 	std::cout << "Compiling sdf trace program...  ";
-	sdfProgram
+	
+	delete sdfProgram;
+	sdfProgram = new df::ShaderProgramEditorVF("SDF-prog");
+	*sdfProgram
 		<< "Shaders/defines.glsl"_fs
 		<< "Shaders/Math/box_plane_intersection.glsl"_vs
 		<< "Shaders/cube_solid.vert"_vs
@@ -399,5 +356,5 @@ void App::CompileShaders()
 		<< "Shaders/SDF/sdfOctree.glsl"_fs
 		
 		<< LinkProgram;
-	std::cout << sdfProgram.GetErrors();
+	std::cout << sdfProgram->GetErrors();
 }
