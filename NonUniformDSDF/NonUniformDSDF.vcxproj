@@ -279,6 +279,7 @@
     <ClInclude Include="SDF\SDFTorus.h" />
     <ClInclude Include="Structures.h" />
     <ClInclude Include="Utils\gpuTimer.h" />
+    <ClInclude Include="Utils\Lazy.hpp" />
     <ClInclude Include="Utils\PerformanceTest.h" />
     <ClInclude Include="vector3d.h" />
   </ItemGroup>
@@ -327,6 +328,8 @@
     <None Include="Shaders\mesh.frag" />
     <None Include="Shaders\mesh.vert" />
     <None Include="Shaders\Octree\octree.glsl" />
+    <None Include="Shaders\Primitives\plane.frag" />
+    <None Include="Shaders\Primitives\plane.vert" />
     <None Include="Shaders\render_main.frag" />
     <None Include="Shaders\sdf.glsl" />
     <None Include="Shaders\SDFScenes\cube.glsl" />

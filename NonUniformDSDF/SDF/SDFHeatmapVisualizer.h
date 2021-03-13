@@ -3,69 +3,44 @@
 
 #include <sstream>
 #include <memory>
-#include <Dragonfly/editor.h>		 //inlcludes most features
-#include <Dragonfly/detail/vao.h>	 //will be replaced
 
-#include "SDF/SDFBase.h"
+#include "SDFBase.h"
 #include "../constants.h"
+#include "../Utils/Lazy.hpp"
+
+using namespace df;
 
 class SDFHeatmapVisualizer
 {
 public:
-
-	SDFHeatmapVisualizer(std::shared_ptr<SaveableOctree> saveableOctree_) :
-		saveableOctree(saveableOctree_)
+	inline static void renderShaderEditor()
 	{
-		std::stringstream ss;
-		ss << saveableOctree->sdfFunction()->name() << "-diff";
-		differenceCalculateProgram = new df::ComputeProgramEditor(ss.str());
-
-		*differenceCalculateProgram
-			<< "Shaders/defines.glsl"_comp
-			<< "Shaders/uniforms.glsl"_comp
-			<< "Shaders/Math/common.glsl"_comp
-			<< "Shaders/common.glsl"_comp
-			<< "Shaders/Octree/octree.glsl"_comp
-			<< "Shaders/SDF/sdfOctree.glsl"_comp
-			<< "Shaders/Evaluate/sdfDifference.comp"_comp
-			<< df::LinkProgram;
-
-
-		sdfSSBO = std::make_unique<eltecg::ogl::ShaderStorageBuffer>();
-		sdfSSBO->constructImmutable(saveableOctree->sdfFunction()->discreteSDFValues()->innerVector(), eltecg::ogl::BufferFlags::MAP_READ_BIT);
-
-		sdfValuesXSlice = df::Texture2D<glm::vec4>(ERROR_HEATMAP_SIZE, ERROR_HEATMAP_SIZE);
-		sdfValuesYSlice = df::Texture2D<glm::vec4>(ERROR_HEATMAP_SIZE, ERROR_HEATMAP_SIZE);
-		sdfValuesZSlice = df::Texture2D<glm::vec4>(ERROR_HEATMAP_SIZE, ERROR_HEATMAP_SIZE);
-
-		sdfErrorXSlice = df::Texture2D<glm::vec4>(ERROR_HEATMAP_SIZE, ERROR_HEATMAP_SIZE);
-		sdfErrorYSlice = df::Texture2D<glm::vec4>(ERROR_HEATMAP_SIZE, ERROR_HEATMAP_SIZE);
-		sdfErrorZSlice = df::Texture2D<glm::vec4>(ERROR_HEATMAP_SIZE, ERROR_HEATMAP_SIZE);
-
-		GL_CHECK;
+		differenceCalculateProgram()->Render();
 	}
 
-	~SDFHeatmapVisualizer()
+	inline static void renderToGUI(int xSlice, int ySlice, int zSlice, std::shared_ptr<SaveableOctree> saveableOctree, df::Camera& cam)
 	{
-		delete differenceCalculateProgram;
-	}
+		// update SSBO
+		if (saveableOctree != previouslyDrawnHeatmap)
+		{
+			previouslyDrawnHeatmap = saveableOctree;
+			sdfSSBO.force().assignMutable(saveableOctree->sdfFunction()->discreteSDFValues()->innerVector(), 0);
+		}
 
-	void renderToGUI(int xSlice, int ySlice, int zSlice)
-	{
 		int heatMapSize = ERROR_HEATMAP_SIZE;
 
-		glBindImageTexture(0, (GLuint)sdfValuesXSlice, 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA32F);
-		glBindImageTexture(1, (GLuint)sdfValuesYSlice, 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA32F);
-		glBindImageTexture(2, (GLuint)sdfValuesZSlice, 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA32F);
+		glBindImageTexture(0, (GLuint)sdfValuesXSlice.force(), 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA32F);
+		glBindImageTexture(1, (GLuint)sdfValuesYSlice.force(), 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA32F);
+		glBindImageTexture(2, (GLuint)sdfValuesZSlice.force(), 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA32F);
 
-		glBindImageTexture(3, (GLuint)sdfErrorXSlice, 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA32F);
-		glBindImageTexture(4, (GLuint)sdfErrorYSlice, 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA32F);
-		glBindImageTexture(5, (GLuint)sdfErrorZSlice, 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA32F);
+		glBindImageTexture(3, (GLuint)sdfErrorXSlice.force(), 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA32F);
+		glBindImageTexture(4, (GLuint)sdfErrorYSlice.force(), 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA32F);
+		glBindImageTexture(5, (GLuint)sdfErrorZSlice.force(), 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA32F);
 
-		sdfSSBO->bindBufferRange(3);
+		sdfSSBO.force().bindBufferRange(3);
 
-		saveableOctree->SetOctreeUniforms(*differenceCalculateProgram);
-		*differenceCalculateProgram
+		saveableOctree->SetOctreeUniforms(*(differenceCalculateProgram()));
+		*(differenceCalculateProgram())
 			<< "heatMapSize" << heatMapSize
 			<< "xSliceId" << xSlice
 			<< "ySliceId" << ySlice
@@ -83,11 +58,11 @@ public:
 		ImGui::Checkbox("Render diff", &renderDiff);
 		if (renderDiff) ImGui::InputFloat("Diff multiplier", &diffMultiplier);
 
-		ImGui::Image((void*)(intptr_t)(GLuint)sdfErrorXSlice, ImVec2(heatMapSize, heatMapSize));
+		ImGui::Image((void*)(intptr_t)(GLuint)sdfErrorXSlice.force(), ImVec2(heatMapSize, heatMapSize));
 		ImGui::SameLine(heatMapSize);
-		ImGui::Image((void*)(intptr_t)(GLuint)sdfErrorYSlice, ImVec2(heatMapSize, heatMapSize));
+		ImGui::Image((void*)(intptr_t)(GLuint)sdfErrorYSlice.force(), ImVec2(heatMapSize, heatMapSize));
 		ImGui::SameLine(2 * heatMapSize);
-		ImGui::Image((void*)(intptr_t)(GLuint)sdfErrorZSlice, ImVec2(heatMapSize, heatMapSize));
+		ImGui::Image((void*)(intptr_t)(GLuint)sdfErrorZSlice.force(), ImVec2(heatMapSize, heatMapSize));
 
 
 		// Displays the SDF value textures
@@ -124,24 +99,191 @@ public:
 		ImGui::SameLine(2 * heatMapSize);
 		ImGui::Text("Z slice");
 
-		ImGui::Image((void*)(intptr_t)(GLuint)sdfValuesXSlice, ImVec2(heatMapSize, heatMapSize));
+		ImGui::Image((void*)(intptr_t)(GLuint)sdfValuesXSlice.force(), ImVec2(heatMapSize, heatMapSize));
 		ImGui::SameLine(heatMapSize);
-		ImGui::Image((void*)(intptr_t)(GLuint)sdfValuesYSlice, ImVec2(heatMapSize, heatMapSize));
+		ImGui::Image((void*)(intptr_t)(GLuint)sdfValuesYSlice.force(), ImVec2(heatMapSize, heatMapSize));
 		ImGui::SameLine(2 * heatMapSize);
-		ImGui::Image((void*)(intptr_t)(GLuint)sdfValuesZSlice, ImVec2(heatMapSize, heatMapSize));
+		ImGui::Image((void*)(intptr_t)(GLuint)sdfValuesZSlice.force(), ImVec2(heatMapSize, heatMapSize));
+
+
+		// RENDER PLANES
+		glDisable(GL_CULL_FACE);
+
+		glm::vec3 middle = glm::vec3(xSlice, ySlice, zSlice) / (float)(heatMapSize - 1.0f);
+
+		struct Corners
+		{
+			glm::vec3 p1, p2, p3, p4;
+
+			glm::vec3 center() { return (p1 + p2 + p3 + p4) / 4.0f; }
+		};
+
+		Corners planes[12] = {
+			// z plane
+			{ 
+				middle,
+				middle + glm::vec3(1.0f - middle.x, 0.0f, 0.0f),
+				middle + glm::vec3(1.0f - middle.x, 1.0f - middle.y, 0.0f),
+				middle + glm::vec3(0.0f, 1.0f - middle.y, 0.0f)
+			},
+			{
+				middle + glm::vec3(-middle.x, 0.0f, 0.0f),
+				middle,
+				middle + glm::vec3(0.0f, 1.0f - middle.y, 0.0f),
+				middle + glm::vec3(-middle.x, 1.0f - middle.y, 0.0f)
+			},
+			{
+				middle + glm::vec3(-middle.x, -middle.y, 0.0f),
+				middle + glm::vec3(0.0f, -middle.y, 0.0f),
+				middle,
+				middle + glm::vec3(-middle.x, 0.0f, 0.0f)
+			},
+			{
+				middle + glm::vec3(0.0f, -middle.y, 0.0f),
+				middle + glm::vec3(1.0f - middle.x, -middle.y, 0.0f),
+				middle + glm::vec3(1.0f - middle.x, 0.0f, 0.0f),
+				middle
+			},
+			// x plane
+			{
+				middle,
+				middle + glm::vec3(0.0f, 1.0f - middle.y, 0.0f),
+				middle + glm::vec3(0.0f, 1.0f - middle.y, 1.0f - middle.z),
+				middle + glm::vec3(0.0f, 0.0f, 1.0f - middle.z)
+			},
+			{
+				middle + glm::vec3(0.0f, -middle.y, 0.0f),
+				middle,
+				middle + glm::vec3(0.0f, 0.0f, 1.0f - middle.z),
+				middle + glm::vec3(0.0f, -middle.y, 1.0f - middle.z)
+			},
+			{
+				middle + glm::vec3(0.0f, -middle.y, -middle.z),
+				middle + glm::vec3(0.0f, 0.0f, -middle.z),
+				middle,
+				middle + glm::vec3(0.0f, -middle.y, 0.0f)
+			},
+			{
+				middle + glm::vec3(0.0f, 0.0f, -middle.z),
+				middle + glm::vec3(0.0f, 1.0f - middle.y, -middle.z),
+				middle + glm::vec3(0.0f, 1.0f - middle.y, 0.0f),
+				middle
+			},
+			// y plane
+			{
+				middle,
+				middle + glm::vec3(1.0f - middle.x, 0.0f, 0.0f),
+				middle + glm::vec3(1.0f - middle.x, 0.0f, 1.0f - middle.z),
+				middle + glm::vec3(0.0f, 0.0f, 1.0f - middle.z)
+			},
+			{
+				middle + glm::vec3(-middle.x, 0.0f, 0.0f),
+				middle,
+				middle + glm::vec3(0.0f, 0.0f, 1.0f - middle.z),
+				middle + glm::vec3(-middle.x, 0.0f, 1.0f - middle.z)
+			},
+			{
+				middle + glm::vec3(-middle.x, 0.0f, -middle.z),
+				middle + glm::vec3(0.0f, 0.0f, -middle.z),
+				middle,
+				middle + glm::vec3(-middle.x, 0.0f, 0.0f)
+			},
+			{
+				middle + glm::vec3(0.0f, 0.0f, -middle.z),
+				middle + glm::vec3(1.0f - middle.x, 0.0f, -middle.z),
+				middle + glm::vec3(1.0f - middle.x, 0.0f, 0.0f),
+				middle
+			},
+		};
+
+		std::map<float, int> sorted;
+		for (int i = 0; i < 12; i++)
+		{
+			float distance = glm::length(cam.GetEye() - planes[i].center());
+			sorted[distance] = i;
+		}
+
+		for (std::map<float, int>::reverse_iterator it = sorted.rbegin(); it != sorted.rend(); ++it)
+		{
+			Corners& c = planes[it->second];
+
+			df::Backbuffer << *planeShaderProgram() 
+				<< "MVP" << cam.GetViewProj()
+				<< "p1" << c.p1
+				<< "p2" << c.p2
+				<< "p3" << c.p3
+				<< "p4" << c.p4
+				<< "color" << glm::vec4(0.3f);
+			*planeShaderProgram() << df::NoVao(GL_TRIANGLES, 6, 0);
+		}
+
+		glEnable(GL_CULL_FACE);
 	}
 
 private:
-	std::shared_ptr<SaveableOctree> saveableOctree;
+	static inline std::shared_ptr<SaveableOctree> previouslyDrawnHeatmap;
 
-	std::unique_ptr<eltecg::ogl::ShaderStorageBuffer> sdfSSBO;
-	df::ComputeProgramEditor* differenceCalculateProgram;
+	static inline Lazy<eltecg::ogl::ShaderStorageBuffer> sdfSSBO = Lazy< eltecg::ogl::ShaderStorageBuffer>([]() 
+	{
+		auto sdfSSBO = eltecg::ogl::ShaderStorageBuffer();
+		std::vector<float> sdfValues(ERROR_HEATMAP_SIZE * ERROR_HEATMAP_SIZE * ERROR_HEATMAP_SIZE, 0.0f);
 
-	df::Texture2D<glm::vec4> sdfValuesXSlice, sdfValuesYSlice, sdfValuesZSlice;
-	df::Texture2D<glm::vec4> sdfErrorXSlice, sdfErrorYSlice, sdfErrorZSlice;
+		sdfSSBO.constructMutable(sdfValues, GL_DYNAMIC_READ);
 
-	bool renderDiff = false;
-	float diffMultiplier = 1.0f;
+		return sdfSSBO;
+	});
+
+
+	inline static std::unique_ptr<df::ComputeProgramEditor> _differenceCalculateProgram;
+	static std::unique_ptr<df::ComputeProgramEditor>& differenceCalculateProgram()
+	{
+		if (_differenceCalculateProgram == nullptr)
+		{
+			_differenceCalculateProgram = std::make_unique<df::ComputeProgramEditor>("HeatmapDiffProgram");
+
+			*_differenceCalculateProgram
+				<< "Shaders/defines.glsl"_comp
+				<< "Shaders/uniforms.glsl"_comp
+				<< "Shaders/Math/common.glsl"_comp
+				<< "Shaders/common.glsl"_comp
+				<< "Shaders/Octree/octree.glsl"_comp
+				<< "Shaders/SDF/sdfOctree.glsl"_comp
+				<< "Shaders/Evaluate/sdfDifference.comp"_comp
+				<< df::LinkProgram;
+		}
+
+		return _differenceCalculateProgram;
+	}
+
+	inline static std::unique_ptr<df::ShaderProgramEditorVF> _planeShaderProgram;
+	static std::unique_ptr<df::ShaderProgramEditorVF>& planeShaderProgram()
+	{
+		if (_planeShaderProgram == nullptr)
+		{
+			_planeShaderProgram = std::make_unique<df::ShaderProgramEditorVF>("HeatmapPlane");
+
+			*_planeShaderProgram
+				<< "Shaders/Primitives/plane.vert"_vs
+				<< "Shaders/Primitives/plane.frag"_fs
+				<< df::LinkProgram;
+		}
+
+		return _planeShaderProgram;
+	}
+	
+
+	inline static Lazy<df::Texture2D<glm::vec4>>
+		sdfValuesXSlice = Lazy<df::Texture2D<glm::vec4>>([]() { return df::Texture2D<glm::vec4>(ERROR_HEATMAP_SIZE, ERROR_HEATMAP_SIZE); }),
+		sdfValuesYSlice = Lazy<df::Texture2D<glm::vec4>>([]() { return df::Texture2D<glm::vec4>(ERROR_HEATMAP_SIZE, ERROR_HEATMAP_SIZE); }),
+		sdfValuesZSlice = Lazy<df::Texture2D<glm::vec4>>([]() { return df::Texture2D<glm::vec4>(ERROR_HEATMAP_SIZE, ERROR_HEATMAP_SIZE); });
+
+	inline static Lazy<df::Texture2D<glm::vec4>> 
+		sdfErrorXSlice = Lazy<df::Texture2D<glm::vec4>>( []() { return df::Texture2D<glm::vec4>(ERROR_HEATMAP_SIZE, ERROR_HEATMAP_SIZE); } ),
+		sdfErrorYSlice = Lazy<df::Texture2D<glm::vec4>>( []() { return df::Texture2D<glm::vec4>(ERROR_HEATMAP_SIZE, ERROR_HEATMAP_SIZE); } ),
+		sdfErrorZSlice = Lazy<df::Texture2D<glm::vec4>>( []() { return df::Texture2D<glm::vec4>(ERROR_HEATMAP_SIZE, ERROR_HEATMAP_SIZE); } );
+
+	inline static bool renderDiff = false;
+	inline static float diffMultiplier = 1.0f;
 };
 
 #endif

@@ -44,6 +44,9 @@
     <Filter Include="Shaders\Evaluate">
       <UniqueIdentifier>{287b4e09-7470-4eb5-ab59-054ce40fda32}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Shaders\Primitives">
+      <UniqueIdentifier>{54faa33e-7907-42d6-b9ef-454c9ab40934}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
@@ -144,6 +147,9 @@
       <Filter>SDF</Filter>
     </ClInclude>
     <ClInclude Include="constants.h" />
+    <ClInclude Include="Utils\Lazy.hpp">
+      <Filter>Utils</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="Shaders\main_cube.glsl">
@@ -367,6 +373,12 @@
     </None>
     <None Include="Shaders\Evaluate\sdfDifference.comp">
       <Filter>Shaders\Evaluate</Filter>
+    </None>
+    <None Include="Shaders\Primitives\plane.vert">
+      <Filter>Shaders\Primitives</Filter>
+    </None>
+    <None Include="Shaders\Primitives\plane.frag">
+      <Filter>Shaders\Primitives</Filter>
     </None>
   </ItemGroup>
 </Project>

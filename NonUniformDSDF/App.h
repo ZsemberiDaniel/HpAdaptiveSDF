@@ -63,8 +63,7 @@ private:
 	void CompileShaders();
 
 	void CalculateOctreeSendToGPU();
-
-	std::shared_ptr<SDFHeatmapVisualizer> heatmapVisualizer;
+	
 	std::shared_ptr<SaveableOctree> currOctree;
 
 	
@@ -81,6 +80,8 @@ private:
 		PolynomialBase activeApproxType() { return approxTypes[activeApproxTypeIndex]; }
 
 		df::Camera cam;
+		bool enableHeatmapShaderEditor = false;
+		bool enableSDFShadersEditor = false;
 		bool printOctree = false;
 		bool enableGUI = true;
 		bool showNormals = false;

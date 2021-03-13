@@ -18,6 +18,9 @@ App::App(df::Sample& s) : sam(s), noVao(GL_TRIANGLES, 3)
 	glClearColor(0.125f, 0.25f, 0.5f, 1.0f);
 	glEnable(GL_CULL_FACE);
 	glEnable(GL_DEPTH_TEST);
+
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	
 	CalculateOctreeSendToGPU();
 	CompileShaders();
@@ -32,7 +35,6 @@ void App::CalculateOctreeSendToGPU()
 {
 	std::cout << state.activeApproxTypeIndex << std::endl;
 	currOctree = std::make_shared<SaveableOctree>(state.activeSDFIndex, state.activeApproxTypeIndex, state.constructionParams);
-	heatmapVisualizer = std::make_shared<SDFHeatmapVisualizer>(currOctree);
 
 	if (state.printOctree) PrintCurrentOctree();
 }
@@ -144,12 +146,22 @@ void App::Render()
 	*prog << df::NoVao(GL_TRIANGLE_STRIP, 14, 9);
 
 	GL_CHECK;
+
 }
 
 void App::RenderGUI()
 {
 	if (!state.enableGUI) return;
-	sdfProgram->Render();
+
+	if (state.enableSDFShadersEditor)
+	{
+		sdfProgram->Render();
+	}
+
+	if (state.enableHeatmapShaderEditor)
+	{
+		SDFHeatmapVisualizer::renderShaderEditor();
+	}
 
 	ImGui::SetNextWindowSize({ 600,400 }, ImGuiCond_FirstUseEver);
 	if (ImGui::Begin("Program settings"))
@@ -170,13 +182,16 @@ void App::RenderGUI()
 		}
 		ImGui::Dummy(ImVec2(0.0f, 20.0f));
 
+		// ### Heatmaps
+		if (ImGui::CollapsingHeader("Heatmaps"))
+		{
+			SDFHeatmapVisualizer::renderToGUI(errorHeatmapSlice.x, errorHeatmapSlice.y, errorHeatmapSlice.z, currOctree, state.cam);
+			ImGui::DragInt3("Error heatmap slice", &errorHeatmapSlice.x, 0.5f, 0, ERROR_HEATMAP_SIZE - 1);
+		}
+
 		// ### Debug settings
 		if (ImGui::CollapsingHeader("Debug settings"))
 		{
-			// SetOctreeUniforms(*state.activeSDF()->heatmapsProgram());
-			heatmapVisualizer->renderToGUI(errorHeatmapSlice.x, errorHeatmapSlice.y, errorHeatmapSlice.z);
-			ImGui::DragInt3("Error heatmap slice", &errorHeatmapSlice.x, 0.5f, 0, ERROR_HEATMAP_SIZE - 1);
-
 			// Drawing octree attributes
 			ImGui::Checkbox("Draw octree grid", &state.drawOctreeGrid);
 			if (state.drawOctreeGrid)
@@ -214,6 +229,14 @@ void App::RenderGUI()
 			ImGui::DragInt("Max level", &state.constructionParams.maxLevel, 0.3f, 2, 10);
 			ImGui::DragFloat("Error threshold", &state.constructionParams.errorThreshold, 0.000005f, 0.0000001f, 1.0f, "%.7f");
 		}
+
+		// ### Shader editors
+		if (ImGui::CollapsingHeader("Shader editors"))
+		{
+			ImGui::Checkbox("SDF octree shader", &state.enableSDFShadersEditor);
+			ImGui::Checkbox("SDF heatmap shader", &state.enableHeatmapShaderEditor);
+		}
+
 		ImGui::Dummy(ImVec2(0.0f, 20.0f));
 
 
