@@ -64,9 +64,17 @@ private:
 
 	void CalculateOctreeSendToGPU();
 	
+	std::vector<std::shared_ptr<SaveableOctree>> octreeHistory;
 	std::shared_ptr<SaveableOctree> currOctree;
+	void currOctreeSetFromHistory(int historyIndex)
+	{
+		if (historyIndex < 0 || historyIndex >= octreeHistory.size()) return;
+
+		octreeHistory[historyIndex].swap(currOctree);
+	}
 	void currOctreeSet(std::shared_ptr<SaveableOctree> newCurrOctree)
 	{
+		if (currOctree != nullptr) octreeHistory.push_back(currOctree);
 		currOctree.swap(newCurrOctree);
 	}
 
@@ -108,7 +116,10 @@ private:
 			glm::vec3 gCookRoughness = glm::vec3(31, 31, 31) / 255.f;
 			glm::vec3 gCookIOR = glm::vec3(2.0f, 2.0f, 2.0f);
 
-			float stepEpsilon = 0.002f;
+			float epsilonToSurface = 0.002f;
+			float smallestStep = 10e-7f;
+			float biggestStep = 100.0f;
+			float stepMultiplier = 1.0f;
 			int maxStep = 40;
 			bool refineRoot = false;
 		} settings;

@@ -16,6 +16,9 @@ uniform int maxStep = 100;
 
 uniform float time;
 uniform float epsilon = 0.002f;
+uniform float smallestStep;
+uniform float biggestStep;
+uniform float stepMultiplier;
 
 //!#include "common.glsl"
 //?#include "Math/box_ray_intersection.glsl"
@@ -147,7 +150,7 @@ TraceResult basicSphereTrace(in RayCone cone, SphereTraceDesc params)
 		ret.T += dd;
 		prevSign = dd;
 		dd = sdfInside(cone.ray.Origin + ret.T * cone.ray.Direction);
-		// dd = max(0.0f, (dd - 0.05f) / 25.0f);
+		dd = clamp(stepMultiplier * dd, smallestStep, biggestStep);
 		debugDist = dd.xxx;
 	}
 

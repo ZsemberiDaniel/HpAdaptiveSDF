@@ -3,6 +3,7 @@
 #include <vector>
 #include <iostream>
 #include <fstream>
+#include <sstream>
 
 #include <Dragonfly/detail/buffer.h>
 #include "octree.h"
@@ -17,6 +18,7 @@ class SaveableOctree
 private:
 	SaveableOctree() { }
 
+	std::string name;
 	std::unique_ptr<Octree<Cell>> octree = nullptr;
 
 	std::unique_ptr<eltecg::ogl::ShaderStorageBuffer> branchSSBO;
@@ -145,6 +147,13 @@ private:
 
 		leavesSSBO = std::make_unique<eltecg::ogl::ShaderStorageBuffer>();
 		leavesSSBO->constructImmutable(fileData.leavesGPU, eltecg::ogl::BufferFlags::MAP_READ_BIT);
+
+		std::stringstream ss;
+		ss << sdfFunction()->name() << approxType().shortUniqueName << "D" << getConstructionParams().maxDegree << "L" << getConstructionParams().maxLevel;
+		if (getConstructionParams().useHAdapt && !getConstructionParams().usePAdapt) ss << "H";
+		if (getConstructionParams().usePAdapt && !getConstructionParams().useHAdapt) ss << "P";
+
+		name = ss.str();
 	}
 
 public:
@@ -233,6 +242,8 @@ public:
 	int branchCount() { return fileData.dat.branchCount; }
 	int sdfIndex() { return fileData.dat.sdfIndex; }
 	int approxTypeIndex() { return fileData.dat.approxTypeIndex; }
+
+	const std::string& getName() { return name; }
 };
 
 

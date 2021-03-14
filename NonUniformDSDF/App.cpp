@@ -34,7 +34,7 @@ App::App(df::Sample& s) : sam(s), noVao(GL_TRIANGLES, 3)
 void App::CalculateOctreeSendToGPU()
 {
 	std::cout << state.activeApproxTypeIndex << std::endl;
-	currOctree = std::make_shared<SaveableOctree>(state.activeSDFIndex, state.activeApproxTypeIndex, state.constructionParams);
+	currOctreeSet(std::make_shared<SaveableOctree>(state.activeSDFIndex, state.activeApproxTypeIndex, state.constructionParams));
 
 	if (state.printOctree) PrintCurrentOctree();
 }
@@ -130,7 +130,10 @@ void App::Render()
 		<< "gNormEps" << glm::vec3(0.01f)
 		<< "maxStep" << settings.maxStep
 		<< "refineRoot" << (state.settings.refineRoot ? 1 : 0)
-		<< "epsilon" << state.settings.stepEpsilon;
+		<< "epsilon" << state.settings.epsilonToSurface
+		<< "smallestStep" << state.settings.smallestStep
+		<< "biggestStep" << state.settings.biggestStep
+		<< "stepMultiplier" << state.settings.stepMultiplier;
 
 
 	GL_CHECK;
@@ -209,6 +212,25 @@ void App::RenderGUI()
 			SceneLightToCamera();
 		}
 
+		if (ImGui::ListBoxHeader("SDF History"))
+		{
+			static int selectedOctreeHistory = 0;
+			int i = 0;
+			for (auto it = octreeHistory.begin(); it < octreeHistory.end(); it++, i++)
+			{
+				if (ImGui::Selectable((*it)->getName().c_str(), i == selectedOctreeHistory))
+				{
+					selectedOctreeHistory = i;
+				}
+			}
+			ImGui::ListBoxFooter();
+			if (ImGui::Button("Load selected", ImVec2(450, 20)))
+			{
+				currOctreeSetFromHistory(selectedOctreeHistory);
+			}
+		}
+		
+
 		ImGui::Dummy(ImVec2(0.0f, 20.0f));
 
 		// ### Heatmaps
@@ -267,7 +289,10 @@ void App::RenderGUI()
 		{
 			ImGui::Checkbox("Refine root", &state.settings.refineRoot);
 			ImGui::InputInt("Max step", &state.settings.maxStep);
-			ImGui::InputFloat("Epsilon to surface", &state.settings.stepEpsilon, 0, 0, "%.7f");
+			ImGui::InputFloat("Epsilon to surface", &state.settings.epsilonToSurface, 0, 0, "%.7f");
+			ImGui::InputFloat("Smallest allowed step", &state.settings.smallestStep, 0, 0, "%.7f");
+			ImGui::InputFloat("Biggest allowed step", &state.settings.biggestStep, 0, 0, "%.5f");
+			ImGui::InputFloat("Step multiplier", &state.settings.stepMultiplier, 0, 0, "%.5f");
 		}
 
 		// Construction settings
@@ -275,7 +300,23 @@ void App::RenderGUI()
 		{
 			ImGui::DragInt("Max degree", &state.constructionParams.maxDegree, 0.3f, 2, 10);
 			ImGui::DragInt("Max level", &state.constructionParams.maxLevel, 0.3f, 2, 10);
-			ImGui::DragFloat("Error threshold", &state.constructionParams.errorThreshold, 0.000005f, 0.0000001f, 1.0f, "%.7f");
+			ImGui::DragFloat("Error threshold", &state.constructionParams.errorThreshold, 0.000005f, 0.0000001f, 1.0f, "%.9f");
+
+			// make sure that at least one of the adapts is set to true
+			if (ImGui::Checkbox("Use h-adapt", &state.constructionParams.useHAdapt))
+			{
+				if (!state.constructionParams.useHAdapt && !state.constructionParams.usePAdapt)
+				{
+					state.constructionParams.usePAdapt = true;
+				}
+			}
+			if (ImGui::Checkbox("Use p-adapt", &state.constructionParams.usePAdapt))
+			{
+				if (!state.constructionParams.useHAdapt && !state.constructionParams.usePAdapt)
+				{
+					state.constructionParams.useHAdapt = true;
+				}
+			}
 		}
 
 		// ### Shader editors

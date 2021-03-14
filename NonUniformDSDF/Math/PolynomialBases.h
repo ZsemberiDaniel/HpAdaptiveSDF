@@ -13,6 +13,7 @@ struct PolynomialBase
 {
 	int id;
 	std::string name;
+	std::string shortUniqueName;
 	std::string shaderEvalFunctionName;
 	std::function<void(std::unique_ptr<Octree<Cell>>&, OctreeGenerator::ConstructionParameters&, SDFBase*)> cpuConstruction;
 };
@@ -22,6 +23,7 @@ inline PolynomialBase approxTypes[2] = {
 	PolynomialBase {
 		0,
 		"Gauss Quadrature - normalized Legendre",
+		"Gauss",
 		"evalPolynom_normLagrange",
 		 [](std::unique_ptr<Octree<Cell>>& octree, OctreeGenerator::ConstructionParameters& constr, SDFBase* sdfFunc)
 		 {
@@ -39,6 +41,7 @@ inline PolynomialBase approxTypes[2] = {
 	PolynomialBase {
 		1,
 		"LSQ - Legendre",
+		"LSQ",
 		"evalPolynom_lagrange",
 		 [](std::unique_ptr<Octree<Cell>>& octree, OctreeGenerator::ConstructionParameters& constr, SDFBase* sdfFunc)
 		 {

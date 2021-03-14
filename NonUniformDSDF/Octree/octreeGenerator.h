@@ -18,6 +18,8 @@ public:
 		int maxDegree = 3;
 		int maxLevel = 2;
 		float errorThreshold = 0.005f;
+		bool useHAdapt = true;
+		bool usePAdapt = true;
 	};
 
 	template<typename generator, typename sdf>
@@ -27,6 +29,13 @@ public:
 template<typename generator, typename sdf>
 void OctreeGenerator::constructField(std::unique_ptr<Octree<Cell>>& octree, generator& polynomialGenerator, const ConstructionParameters& params, sdf& sdfFunction)
 {
+	if (!params.useHAdapt && !params.usePAdapt)
+	{
+		octree = nullptr;
+		std::cout << "Cannot construct octree without either h and p adapt! (Both set to false in constructPatams)" << std::endl;
+		return;
+	}
+
 	float gridCellSize = params.sizeInWorld / INITIAL_CELL_COUNT;
 
 	auto queueCellCompare = [](const Cell& c1, const Cell& c2) -> bool
@@ -103,7 +112,7 @@ void OctreeGenerator::constructField(std::unique_ptr<Octree<Cell>>& octree, gene
 
 		// p-improvement
 		// estimate error when using a polynom that is a degree higher
-		{
+		if (params.usePAdapt) {
 			pImprovementPoly = polynomialGenerator.fitPolynomial<sdf>(currentCell.bbox, currentCell.degree() + 1, sdfFunction);
 			pImprovementError = pImprovementPoly.coefficientBasedError();
 
@@ -114,7 +123,7 @@ void OctreeGenerator::constructField(std::unique_ptr<Octree<Cell>>& octree, gene
 
 		// h-improvement
 		// subdivide cell into 2x2x2
-		{
+		if (params.useHAdapt) {
 			// max error for subdivided cells, needed for eq. (9)
 			float maxError = -std::numeric_limits<float>::max();
 			// how big a subdivided cube's side is
@@ -149,8 +158,23 @@ void OctreeGenerator::constructField(std::unique_ptr<Octree<Cell>>& octree, gene
 			hImprovement = 1.0f / 7.0f / Polynomial::calculateCoeffCount(currentCell.degree()) * (currentCell.error - 8 * maxError);
 		}
 
-		bool refineP = currentCell.degree() < params.maxDegree && (currentCell.level() == params.maxLevel || pImprovement > hImprovement);
-		bool refineH = currentCell.level() < params.maxLevel && !refineP;
+		// both false not possible (checked at beginning of function)
+		bool refineP, refineH;
+		if (params.useHAdapt && !params.usePAdapt)
+		{
+			refineH = true;
+			refineP = false;
+		}
+		else if (params.usePAdapt && !params.useHAdapt)
+		{
+			refineP = true;
+			refineH = false;
+		}
+		else
+		{
+			refineP = currentCell.degree() < params.maxDegree && (currentCell.level() == params.maxLevel || pImprovement > hImprovement);
+			refineH = currentCell.level() < params.maxLevel && !refineP;
+		}
 
 		// deciding in favor of p-improvement
 		if (refineP/*pImprovement >= hImprovement*/)
