@@ -6,6 +6,7 @@
 #include "octree.h"
 
 #include "../Math/Polynomial.h"
+#include "../constants.h"
 
 class OctreeGenerator
 {
@@ -26,26 +27,25 @@ public:
 template<typename generator, typename sdf>
 void OctreeGenerator::constructField(std::unique_ptr<Octree<Cell>>& octree, generator& polynomialGenerator, const ConstructionParameters& params, sdf& sdfFunction)
 {
-	const int initialCellCount = 2;
-	float gridCellSize = params.sizeInWorld / initialCellCount;
+	float gridCellSize = params.sizeInWorld / INITIAL_CELL_COUNT;
 
 	auto queueCellCompare = [](const Cell& c1, const Cell& c2) -> bool
 	{
 		return c1.error < c2.error;
 	};
 
-	vector3d<Cell> initialCells(initialCellCount);
-	vector3d<std::shared_ptr<Octree<Cell>::Leaf>> generatedCells(initialCellCount);
+	vector3d<Cell> initialCells(INITIAL_CELL_COUNT);
+	vector3d<std::shared_ptr<Octree<Cell>::Leaf>> generatedCells(INITIAL_CELL_COUNT);
 
 	float error = 0.0f;
 	// std::priority_queue< Cell, std::vector<Cell>, decltype(queueCellCompare) > pending(queueCellCompare);
 	std::vector<Cell> pendingVector;
 
-	for (int x = 0; x < initialCellCount; x++)
+	for (int x = 0; x < INITIAL_CELL_COUNT; x++)
 	{
-		for (int y = 0; y < initialCellCount; y++)
+		for (int y = 0; y < INITIAL_CELL_COUNT; y++)
 		{
-			for (int z = 0; z < initialCellCount; z++)
+			for (int z = 0; z < INITIAL_CELL_COUNT; z++)
 			{
 				glm::vec3 cellCoord = params.minPos + gridCellSize * glm::vec3(x, y, z);
 				BoundingBox bbox = BoundingBox{ cellCoord, cellCoord + gridCellSize };
@@ -62,12 +62,12 @@ void OctreeGenerator::constructField(std::unique_ptr<Octree<Cell>>& octree, gene
 			}
 		}
 	}
-	octree = std::make_unique<Octree<Cell>>(initialCellCount, initialCells, generatedCells);
-	for (int x = 0; x < initialCellCount; x++)
+	octree = std::make_unique<Octree<Cell>>(INITIAL_CELL_COUNT, initialCells, generatedCells);
+	for (int x = 0; x < INITIAL_CELL_COUNT; x++)
 	{
-		for (int y = 0; y < initialCellCount; y++)
+		for (int y = 0; y < INITIAL_CELL_COUNT; y++)
 		{
-			for (int z = 0; z < initialCellCount; z++)
+			for (int z = 0; z < INITIAL_CELL_COUNT; z++)
 			{
 				initialCells(x, y, z).octreeLeaf = generatedCells(x, y, z);
 				
@@ -173,7 +173,7 @@ void OctreeGenerator::constructField(std::unique_ptr<Octree<Cell>>& octree, gene
 			error -= currentCell.error;
 
 			vector3d<std::shared_ptr<Octree<Cell>::Leaf>> leaves(2);
-			currentCell.octreeLeaf->subdivide(hImpSubdividedCell, leaves);
+			currentCell.octreeLeaf->subdivide(octree.get(), hImpSubdividedCell, leaves);
 
 			for (int x = 0; x < 2; x++)
 			{

@@ -2,7 +2,7 @@
 
 using namespace df;
 
-const glm::vec3 CUBE_COLORS[8] = {
+const std::vector<glm::vec3> CUBE_COLORS = {
 	glm::vec3(0.92, 0.50, 0.33),
 	glm::vec3(0.02, 0.14, 0.20),
 	glm::vec3(0.80, 0.42, 0.44),
@@ -163,6 +163,34 @@ void App::RenderGUI()
 		SDFHeatmapVisualizer::renderShaderEditor();
 	}
 
+	// MAIN MENU BAR
+	if (ImGui::BeginMainMenuBar())
+	{
+		if (ImGui::BeginMenu("File"))
+		{
+			if (ImGui::Button("Load"))
+			{
+				std::wstring path = FileSelector::OpenLoadDialog();
+				if (!path.empty())
+				{
+					currOctreeSet(SaveableOctree::loadFrom(path));
+				}
+			}
+
+			if (ImGui::Button("Save"))
+			{
+				std::wstring path = FileSelector::OpenSaveDialog();
+				if (!path.empty())
+				{
+					currOctree->saveTo(path);
+				}
+			}
+
+			ImGui::EndMenu();
+		}
+		ImGui::EndMainMenuBar();
+	}
+
 	ImGui::SetNextWindowSize({ 600,400 }, ImGuiCond_FirstUseEver);
 	if (ImGui::Begin("Program settings"))
 	{
@@ -180,6 +208,7 @@ void App::RenderGUI()
 		{
 			SceneLightToCamera();
 		}
+
 		ImGui::Dummy(ImVec2(0.0f, 20.0f));
 
 		// ### Heatmaps
@@ -199,6 +228,25 @@ void App::RenderGUI()
 				ImGui::DragInt("Show level", &state.drawOctreeLevel, 0.1f, -1, state.constructionParams.maxLevel);
 				if (ImGui::IsItemHovered())
 					ImGui::SetTooltip("-1 = all levels. 0 = upper most level. Increasing for lower levels.");
+
+				ImGui::Text("Level colors:");
+				ImVec2 rectSize = ImVec2(15, 15);
+				const ImVec2 p = ImGui::GetCursorScreenPos();
+				ImDrawList* draw_list = ImGui::GetWindowDrawList();
+				int rowCount = 0;
+
+				ImVec2 cursor = p;
+
+				for (int i = 0; i < CUBE_COLORS.size(); i++)
+				{
+					auto c = ImGui::GetColorU32(ImVec4(CUBE_COLORS[i].x, CUBE_COLORS[i].y, CUBE_COLORS[i].z, 1.0f));
+					draw_list->AddRectFilled(cursor, ImVec2(cursor.x + rectSize.x, cursor.y + rectSize.y), c);
+
+					cursor.x += rectSize.x;
+				}
+
+				ImGui::Dummy(ImVec2(rectSize.x * CUBE_COLORS.size(), rectSize.y));
+				ImGui::Dummy(ImVec2(0.0f, 5.0f));
 			}
 
 			if (ImGui::Checkbox("Show surface normals", &state.showNormals))

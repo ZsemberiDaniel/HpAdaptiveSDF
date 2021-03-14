@@ -31,10 +31,5 @@ struct Cell
 	{
 		return poly.getDegree();
 	}
-
-	bool operator< (const Cell& cell) const
-	{
-		return false;
-	}
 };
 #endif

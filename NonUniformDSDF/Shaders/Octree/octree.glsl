@@ -46,6 +46,8 @@ Branch getBranch(in uint branchId)
 
 Leaf getLeaf(in uint leafIndexInArray)
 {
+	// IF THIS IS CHANGED:
+	// the loading a save file part needs to be changed as well
 	Leaf leaf; 
 	Polynom poly;
 	leaf.level =  l_leaves[leafIndexInArray + 0];

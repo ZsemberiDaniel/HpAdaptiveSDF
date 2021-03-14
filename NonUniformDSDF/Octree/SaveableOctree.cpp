@@ -1,17 +1,16 @@
 #include "SaveableOctree.h"
 
-SaveableOctree::SaveableOctree(int sdfIndex, int approxIndex, OctreeGenerator::ConstructionParameters& constructionParams) :
-	sdfIndex(sdfIndex), approxTypeIndex(approxIndex), constructionParams(constructionParams)
+SaveableOctree::SaveableOctree(int sdfIndex_, int approxIndex_, OctreeGenerator::ConstructionParameters& constructionParams_)
 {
-	this->constructionParams.minPos = sdfFunction()->worldMinPos();
-	this->constructionParams.sizeInWorld = sdfFunction()->worldSize();
-	approxType().cpuConstruction(this->octree, this->constructionParams, this->sdfFunction());
+	fileData.dat.sdfIndex = sdfIndex_;
+	fileData.dat.approxTypeIndex = approxIndex_;
+	fileData.dat.constructionParams = constructionParams_;
 
-	octree->packForGPU(branchesGPU, leavesGPU, branchCount, compressCoefficient);
+	fileData.dat.constructionParams.minPos = sdfFunction()->worldMinPos();
+	fileData.dat.constructionParams.sizeInWorld = sdfFunction()->worldSize();
+	approxType().cpuConstruction(this->octree, fileData.dat.constructionParams, this->sdfFunction());
 
-	branchSSBO = std::make_unique<eltecg::ogl::ShaderStorageBuffer>();
-	branchSSBO->constructImmutable(branchesGPU, eltecg::ogl::BufferFlags::MAP_READ_BIT);
+	octree->packForGPU(fileData.branchesGPU, fileData.leavesGPU, fileData.dat.branchCount, fileData.dat.compressCoefficient);
 
-	leavesSSBO = std::make_unique<eltecg::ogl::ShaderStorageBuffer>();
-	leavesSSBO->constructImmutable(leavesGPU, eltecg::ogl::BufferFlags::MAP_READ_BIT);
+	initClassFromFileData();
 }

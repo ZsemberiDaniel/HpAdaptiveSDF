@@ -45,8 +45,10 @@ void Octree<T, P>::Leaf::setValue(const T& v)
     value_ = v;
 }
 
+// Note that after root subdivision, the root in the octree will not change (it will stay as leaf).
+// The function user has to separately assign a new root!
 template< typename T, int P >
-void Octree<T, P>::Leaf::subdivide(vector3d<T>& init, vector3d<std::shared_ptr<Leaf>>& newLeaves)
+void Octree<T, P>::Leaf::subdivide(Octree<T>* octree, vector3d<T>& init, vector3d<std::shared_ptr<Leaf>>& newLeaves)
 {
     std::shared_ptr<Branch> newBranch = std::make_shared<Branch>(this->layer());
 
@@ -70,5 +72,11 @@ void Octree<T, P>::Leaf::subdivide(vector3d<T>& init, vector3d<std::shared_ptr<L
 
     this->parent_ = nullptr;
     this->layer_ = -1;
+
+    // set the new root for the octree
+    if (octree->root().get() == dynamic_cast<Node*>(this))
+    {
+        octree->root() = std::dynamic_pointer_cast<Node>(newBranch);
+    }
 }
 #endif

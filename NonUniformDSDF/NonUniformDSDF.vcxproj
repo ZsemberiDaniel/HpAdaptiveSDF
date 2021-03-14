@@ -278,6 +278,7 @@
     <ClInclude Include="SDF\SDFSphere.h" />
     <ClInclude Include="SDF\SDFTorus.h" />
     <ClInclude Include="Structures.h" />
+    <ClInclude Include="Utils\FileSelector.h" />
     <ClInclude Include="Utils\gpuTimer.h" />
     <ClInclude Include="Utils\Lazy.hpp" />
     <ClInclude Include="Utils\PerformanceTest.h" />

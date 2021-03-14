@@ -13,7 +13,6 @@
  */
 template< typename T, int P >
 Octree<T, P>::Octree(int size, vector3d<T>& init, vector3d<std::shared_ptr<Leaf>>& generatedLeaves)
-    : root_(0)
 {
     // Make sure size is power of two.
     assert(((size - 1) & size) == 0);

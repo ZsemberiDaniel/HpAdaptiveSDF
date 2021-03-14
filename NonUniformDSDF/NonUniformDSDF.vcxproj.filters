@@ -150,6 +150,9 @@
     <ClInclude Include="Utils\Lazy.hpp">
       <Filter>Utils</Filter>
     </ClInclude>
+    <ClInclude Include="Utils\FileSelector.h">
+      <Filter>Utils</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="Shaders\main_cube.glsl">

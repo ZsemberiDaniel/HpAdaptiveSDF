@@ -77,7 +77,7 @@ public:
         const T& value() const;
         T& value();
         void setValue(const T& v);
-        void subdivide(vector3d<T>& init, vector3d<std::shared_ptr<Leaf>>& newLeaves);
+        void subdivide(Octree<T>* octree, vector3d<T>& init, vector3d<std::shared_ptr<Leaf>>& newLeaves);
 
         ~Leaf() final = default;
 
@@ -85,7 +85,12 @@ public:
         T value_;
     };
 
-    Octree() { }
+    /* Generates octree with 1 leaf root.
+    */
+    Octree() 
+    {
+        root_ = std::make_shared<Leaf>(0);
+    }
     Octree(int size, vector3d<T>& init, vector3d<std::shared_ptr<Leaf>>& generatedLeaves);
     ~Octree();
 

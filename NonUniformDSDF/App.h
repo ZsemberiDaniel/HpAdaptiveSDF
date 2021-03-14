@@ -29,7 +29,7 @@
 #include "Octree/SaveableOctree.h"
 #include "SDF/SDFHeatmapVisualizer.h"
 #include "constants.h"
-
+#include "Utils/FileSelector.h"
 
 class App {
 public:
@@ -65,6 +65,10 @@ private:
 	void CalculateOctreeSendToGPU();
 	
 	std::shared_ptr<SaveableOctree> currOctree;
+	void currOctreeSet(std::shared_ptr<SaveableOctree> newCurrOctree)
+	{
+		currOctree.swap(newCurrOctree);
+	}
 
 	
 	void DrawOctree(df::ShaderProgramEditorVF& program, const std::shared_ptr<Octree<Cell>::Node>& currentNode, int level = -1);

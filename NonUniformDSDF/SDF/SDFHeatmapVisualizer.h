@@ -66,7 +66,20 @@ public:
 
 
 		// Displays the SDF value textures
-		ImGui::Text("SDF VALUES");
+		ImGui::Text("EXACT SDF VALUES");
+
+		ImGui::Text("X slice");
+		ImGui::SameLine(heatMapSize);
+		ImGui::Text("Y slice");
+		ImGui::SameLine(2 * heatMapSize);
+		ImGui::Text("Z slice");
+
+		ImGui::Image((void*)(intptr_t)(GLuint)sdfValuesXSlice.force(), ImVec2(heatMapSize, heatMapSize));
+		ImGui::SameLine(heatMapSize);
+		ImGui::Image((void*)(intptr_t)(GLuint)sdfValuesYSlice.force(), ImVec2(heatMapSize, heatMapSize));
+		ImGui::SameLine(2 * heatMapSize);
+		ImGui::Image((void*)(intptr_t)(GLuint)sdfValuesZSlice.force(), ImVec2(heatMapSize, heatMapSize));
+
 		ImGui::Text(std::to_string(saveableOctree->sdfFunction()->discreteMaxSDFValue()).c_str());
 		ImGui::SameLine();
 		{
@@ -92,19 +105,6 @@ public:
 		}
 		ImGui::SameLine();
 		ImGui::Text(std::to_string(-saveableOctree->sdfFunction()->discreteMaxSDFValue()).c_str());
-
-		ImGui::Text("X slice");
-		ImGui::SameLine(heatMapSize);
-		ImGui::Text("Y slice");
-		ImGui::SameLine(2 * heatMapSize);
-		ImGui::Text("Z slice");
-
-		ImGui::Image((void*)(intptr_t)(GLuint)sdfValuesXSlice.force(), ImVec2(heatMapSize, heatMapSize));
-		ImGui::SameLine(heatMapSize);
-		ImGui::Image((void*)(intptr_t)(GLuint)sdfValuesYSlice.force(), ImVec2(heatMapSize, heatMapSize));
-		ImGui::SameLine(2 * heatMapSize);
-		ImGui::Image((void*)(intptr_t)(GLuint)sdfValuesZSlice.force(), ImVec2(heatMapSize, heatMapSize));
-
 
 		// RENDER PLANES
 		glDisable(GL_CULL_FACE);
