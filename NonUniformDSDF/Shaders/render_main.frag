@@ -13,7 +13,8 @@ void main()
 	recalc_t_min = true;
 #endif
 	vec3 col;
-	if(!cube_main(worldPos, true, recalc_t_min, col, gl_FragDepth))
+	if(!cube_main(worldPos, true, true, col, gl_FragDepth))
 		discard;
 	fs_out_col = vec4(col, 1);
 }
+

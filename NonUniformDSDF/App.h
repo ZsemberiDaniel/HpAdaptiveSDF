@@ -5,7 +5,7 @@
 #include <Dragonfly/detail/vao.h>	 //will be replaced
 #include <queue>
 #include <fstream>
-
+#include <iomanip>
 
 #include <Dragonfly/editor.h>		 //inlcludes most features
 #include <Dragonfly/detail/buffer.h> //will be replaced
@@ -30,6 +30,8 @@
 #include "SDF/SDFHeatmapVisualizer.h"
 #include "constants.h"
 #include "Utils/FileSelector.h"
+
+// #define USE_0th_ORDER
 
 class App {
 public:
@@ -64,18 +66,38 @@ private:
 
 	void CalculateOctreeSendToGPU();
 	
+#ifdef USE_0th_ORDER
+	int sdf0thOrderResolution = 128;
+	std::unique_ptr<df::Texture3D<float>> sdf0thOrderCurrOctree;
+	df::ShaderProgramEditorVF* sdf0thOrderProgram = nullptr;
+	bool show0thOrder = false;
+	bool show0thOrderShaderEditor = false;
+#endif
+	
 	std::vector<std::shared_ptr<SaveableOctree>> octreeHistory;
 	std::shared_ptr<SaveableOctree> currOctree;
+	
 	void currOctreeSetFromHistory(int historyIndex)
 	{
 		if (historyIndex < 0 || historyIndex >= octreeHistory.size()) return;
 
 		octreeHistory[historyIndex].swap(currOctree);
+#ifdef USE_0th_ORDER
+		sdf0thOrderCurrOctree = currOctree->calculateSdf0thOrderTexture(sdf0thOrderResolution);
+#endif
+		
+		CompileShaders();
 	}
 	void currOctreeSet(std::shared_ptr<SaveableOctree> newCurrOctree)
 	{
 		if (currOctree != nullptr) octreeHistory.push_back(currOctree);
+		
 		currOctree.swap(newCurrOctree);
+#ifdef USE_0th_ORDER
+		sdf0thOrderCurrOctree = currOctree->calculateSdf0thOrderTexture(sdf0thOrderResolution);
+#endif
+		
+		CompileShaders();
 	}
 
 	

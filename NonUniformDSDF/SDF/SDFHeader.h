@@ -8,12 +8,14 @@
 #include "SDFPlane.h"
 #include "SDFModel1.h"
 #include "SDFCube.h"
+#include "SDFModel3.h"
 
 inline std::vector<SDFBase*> sdfs = {
 	new SDFTorus(),
 	new SDFSphere(),
 	new SDFPlane(),
 	new SDFModel1(),
-	new SDFCube()
+	new SDFCube(),
+	new SDFModel3()
 };
 #endif

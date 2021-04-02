@@ -29,13 +29,12 @@ TraceResult basicSphereTrace(RayCone cone, SphereTraceDesc params);
 uniform float octreeSize;
 float sdfInside(vec3 p)
 {
-	vec3 texCoord = p / sdfTexSize;
+	vec3 texCoord = (p - sdfTexCorner) / sdfTexSize;
 	return getSample(texCoord);
 }
 
 // TODO: delete these
 vec3 debug1(vec3 p);
-
 vec3 debugDist = vec3(1,0,0);
 
 // returns false if the fragment should be discarded (the cube was not hit by the ray)
@@ -59,10 +58,14 @@ bool cube_main(vec3 in_vec, bool pos_or_dir, bool calc_t_min, out vec3 out_col, 
 
 	// construct box in which the sdf is
 	float temp_t = 0.0f;
-	Box box = Box(modelTrans + 0.5 * modelScale, 0.5 * modelScale);
+	// Box box = Box(modelTrans + 0.5 * modelScale, 0.5 * modelScale);
+	Box box = Box(sdfTexCorner + 0.5 * sdfTexSize, 0.5 * sdfTexSize);
 	Ray ray = Ray(cone.ray.Origin, cone.ray.Direction);
-	if(!intersectBox(box, ray, false, temp_t))
+
+	if (!intersectBox(box, ray, false, temp_t))
+	{
 		return false;
+	}
 
 	// intersectBox returned the maximum possible t inside box
 	cone.ray.Tmax = temp_t;
@@ -74,14 +77,11 @@ bool cube_main(vec3 in_vec, bool pos_or_dir, bool calc_t_min, out vec3 out_col, 
 	}
 	if(cone.ray.Tmax <= cone.ray.Tmin)
 		return false;
+
 	
 	// DEBUG START
-//	cone.ray.Origin -= sTranslation + sdfTexCorner;
-//	cone.ray.Origin /= sScale;
-//	cone.ray.Tmin /= sScale;
-//	cone.ray.Tmax /= sScale;
 //	vec3 p_temp = cone.ray.Origin + (cone.ray.Tmin + 0.001f) * cone.ray.Direction;
-//	vec3 deg1 = debug1(p_temp / sdfTexSize);
+//	vec3 deg1 = debug1((p_temp - sdfTexCorner) / sdfTexSize);
 //	out_col = deg1;
 //	return true;
 	// DEBUG END
@@ -127,16 +127,18 @@ bool cube_main(vec3 in_vec, bool pos_or_dir, bool calc_t_min, out vec3 out_col, 
 	vec4 depth_vec = viewProj * vec4(tret.T*cone.ray.Direction + cone.ray.Origin, 1);
 	out_depth = ((depth_vec.z / depth_vec.w) + 1.0) * 0.5;
 
+	// out_col = vec3(sdfInside(cone.ray.Origin), 0, 0);
+
 	return true;
 }
 
 TraceResult basicSphereTrace(in RayCone cone, SphereTraceDesc params)
 {
 	// trace in local model coordinates
-	cone.ray.Origin -= sTranslation + sdfTexCorner;
-	cone.ray.Origin /= sScale;
-	cone.ray.Tmin /= sScale;
-	cone.ray.Tmax /= sScale;
+//	cone.ray.Origin -= sTranslation + sdfTexCorner;
+//	cone.ray.Origin /= sScale;
+//	cone.ray.Tmin /= sScale;
+//	cone.ray.Tmax /= sScale;
 
 	TraceResult ret = TraceResult(cone.ray.Tmin, 0);
 
@@ -189,8 +191,7 @@ TraceResult basicSphereTrace(in RayCone cone, SphereTraceDesc params)
 			  | (int(i >= params.maxiters) << 2);
 
 	// restore global coordinates
-	ret.T *= sScale;
+	// ret.T *= sScale;
 	return ret;
 
 }
-

@@ -1,11 +1,11 @@
-//?#version 460
+//?#version 450
 //?#include "../common.glsl"
 
-uniform sampler3D texTex;
+layout(binding=0) uniform sampler3D sdf0thOrderTex;
 
 // x: texture coordinates
 float getSample(vec3 x)
 {
-	float a = texture(texTex, x).x;
+	float a = texture(sdf0thOrderTex, x).x;
 	return a;
 }

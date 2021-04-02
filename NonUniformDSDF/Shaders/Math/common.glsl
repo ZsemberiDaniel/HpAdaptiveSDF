@@ -22,7 +22,7 @@ float legendref(int deg, float p)
 struct Polynom {
 	uint degree;
 	uint coeffCount;
-	float coeffs[MAX_COEFF_SIZE];
+	float coeffs[150];
 };
 
 float evalPolynom_normLagrange(in Polynom poly, vec3 p, vec3 bboxSize)

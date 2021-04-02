@@ -11,7 +11,8 @@
 class Polynomial
 {
 public:
-	float operator()(glm::vec3 p);
+	enum Type { LEGENDRE, LEGENDRE_NORMALIZED, MONOMIAL };
+	float operator()(glm::vec3 p, Type type = Type::LEGENDRE, glm::vec3 bboxSize = glm::vec3(1)) const;
 	
 	// TODO: remove () operator
 	float& operator()(int i);
@@ -42,6 +43,7 @@ public:
 	}
 	
 private:
+	
 	// To see how they are ordered in this array check out the evaluation operator()
 	std::vector<float> coeffs;
 	int degree;

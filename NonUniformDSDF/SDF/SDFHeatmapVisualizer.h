@@ -53,10 +53,41 @@ public:
 		glDispatchCompute(heatMapSize, heatMapSize, 1);
 		glMemoryBarrier(GL_TEXTURE_FETCH_BARRIER_BIT);
 
-		GL_CHECK;
-
+		// TODO: move inside if
 		ImGui::Checkbox("Render diff", &renderDiff);
-		if (renderDiff) ImGui::InputFloat("Diff multiplier", &diffMultiplier);
+		std::vector<float> dataX(heatMapSize * heatMapSize * 4);
+		std::vector<float> dataY(heatMapSize * heatMapSize * 4);
+		std::vector<float> dataZ(heatMapSize * heatMapSize * 4);
+		glGetTextureImage((GLuint)sdfErrorXSlice.force(), 0, GL_RGBA, GL_FLOAT, sizeof(float) * dataX.size(), &dataX[0]);
+		glGetTextureImage((GLuint)sdfErrorYSlice.force(), 0, GL_RGBA, GL_FLOAT, sizeof(float) * dataY.size(), &dataY[0]);
+		glGetTextureImage((GLuint)sdfErrorZSlice.force(), 0, GL_RGBA, GL_FLOAT, sizeof(float) * dataZ.size(), &dataZ[0]);
+		GL_CHECK;
+		if (renderDiff) 
+		{
+			float max_error = -std::numeric_limits<float>::max();
+			float min_error = std::numeric_limits<float>::max();
+			for (int i = 0; i < heatMapSize * heatMapSize; i++)
+			{
+				if (dataX[4 * i + 0] > max_error) max_error = dataX[4 * i + 0];
+				if (-dataX[4 * i + 2] > max_error) max_error = -dataX[4 * i + 2];
+
+				if (dataX[4 * i + 0] < min_error) min_error = dataX[4 * i + 0];
+				if (-dataX[4 * i + 2] < min_error) min_error = -dataX[4 * i + 2];
+			}
+
+			std::stringstream ss;
+			ss << "Non-multiplied min error: " << (min_error / diffMultiplier) << "\nNon-multiplied max error: " << (max_error / diffMultiplier)
+				<< "\n (Both only on these 3 slices)";
+
+			ImGui::Text(ss.str().c_str());
+
+			ImGui::InputFloat("Diff multiplier", &diffMultiplier); 
+			ImGui::Text("Errors below are not standardized to SDF gradient.\nRed: approximation is bigger.\nBlue: exact value is bigger.");
+		}
+		else
+		{
+			ImGui::Text("The same gradient below can be applied for the approximation.");
+		}
 
 		ImGui::Image((void*)(intptr_t)(GLuint)sdfErrorXSlice.force(), ImVec2(heatMapSize, heatMapSize));
 		ImGui::SameLine(heatMapSize);

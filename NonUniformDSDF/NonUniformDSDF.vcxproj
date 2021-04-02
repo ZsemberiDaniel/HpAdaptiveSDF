@@ -158,10 +158,12 @@
       <ConformanceMode>true</ConformanceMode>
       <PreprocessorDefinitions>_AMD64_;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <LanguageStandard>stdcpp17</LanguageStandard>
+      <AdditionalIncludeDirectories>C:\Program Files\MATLAB\R2020b\extern\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>Framework.lib;SDL2.lib;SDL2main.lib;glew32.lib;opengl32.lib;SDL2_image.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>libMatlabEngine.lib;libMatlabDataArray.lib;Framework.lib;SDL2.lib;SDL2main.lib;glew32.lib;opengl32.lib;SDL2_image.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <SubSystem>Console</SubSystem>
+      <AdditionalLibraryDirectories>C:\Program Files\MATLAB\R2020b\extern\lib\win64\microsoft;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -246,15 +248,17 @@
     <ClCompile Include="App.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Math\Polynomial.cpp" />
-    <ClCompile Include="Math\PolynomialsBase.cpp" />
     <ClCompile Include="Math\QuadratureEvaluator.cpp" />
     <ClCompile Include="Octree\SaveableOctree.cpp" />
     <ClCompile Include="Utils\gpuTimer.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="App.h" />
+    <ClInclude Include="ChebyshevIntegralEvaluator.h" />
     <ClInclude Include="constants.h" />
+    <ClInclude Include="Math\AverageIntegralEvaluator.h" />
     <ClInclude Include="Math\GaussPolynomialGenerator.h" />
+    <ClInclude Include="Math\IntegralEvaluator.h" />
     <ClInclude Include="Math\LSQPolyGenerator.h" />
     <ClInclude Include="Math\Polynomial.h" />
     <ClInclude Include="Math\PolynomialBases.h" />
@@ -273,6 +277,7 @@
     <ClInclude Include="SDF\SDFModel1.h" />
     <ClInclude Include="SDF\SDFBase.h" />
     <ClInclude Include="SDF\SDFHeader.h" />
+    <ClInclude Include="SDF\SDFModel3.h" />
     <ClInclude Include="SDF\SDFPlane.h" />
     <ClInclude Include="SDF\SDFPrimitives.h" />
     <ClInclude Include="SDF\SDFSphere.h" />

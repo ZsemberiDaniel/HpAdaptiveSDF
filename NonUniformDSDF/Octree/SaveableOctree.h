@@ -156,6 +156,69 @@ private:
 		name = ss.str();
 	}
 
+	/// <summary>
+	/// Returns the Cell with the given position. The input should be in [0;1]^3
+	/// </summary>
+	const Cell& getValue(glm::vec3 pos) const
+	{
+		static GLuint twoPow[25] = { 1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768, 65536, 131072, 262144, 524288, 1048576, 2097153, 4194304, 8388608, 16777216 };
+
+		glm::vec3 localP = pos;
+		// last element is the root
+		std::shared_ptr<Octree<Cell>::Node> currentNode = octree->root();
+
+		glm::vec3 boxMin(0.0f);
+		glm::vec3 boxMax(1.0f);
+
+		while (currentNode->type() == Octree<Cell>::BranchNode)
+		{
+			glm::vec3 halfBoxSize(1.0f / twoPow[currentNode->layer()]);
+			// int pointerId = int(localP.z >= 0.5f) * 4 + int(localP.y >= 0.5f) * 2 + int(localP.x >= 0.5f);
+			int pointerId = 0;
+			if (localP.z > 0.5f)
+			{
+				localP.z -= 0.5f;
+				pointerId += 4;
+
+				boxMin.z += halfBoxSize.z;
+			}
+			else
+			{
+				boxMax.z -= halfBoxSize.z;
+			}
+
+			if (localP.y > 0.5f)
+			{
+				localP.y -= 0.5f;
+				pointerId += 2;
+
+				boxMin.y += halfBoxSize.y;
+			}
+			else
+			{
+				boxMax.y -= halfBoxSize.y;
+			}
+
+			if (localP.x > 0.5f)
+			{
+				localP.x -= 0.5f;
+				pointerId += 1;
+
+				boxMin.x += halfBoxSize.x;
+			}
+			else
+			{
+				boxMax.x -= halfBoxSize.x;
+			}
+
+
+			localP *= 2.0f;
+			currentNode = std::static_pointer_cast<Octree<Cell>::Branch>(currentNode)->child(pointerId);
+		}
+
+		return std::static_pointer_cast<Octree<Cell>::Leaf>(currentNode)->value();
+	}
+
 public:
 
 	SaveableOctree(int sdfIndex, int approxIndex, OctreeGenerator::ConstructionParameters& constructionParams);
@@ -168,6 +231,10 @@ public:
 	/// Which approximation type was used to construct this octree
 	/// </summary>
 	PolynomialBase& approxType() { return approxTypes[approxTypeIndex()]; }
+	/// <summary>
+	/// Which approximation type was used to construct this octree
+	/// </summary>
+	const PolynomialBase& approxType() const { return approxTypes[approxTypeIndex()]; }
 
 	/// <summary>
 	/// Prints the octree to the console.
@@ -226,6 +293,28 @@ public:
 		return out;
 	}
 
+	void renderConstructionParamsGUI()
+	{
+		ImGui::Text("Parameters:");
+		ImGui::Text("SDF function: %s", sdfFunction()->name().c_str());
+		ImGui::Text("Approximation: %s", approxType().name.c_str());
+		ImGui::Text("Maximum degree: %d", getConstructionParams().maxDegree);
+		ImGui::Text("Maximum level: %d", getConstructionParams().maxLevel);
+		ImGui::Text("Error threshold: %.9f", getConstructionParams().errorThreshold);
+		if (getConstructionParams().useHAdapt && getConstructionParams().usePAdapt)
+		{
+			ImGui::Text("Both P and H adapt were used.");
+		} 
+		else if (!getConstructionParams().useHAdapt && getConstructionParams().usePAdapt)
+		{
+			ImGui::Text("Used only P adapt.");
+		}
+		else if (getConstructionParams().useHAdapt && !getConstructionParams().usePAdapt)
+		{
+			ImGui::Text("Used only H adapt.");
+		}
+	}
+
 	template<typename S, typename U>
 	void SetOctreeUniforms(df::ProgramEditor<S, U>& program);
 
@@ -238,12 +327,38 @@ public:
 	const std::unique_ptr<Octree<Cell>>& getOctree() { return octree; }
 	const OctreeGenerator::ConstructionParameters& getConstructionParams() { return fileData.dat.constructionParams; }
 
-	float compressCoefficient() { return fileData.dat.compressCoefficient; }
-	int branchCount() { return fileData.dat.branchCount; }
-	int sdfIndex() { return fileData.dat.sdfIndex; }
-	int approxTypeIndex() { return fileData.dat.approxTypeIndex; }
+	float compressCoefficient() const { return fileData.dat.compressCoefficient; }
+	int branchCount() const { return fileData.dat.branchCount; }
+	int sdfIndex() const { return fileData.dat.sdfIndex; }
+	int approxTypeIndex() const { return fileData.dat.approxTypeIndex; }
 
 	const std::string& getName() { return name; }
+
+	std::unique_ptr<df::Texture3D<float>> calculateSdf0thOrderTexture(int size) const
+	{
+		std::unique_ptr<df::Texture3D<float>> out = std::make_unique<df::Texture3D<float>>();
+		out->InitTexture(size, size, size);
+		std::vector<float> sdfValues(size * size * size);
+
+		for (int x = 0; x < size; x++)
+		{
+			for (int y = 0; y < size; y++)
+			{
+				for (int z = 0; z < size; z++)
+				{
+					glm::vec3 p = glm::vec3(x, y, z) / (size - 1.0f);
+					const Cell& cell = getValue(p);
+					glm::vec3 posInCell = (p - cell.bbox.min) / cell.bbox.size();
+					
+					sdfValues[x * size * size + y * size + z] = cell.poly(posInCell * 2.0f - 1.0f, approxType().resultingPolynomialType, cell.bbox.size());
+				}
+			}
+		}
+		
+		out->LoadData(sdfValues);
+
+		return out;
+	}
 };
 
 
@@ -253,10 +368,12 @@ void SaveableOctree::SetOctreeUniforms(df::ProgramEditor<S, U>& program)
 	branchSSBO->bindBufferRange(0);
 	leavesSSBO->bindBufferRange(1);
 
-	program << "sdfTexSize" << glm::vec3(1.0f) // glm::vec3(state.octreeConstructionParams.sizeInWorld)
-		<< "sdfTexCorner" << glm::vec3(0.0f) // state.octreeConstructionParams.minPos
+	program << "sdfTexSize" << glm::vec3(getConstructionParams().sizeInWorld)
+		<< "sdfTexCorner" << getConstructionParams().minPos 
+		<< "modelScale" << glm::vec3(getConstructionParams().sizeInWorld)
+		<< "modelTrans" << getConstructionParams().minPos
 		<< "sTranslation" << glm::vec3(0) // state.octreeConstructionParams.minPos
-		<< "sScale" << 1.0f // state.octreeConstructionParams.sizeInWorld
+		<< "sScale" << glm::vec3(1)
 		// << "octreeSize" << state.octreeConstructionParams.sizeInWorld
 		<< "coeffCompressAmount" << compressCoefficient()
 		<< "branchCount" << branchCount();

@@ -44,6 +44,11 @@ Branch getBranch(in uint branchId)
 	return br;
 }
 
+uint getBranchLevel(in uint branchId)
+{
+	return br_data[branchId * BR_SIZE];
+}
+
 Leaf getLeaf(in uint leafIndexInArray)
 {
 	// IF THIS IS CHANGED:
@@ -72,6 +77,8 @@ Leaf getLeaf(in uint leafIndexInArray)
 	return leaf;
 }
 
+const uint twoPow[25] = {1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768, 65536, 131072, 262144, 524288, 1048576, 2097153, 4194304, 8388608, 16777216};
+
 Leaf searchForLeaf(vec3 p, out vec3 boxMin, out vec3 boxMax)
 {
 	vec3 localP = p;
@@ -85,7 +92,7 @@ Leaf searchForLeaf(vec3 p, out vec3 boxMin, out vec3 boxMax)
 	{
 		Branch br = getBranch(currentBranchId);
 
-		vec3 halfBoxSize = (boxMax - boxMin) / 2.0f;
+		vec3 halfBoxSize = vec3(1.0f / twoPow[getBranchLevel(currentBranchId) + 1]);
 		// int pointerId = int(localP.z >= 0.5f) * 4 + int(localP.y >= 0.5f) * 2 + int(localP.x >= 0.5f);
 		int pointerId = 0;
 		if (localP.z > 0.5f) 

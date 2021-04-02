@@ -3,15 +3,53 @@
 using namespace df;
 
 const std::vector<glm::vec3> CUBE_COLORS = {
-	glm::vec3(0.92, 0.50, 0.33),
-	glm::vec3(0.02, 0.14, 0.20),
-	glm::vec3(0.80, 0.42, 0.44),
-	glm::vec3(0.07, 0.19, 0.43),
-	glm::vec3(0.25, 0.22, 0.57),
-	glm::vec3(0.42, 0.27, 0.59),
-	glm::vec3(0.49, 0.31, 0.56),
-	glm::vec3(0.65, 0.36, 0.52)
+	glm::vec3(1),
+	glm::vec3(0.5),
+	glm::vec3(0.835, 0, 0),
+	glm::vec3(0.188, 0.31, 0.996),
+	glm::vec3(0, 0.784, 0.325),
+	glm::vec3(1, 0.671, 0),
+	glm::vec3(1, 0.573, 0.573),
+	glm::vec3(0.86, 0.529, 0.655)
 };
+
+void testIntegrals()
+{
+	auto eval = [](std::pair<std::string, std::function<float(glm::vec3)>> func, IntegralEvaluator& eval, int maxPointCount, float realResult, glm::vec3 start, glm::vec3 end)
+	{
+		std::cout << std::setprecision(7);
+		for (int i = maxPointCount; i >= 2; i /= 2)
+		{
+			std::cout << "Testing " << i << " points  " << func.first << " on x=" << start.x << ".." << end.x << " y=" << start.y << ".." << end.y << " z=" << start.z << ".." << end.z <<
+				" \t\t Approx: " << eval.evaluateIntegral(i, func.second, start, end) << " \t Real: " << realResult << std::endl;
+		}
+	};
+
+	AverageIntegralEvaluator avg;
+	QuadratureEvaluator quad;
+	auto fun1 = std::make_pair("x^2+ 2 * y^3 + z", [](glm::vec3 p) { return p.x * p.x + 2.0f * p.y * p.y * p.y + p.z; });
+	auto fun2 = std::make_pair("sin(x + y)+ cos(2 * y^2) + z + x^2", [](glm::vec3 p) { return sin(p.x + p.y) + cos(2.0f * p.y * p.y) + p.z + p.x * p.x; });
+	auto fun3 = std::make_pair("sin(x + y)+ y ^ 4 + 3.0 * z - 256 * x ^ 0.2", [](glm::vec3 p) { return sin(p.x + p.y) + p.y * p.y * p.y * p.y + 3.0f * p.z - 256.0f * pow(p.x, 0.2f); });
+
+	std::cout << std::endl << std::endl << "------------------- I N T E G R A L   T E S T I N G -------------------" << std::endl;
+	std::cout << "Simpson's max. 100 points" << std::endl;
+	eval(fun1, avg, 100, 2.66667, glm::vec3(-1), glm::vec3(1));
+	eval(fun2, avg, 100, 8.00744, glm::vec3(-1), glm::vec3(1));
+
+	eval(fun1, avg, 100, 0.01826, glm::vec3(0), glm::vec3(0.4));
+	eval(fun2, avg, 100, 0.017771, glm::vec3(0.3), glm::vec3(0.5));
+
+	std::cout << std::endl << "Gauss max. 100 points" << std::endl;
+	eval(fun1, quad, 20, 2.66667, glm::vec3(-1), glm::vec3(1));
+	eval(fun2, quad, 20, 8.00744, glm::vec3(-1), glm::vec3(1));
+
+	eval(fun1, quad, 20, 0.01826, glm::vec3(0), glm::vec3(0.4));
+	eval(fun2, quad, 20, 0.017771, glm::vec3(0.3), glm::vec3(0.5));
+	eval(fun3, quad, 20, -1.68663, glm::vec3(0.3), glm::vec3(0.5));
+	eval(fun3, quad, 20, -0.000200385, glm::vec3(0.3), glm::vec3(0.31));
+	eval(fun3, quad, 20, -0.00000192903, glm::vec3(0.801), glm::vec3(0.803));
+	eval(fun2, quad, 20, -0.0000000218018, glm::vec3(0.801), glm::vec3(0.803));
+}
 
 App::App(df::Sample& s) : sam(s), noVao(GL_TRIANGLES, 3)
 {
@@ -27,6 +65,7 @@ App::App(df::Sample& s) : sam(s), noVao(GL_TRIANGLES, 3)
 
 	sam.AddHandlerClass(state.cam);
 
+	// testIntegrals();
 
 	GL_CHECK;
 }
@@ -100,7 +139,12 @@ void App::Render()
 	}
 
 	//// Draw SDF
-	auto& prog = sdfProgram;
+	auto prog = sdfProgram;
+
+#ifdef USE_0th_ORDER
+	if (show0thOrder) prog = sdf0thOrderProgram;
+#endif
+
 	auto& cam = state.cam;
 	auto& settings = state.settings;
 
@@ -108,12 +152,19 @@ void App::Render()
 	glm::vec3 modelScale = glm::vec3(1);
 
 	float planeDist = glm::dot(cam.GetEye(), cam.GetDir()) + cam.GetNearFarClips().x;
-
+	
+#ifdef USE_0th_ORDER
+	if (show0thOrder)
+	{
+		sdf0thOrderCurrOctree->bind();
+	}
+#endif
 	currOctree->SetOctreeUniforms(*prog);
+	
 	Backbuffer << *prog
 		<< "viewProj" << cam.GetViewProj()
-		<< "modelTrans" << modelTrans
-		<< "modelScale" << modelScale
+		/*<< "modelTrans" << modelTrans
+		<< "modelScale" << modelScale*/
 		<< "planeDist" << planeDist
 		<< "gInverseViewProj" << cam.GetInverseViewProj()
 		// << "gTanPixelAngle" << cam.GetTanPixelFow()
@@ -134,7 +185,6 @@ void App::Render()
 		<< "smallestStep" << state.settings.smallestStep
 		<< "biggestStep" << state.settings.biggestStep
 		<< "stepMultiplier" << state.settings.stepMultiplier;
-
 
 	GL_CHECK;
 
@@ -160,6 +210,13 @@ void App::RenderGUI()
 	{
 		sdfProgram->Render();
 	}
+
+#ifdef USE_0th_ORDER
+	if (show0thOrderShaderEditor)
+	{
+		sdf0thOrderProgram->Render();
+	}
+#endif
 
 	if (state.enableHeatmapShaderEditor)
 	{
@@ -201,7 +258,6 @@ void App::RenderGUI()
 		if (ImGui::Button("Recalculate octree", ImVec2(450, 20)))
 		{
 			CalculateOctreeSendToGPU();
-			CompileShaders();
 		}
 		if (ImGui::Button("Recenter camera", ImVec2(450, 20)))
 		{
@@ -233,6 +289,12 @@ void App::RenderGUI()
 
 		ImGui::Dummy(ImVec2(0.0f, 20.0f));
 
+		// ### Current description
+		if (ImGui::CollapsingHeader("Current construction params"))
+		{
+			currOctree->renderConstructionParamsGUI();
+		}
+
 		// ### Heatmaps
 		if (ImGui::CollapsingHeader("Heatmaps"))
 		{
@@ -243,6 +305,20 @@ void App::RenderGUI()
 		// ### Debug settings
 		if (ImGui::CollapsingHeader("Debug settings"))
 		{
+
+#ifdef USE_0th_ORDER
+			ImGui::Checkbox("Show 0th order", &show0thOrder);
+			if (show0thOrder)
+			{
+				static int resolution = sdf0thOrderResolution;
+				ImGui::InputInt("0th ortder resolution", &resolution);
+				if (resolution != sdf0thOrderResolution)
+				{
+					sdf0thOrderResolution = resolution;
+					sdf0thOrderCurrOctree = currOctree->calculateSdf0thOrderTexture(sdf0thOrderResolution);
+				}
+			}
+#endif
 			// Drawing octree attributes
 			ImGui::Checkbox("Draw octree grid", &state.drawOctreeGrid);
 			if (state.drawOctreeGrid)
@@ -324,6 +400,9 @@ void App::RenderGUI()
 		{
 			ImGui::Checkbox("SDF octree shader", &state.enableSDFShadersEditor);
 			ImGui::Checkbox("SDF heatmap shader", &state.enableHeatmapShaderEditor);
+#ifdef USE_0th_ORDER
+			ImGui::Checkbox("SDF 0th order shader", &show0thOrderShaderEditor);
+#endif
 		}
 
 		ImGui::Dummy(ImVec2(0.0f, 20.0f));
@@ -403,7 +482,7 @@ void App::CompilePreprocess()
 {
 	std::map<std::string, std::string> defines{
 		// which type of evalutaion to use for the polynomials
-		{ "evalPolynom", state.activeApproxType().shaderEvalFunctionName },
+		{ "evalPolynom", currOctree->approxType().shaderEvalFunctionName },
 
 		{ "MAX_COEFF_SIZE", std::to_string(Polynomial::calculateCoeffCount(currOctree->getConstructionParams().maxLevel) + 1) }
 	};
@@ -469,4 +548,28 @@ void App::CompileShaders()
 		
 		<< LinkProgram;
 	std::cout << sdfProgram->GetErrors();
+
+#ifdef USE_0th_ORDER
+	delete sdf0thOrderProgram;
+	sdf0thOrderProgram = new df::ShaderProgramEditorVF("SDF-0thorder-prog");
+	*sdf0thOrderProgram
+		<< "Shaders/defines.glsl"_fs
+		<< "Shaders/Math/box_plane_intersection.glsl"_vs
+		<< "Shaders/cube_solid.vert"_vs
+
+		<< "Shaders/render_main.frag"_fs
+		<< "Shaders/uniforms.glsl"_fs
+		<< "Shaders/common.glsl"_fs
+		<< "Shaders/Math/box_ray_intersection.glsl"_fs
+		<< "Shaders/Shade/ambient_occlusion.glsl"_fs
+		<< "Shaders/Shade/brdf.glsl"_fs
+		<< "Shaders/Shade/basic_shade.glsl"_fs
+		<< "Shaders/main_cube.glsl"_fs
+		<< "Shaders/sdf.glsl"_fs
+
+		<< "Shaders/SDF/sdf0thOrder.glsl"_fs
+
+		<< LinkProgram;
+	std::cout << sdf0thOrderProgram->GetErrors();
+#endif
 }

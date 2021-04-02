@@ -21,14 +21,6 @@ vec3 debug1(vec3 p)
 
 float getSample(vec3 p)
 {
-	vec3 leafBoxMin, leafBoxMax;
-	Leaf leaf = searchForLeaf(p, leafBoxMin, leafBoxMax);
-	vec3 shiftedP = (p - leafBoxMin) / (leafBoxMax - leafBoxMin);
-	// cool:
-	// return length(p - (leafBoxMin + leafBoxMax) / 2.0f) - (leafBoxMax - leafBoxMin).x / 4.0f;
-	return evalPolynom(leaf.poly, shiftedP * 2.0f - 1.0f, (leafBoxMax - leafBoxMin));
-
-
 //	Polynom poly;
 //	poly.degree = 1;
 //	poly.coeffCount = getCoeffCount(poly.degree);
@@ -37,5 +29,12 @@ float getSample(vec3 p)
 //	poly.coeffs[2] = 0.5f;
 //	poly.coeffs[3] = 0.0f;
 //
-//	return evalPolynom(poly, p * 2.0f - 1.0f);
+//	return evalPolynom(poly, p * 2.0f - 1.0f, vec3(1.0f));
+//
+	vec3 leafBoxMin, leafBoxMax;
+	Leaf leaf = searchForLeaf(p, leafBoxMin, leafBoxMax);
+	vec3 shiftedP = (p - leafBoxMin) / (leafBoxMax - leafBoxMin);
+	// cool:
+	// return length(p - (leafBoxMin + leafBoxMax) / 2.0f) - (leafBoxMax - leafBoxMin).x / 4.0f;
+	return evalPolynom(leaf.poly, shiftedP * 2.0f - 1.0f, (leafBoxMax - leafBoxMin));
 }

@@ -5,6 +5,9 @@
 #include "GaussPolynomialGenerator.h"
 #include "LSQPolyGenerator.h"
 
+#include "AverageIntegralEvaluator.h"
+#include "QuadratureEvaluator.h"
+
 #include "../Octree/octree.h"
 #include "../Octree/octreeGenerator.h"
 #include "../SDF/SDFBase.h"
@@ -16,9 +19,10 @@ struct PolynomialBase
 	std::string shortUniqueName;
 	std::string shaderEvalFunctionName;
 	std::function<void(std::unique_ptr<Octree<Cell>>&, OctreeGenerator::ConstructionParameters&, SDFBase*)> cpuConstruction;
+	Polynomial::Type resultingPolynomialType;
 };
 
-inline PolynomialBase approxTypes[2] = {
+inline PolynomialBase approxTypes[3] = {
 	// GAUSS QUADRATURE WITH LEGENDRE
 	PolynomialBase {
 		0,
@@ -27,14 +31,15 @@ inline PolynomialBase approxTypes[2] = {
 		"evalPolynom_normLagrange",
 		 [](std::unique_ptr<Octree<Cell>>& octree, OctreeGenerator::ConstructionParameters& constr, SDFBase* sdfFunc)
 		 {
-			static GaussPolynomialGenerator generator;
+			static GaussPolynomialGenerator generator(std::make_shared<QuadratureEvaluator>());
 
 			OctreeGenerator::constructField<GaussPolynomialGenerator>(
 				octree,
 				generator,
 				constr,
 				*sdfFunc);
-		 }
+		 },
+		Polynomial::Type::LEGENDRE_NORMALIZED
 	},
 
 	// LEAST SQUARES WITH LEGENDRE
@@ -52,7 +57,27 @@ inline PolynomialBase approxTypes[2] = {
 				generator,
 				constr,
 				*sdfFunc);
-		 }
+		 },
+		Polynomial::Type::LEGENDRE
+	}, 
+
+	// GAUSS QUADRATURE WITH LEGENDRE
+	PolynomialBase {
+		2,
+		"Averaging Quadrature - normalized Legendre",
+		"Averaging",
+		"evalPolynom_normLagrange",
+		 [](std::unique_ptr<Octree<Cell>>& octree, OctreeGenerator::ConstructionParameters& constr, SDFBase* sdfFunc)
+		 {
+			static GaussPolynomialGenerator generator(std::make_shared<AverageIntegralEvaluator>());
+
+			OctreeGenerator::constructField<GaussPolynomialGenerator>(
+				octree,
+				generator,
+				constr,
+				*sdfFunc);
+		 },
+		Polynomial::Type::LEGENDRE_NORMALIZED
 	}
 };
 #endif

@@ -4,10 +4,23 @@
 #include "../vector3d.h"
 #include <Dragonfly/editor.h>		 //inlcludes most features
 #include <Dragonfly/detail/buffer.h> //will be replaced
+#include <Dragonfly/detail/Texture/Texture3D.h>
 #include "../constants.h"
 
 class SDFBase
 {
+private:
+	std::shared_ptr<vector3d<float>> sdfValues = std::make_shared<vector3d<float>>(ERROR_HEATMAP_SIZE, 0.0f);
+	float maxSDFValue = -std::numeric_limits<float>::max();
+
+	bool discreteSDFInitialized = false;
+	df::Texture3D<float> discreteSDFTexture;
+
+protected:
+	glm::vec3 _worldMinPos;
+	float _worldSize;
+
+	std::string _sdfName = "Default SDF name";
 public:
 	SDFBase(std::string sdfName, glm::vec3 worldMinPos = glm::vec3(0), float worldSize = 1.0f) :
 		_sdfName(sdfName), _worldMinPos(worldMinPos), _worldSize(worldSize) 
@@ -27,6 +40,7 @@ public:
 
 	void initializeSDFDiscreteValues()
 	{
+		std::vector<float> temp(ERROR_HEATMAP_SIZE * ERROR_HEATMAP_SIZE * ERROR_HEATMAP_SIZE);
 		float heatMapSize = (float)ERROR_HEATMAP_SIZE;
 		for (int x = 0; x < ERROR_HEATMAP_SIZE; x++)
 		{
@@ -35,6 +49,7 @@ public:
 				for (int z = 0; z < ERROR_HEATMAP_SIZE; z++)
 				{
 					sdfValues->get(x, y, z) = this->operator()(glm::vec3(_worldSize) * glm::vec3(x, y, z) / heatMapSize);
+					temp[ERROR_HEATMAP_SIZE * ERROR_HEATMAP_SIZE * x + ERROR_HEATMAP_SIZE * y + z] = sdfValues->get(x, y, z);
 
 					if (glm::abs(sdfValues->get(x, y, z)) > maxSDFValue) maxSDFValue = glm::abs(sdfValues->get(x, y, z));
 				}
@@ -42,6 +57,10 @@ public:
 		}
 
 		discreteSDFInitialized = true;
+
+		discreteSDFTexture.InitTexture(ERROR_HEATMAP_SIZE, ERROR_HEATMAP_SIZE, ERROR_HEATMAP_SIZE);
+		discreteSDFTexture.LoadData(sdfValues->innerVector());
+		GL_CHECK;
 	}
 
 	glm::vec3 worldMinPos() const { return _worldMinPos; }
@@ -65,18 +84,5 @@ public:
 		}
 		return maxSDFValue;
 	}
-
-private:
-	std::shared_ptr<vector3d<float>> sdfValues = std::make_shared<vector3d<float>>(ERROR_HEATMAP_SIZE, 0.0f);
-	float maxSDFValue = -std::numeric_limits<float>::max();
-
-	bool discreteSDFInitialized = false;
-
-
-protected:
-	glm::vec3 _worldMinPos;
-	float _worldSize;
-
-	std::string _sdfName = "Default SDF name";
 };
 #endif

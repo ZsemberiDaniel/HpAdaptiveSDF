@@ -1,7 +1,7 @@
 #include "QuadratureEvaluator.h"
 
 QuadratureEvaluator::QuadratureEvaluator(int _maxPointCount) :
-	maxPointCount(_maxPointCount)
+	IntegralEvaluator(), maxPointCount(_maxPointCount)
 {
 	// init the quadrature points so they don't need to be recalculated each time
 	quadraturePoints.resize(maxPointCount + 1);

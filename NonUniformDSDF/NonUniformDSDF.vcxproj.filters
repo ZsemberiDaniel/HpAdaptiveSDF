@@ -20,9 +20,6 @@
     <Filter Include="Shaders\Shade">
       <UniqueIdentifier>{6a55534a-91bb-40ef-9c93-b45a88814d89}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Shaders\SDFScenes">
-      <UniqueIdentifier>{1610f35d-cecc-4a3f-b5d0-71f42ac393dd}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Shaders\SDF">
       <UniqueIdentifier>{f25ad3aa-cd44-41ba-9702-90058e56d4e1}</UniqueIdentifier>
     </Filter>
@@ -47,6 +44,9 @@
     <Filter Include="Shaders\Primitives">
       <UniqueIdentifier>{54faa33e-7907-42d6-b9ef-454c9ab40934}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Shaders\SDF\SDFScenes">
+      <UniqueIdentifier>{1610f35d-cecc-4a3f-b5d0-71f42ac393dd}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
@@ -62,9 +62,6 @@
     </ClCompile>
     <ClCompile Include="Octree\SaveableOctree.cpp">
       <Filter>Octree</Filter>
-    </ClCompile>
-    <ClCompile Include="Math\PolynomialsBase.cpp">
-      <Filter>Math</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -153,6 +150,18 @@
     <ClInclude Include="Utils\FileSelector.h">
       <Filter>Utils</Filter>
     </ClInclude>
+    <ClInclude Include="SDF\SDFModel3.h">
+      <Filter>SDF</Filter>
+    </ClInclude>
+    <ClInclude Include="Math\IntegralEvaluator.h">
+      <Filter>Math</Filter>
+    </ClInclude>
+    <ClInclude Include="Math\AverageIntegralEvaluator.h">
+      <Filter>Math</Filter>
+    </ClInclude>
+    <ClInclude Include="ChebyshevIntegralEvaluator.h">
+      <Filter>Math</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="Shaders\main_cube.glsl">
@@ -207,55 +216,55 @@
       <Filter>Shaders</Filter>
     </None>
     <None Include="Shaders\SDFScenes\sdf_3.glsl">
-      <Filter>Shaders\SDFScenes</Filter>
+      <Filter>Shaders\SDF\SDFScenes</Filter>
     </None>
     <None Include="Shaders\SDFScenes\sdf_4.glsl">
-      <Filter>Shaders\SDFScenes</Filter>
+      <Filter>Shaders\SDF\SDFScenes</Filter>
     </None>
     <None Include="Shaders\SDFScenes\sdf_5.glsl">
-      <Filter>Shaders\SDFScenes</Filter>
+      <Filter>Shaders\SDF\SDFScenes</Filter>
     </None>
     <None Include="Shaders\SDFScenes\sdf_6.glsl">
-      <Filter>Shaders\SDFScenes</Filter>
+      <Filter>Shaders\SDF\SDFScenes</Filter>
     </None>
     <None Include="Shaders\SDFScenes\sdf_7.glsl">
-      <Filter>Shaders\SDFScenes</Filter>
+      <Filter>Shaders\SDF\SDFScenes</Filter>
     </None>
     <None Include="Shaders\SDFScenes\sdf_8.glsl">
-      <Filter>Shaders\SDFScenes</Filter>
+      <Filter>Shaders\SDF\SDFScenes</Filter>
     </None>
     <None Include="Shaders\SDFScenes\sdf_9.glsl">
-      <Filter>Shaders\SDFScenes</Filter>
+      <Filter>Shaders\SDF\SDFScenes</Filter>
     </None>
     <None Include="Shaders\SDFScenes\sphere.glsl">
-      <Filter>Shaders\SDFScenes</Filter>
+      <Filter>Shaders\SDF\SDFScenes</Filter>
     </None>
     <None Include="Shaders\SDFScenes\temple.glsl">
-      <Filter>Shaders\SDFScenes</Filter>
+      <Filter>Shaders\SDF\SDFScenes</Filter>
     </None>
     <None Include="Shaders\SDFScenes\torus.glsl">
-      <Filter>Shaders\SDFScenes</Filter>
+      <Filter>Shaders\SDF\SDFScenes</Filter>
     </None>
     <None Include="Shaders\SDFScenes\torus_pipes.glsl">
-      <Filter>Shaders\SDFScenes</Filter>
+      <Filter>Shaders\SDF\SDFScenes</Filter>
     </None>
     <None Include="Shaders\SDFScenes\cube.glsl">
-      <Filter>Shaders\SDFScenes</Filter>
+      <Filter>Shaders\SDF\SDFScenes</Filter>
     </None>
     <None Include="Shaders\SDFScenes\cuboids.glsl">
-      <Filter>Shaders\SDFScenes</Filter>
+      <Filter>Shaders\SDF\SDFScenes</Filter>
     </None>
     <None Include="Shaders\SDFScenes\Mandelbulb.glsl">
-      <Filter>Shaders\SDFScenes</Filter>
+      <Filter>Shaders\SDF\SDFScenes</Filter>
     </None>
     <None Include="Shaders\SDFScenes\sdf_0.glsl">
-      <Filter>Shaders\SDFScenes</Filter>
+      <Filter>Shaders\SDF\SDFScenes</Filter>
     </None>
     <None Include="Shaders\SDFScenes\sdf_1.glsl">
-      <Filter>Shaders\SDFScenes</Filter>
+      <Filter>Shaders\SDF\SDFScenes</Filter>
     </None>
     <None Include="Shaders\SDFScenes\sdf_2.glsl">
-      <Filter>Shaders\SDFScenes</Filter>
+      <Filter>Shaders\SDF\SDFScenes</Filter>
     </None>
     <None Include="Shaders\Math\primitives.glsl">
       <Filter>Shaders\Math</Filter>

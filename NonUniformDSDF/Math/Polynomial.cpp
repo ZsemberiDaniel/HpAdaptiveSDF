@@ -3,6 +3,7 @@
 #include <iomanip>
 #include <iostream>
 #include <glm/common.hpp>
+#include <glm/exponential.hpp>
 
 
 Polynomial::Polynomial(int _degree) :
@@ -102,7 +103,7 @@ const float& Polynomial::operator[](int i) const
 	return coeffs[i];
 }
 
-float Polynomial::operator()(glm::vec3 p)
+float Polynomial::operator()(glm::vec3 p, Type type, glm::vec3 bboxSize) const
 {
 	float ret = 0.0f;
 
@@ -112,7 +113,19 @@ float Polynomial::operator()(glm::vec3 p)
 		{
 			for (int j = 0; i + k + j <= degree; j++, m++)
 			{
-				ret += coeffs[m] * std::legendref(i, p.x) * std::legendref(k, p.y) * std::legendref(j, p.z);
+				switch (type)
+				{
+				case LEGENDRE:
+					ret += coeffs[m] * std::legendref(i, p.x) * std::legendref(k, p.y) * std::legendref(j, p.z);
+					break;
+				case LEGENDRE_NORMALIZED:
+					glm::vec3 a = glm::sqrt((2.0f * glm::vec3(i, k, j) + 1.0f) / bboxSize);
+					ret += coeffs[m] * std::legendref(i, p.x) * std::legendref(k, p.y) * std::legendref(j, p.z) * a.x * a.y * a.z;
+					break;
+				case MONOMIAL:
+					ret += coeffs[m] * pow(p.x, i) * pow(p.y, k) * pow(p.z, j);
+					break;
+				}
 			}
 		}
 	}
