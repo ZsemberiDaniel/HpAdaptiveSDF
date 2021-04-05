@@ -4,6 +4,8 @@
 
 layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
 
+layout(binding = 6) uniform sampler3D sdfDiscreteValueTexture;
+
 layout(rgba32f, binding = 0) restrict writeonly uniform image2D sdfValueXSlice;
 layout(rgba32f, binding = 1) restrict writeonly uniform image2D sdfValueYSlice;
 layout(rgba32f, binding = 2) restrict writeonly uniform image2D sdfValueZSlice;
@@ -11,11 +13,6 @@ layout(rgba32f, binding = 2) restrict writeonly uniform image2D sdfValueZSlice;
 layout(rgba32f, binding = 3) restrict writeonly uniform image2D sdfErrorXSlice;
 layout(rgba32f, binding = 4) restrict writeonly uniform image2D sdfErrorYSlice;
 layout(rgba32f, binding = 5) restrict writeonly uniform image2D sdfErrorZSlice;
-
-readonly layout(std430, binding = 3) buffer sdfDiscreteValues
-{
-	float sdfDiscValues[];
-};
 
 uniform int heatMapSize;
 uniform int xSliceId;
@@ -27,7 +24,7 @@ uniform float diffMultiplier;
 
 float getSDFValue(in ivec3 p)
 {
-	 return sdfDiscValues[p.x * heatMapSize * heatMapSize + p.y * heatMapSize + p.z];
+	return texture(sdfDiscreteValueTexture, vec3(p / (heatMapSize - 1.0f))).x;
 }
 
 void main()

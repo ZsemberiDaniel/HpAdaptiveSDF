@@ -1,15 +1,14 @@
 #ifndef PERFORMANCETEST_H
 #define PERFORMANCETEST_H
 
-#include <vector>
+#include <deque>
 
 class PerformanceTest
 {
-	bool testIsRunning = false;
 	int maxFrame = 50;
-	int actualFrame = 0;
+	int storedFrameCount = 0;
 
-	std::vector<double> times;
+	std::deque<double> times;
 public:
 	struct Results {
 		int frames; // number of frames
@@ -19,51 +18,29 @@ public:
 		double max;
 	};
 
-	// returns if stating the test was successful
-	inline bool startTest(int frames);
-	inline void stopTest();
 	// returns if the test is still running or not
-	inline bool testInProgress() const;
-	// returns if the test is still running or not
-	inline operator bool() const { return testInProgress(); }
-	// returns if the test is still running or not
-	inline bool addFrameTime(double frameTime);
+	inline void addFrameTime(double frameTime);
 	// retruns the results
 	inline Results getResults();
 };
 
-bool PerformanceTest::startTest(int frames)
+void PerformanceTest::addFrameTime(double frameTime)
 {
-	if (!testIsRunning) {
-		maxFrame = frames > 0 ? frames : 0;
-		actualFrame = 0;
-		times.clear();
-		times.reserve(maxFrame);
-		return testIsRunning = maxFrame > 0;
+	if (storedFrameCount == maxFrame)
+	{
+		times.pop_front();
+		times.push_back(frameTime);
 	}
-	else return false;
-}
-void PerformanceTest::stopTest()
-{
-	testIsRunning = false;
-}
-bool PerformanceTest::testInProgress() const
-{
-	return testIsRunning;
-}
-bool PerformanceTest::addFrameTime(double frameTime)
-{
-	if (!testIsRunning) return false;
-	times.push_back(frameTime);
-	actualFrame++;
-	if (actualFrame >= maxFrame)
-		testIsRunning = false;
-	return testIsRunning;
+	else
+	{
+		times.push_back(frameTime);
+		storedFrameCount++;
+	}
 }
 PerformanceTest::Results PerformanceTest::getResults()
 {
-	int frames = int(times.size());
-	if (testIsRunning || frames == 0) return {};
+	int frames = times.size();
+	if (frames == 0) return {};
 
 	double sum = 0.0;
 	double min = times[0], max = times[0];

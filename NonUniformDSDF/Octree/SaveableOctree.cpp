@@ -2,6 +2,11 @@
 
 SaveableOctree::SaveableOctree(int sdfIndex_, int approxIndex_, OctreeGenerator::ConstructionParameters& constructionParams_)
 {
+	if (texture2DArrayCalculator == nullptr)
+	{
+		initTexture2DArrayCalculator();
+	}
+
 	fileData.dat.sdfIndex = sdfIndex_;
 	fileData.dat.approxTypeIndex = approxIndex_;
 	fileData.dat.constructionParams = constructionParams_;

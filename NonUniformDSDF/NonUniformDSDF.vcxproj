@@ -250,6 +250,7 @@
     <ClCompile Include="Math\Polynomial.cpp" />
     <ClCompile Include="Math\QuadratureEvaluator.cpp" />
     <ClCompile Include="Octree\SaveableOctree.cpp" />
+    <ClCompile Include="Utils\ErrorStatistics.cpp" />
     <ClCompile Include="Utils\gpuTimer.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -283,6 +284,7 @@
     <ClInclude Include="SDF\SDFSphere.h" />
     <ClInclude Include="SDF\SDFTorus.h" />
     <ClInclude Include="Structures.h" />
+    <ClInclude Include="Utils\ErrorStatistics.h" />
     <ClInclude Include="Utils\FileSelector.h" />
     <ClInclude Include="Utils\gpuTimer.h" />
     <ClInclude Include="Utils\Lazy.hpp" />
@@ -323,7 +325,12 @@
     <None Include="Shaders\cube.frag" />
     <None Include="Shaders\cube.vert" />
     <None Include="Shaders\cube_solid.vert" />
+    <None Include="Shaders\Evaluate\initDiff1.comp" />
+    <None Include="Shaders\Evaluate\initDiff2.comp" />
+    <None Include="Shaders\Evaluate\reduce1.comp" />
+    <None Include="Shaders\Evaluate\reduce2.comp" />
     <None Include="Shaders\Evaluate\sdfDifference.comp" />
+    <None Include="Shaders\Evaluate\threeDimFromOctree.comp" />
     <None Include="Shaders\flatMesh.geom" />
     <None Include="Shaders\main_cube.glsl" />
     <None Include="Shaders\Math\box_plane_intersection.glsl" />

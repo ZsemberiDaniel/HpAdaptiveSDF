@@ -63,6 +63,9 @@
     <ClCompile Include="Octree\SaveableOctree.cpp">
       <Filter>Octree</Filter>
     </ClCompile>
+    <ClCompile Include="Utils\ErrorStatistics.cpp">
+      <Filter>Utils</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="App.h" />
@@ -161,6 +164,9 @@
     </ClInclude>
     <ClInclude Include="ChebyshevIntegralEvaluator.h">
       <Filter>Math</Filter>
+    </ClInclude>
+    <ClInclude Include="Utils\ErrorStatistics.h">
+      <Filter>Utils</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -391,6 +397,21 @@
     </None>
     <None Include="Shaders\Primitives\plane.frag">
       <Filter>Shaders\Primitives</Filter>
+    </None>
+    <None Include="Shaders\Evaluate\initDiff1.comp">
+      <Filter>Shaders\Evaluate</Filter>
+    </None>
+    <None Include="Shaders\Evaluate\initDiff2.comp">
+      <Filter>Shaders\Evaluate</Filter>
+    </None>
+    <None Include="Shaders\Evaluate\reduce1.comp">
+      <Filter>Shaders\Evaluate</Filter>
+    </None>
+    <None Include="Shaders\Evaluate\reduce2.comp">
+      <Filter>Shaders\Evaluate</Filter>
+    </None>
+    <None Include="Shaders\Evaluate\threeDimFromOctree.comp">
+      <Filter>Shaders\Evaluate</Filter>
     </None>
   </ItemGroup>
 </Project>

@@ -15,7 +15,10 @@ class SDFHeatmapVisualizer
 public:
 	inline static void renderShaderEditor()
 	{
-		differenceCalculateProgram()->Render();
+		if (differenceCalculateProgram() != nullptr)
+		{
+			differenceCalculateProgram()->Render();
+		}
 	}
 
 	inline static void renderToGUI(int xSlice, int ySlice, int zSlice, std::shared_ptr<SaveableOctree> saveableOctree, df::Camera& cam)
@@ -24,11 +27,11 @@ public:
 		if (saveableOctree != previouslyDrawnHeatmap)
 		{
 			previouslyDrawnHeatmap = saveableOctree;
-			sdfSSBO.force().assignMutable(saveableOctree->sdfFunction()->discreteSDFValues()->innerVector(), 0);
 		}
 
 		int heatMapSize = ERROR_HEATMAP_SIZE;
 
+		saveableOctree->sdfFunction()->discreteSDFValuesTexture()->bind(6);
 		glBindImageTexture(0, (GLuint)sdfValuesXSlice.force(), 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA32F);
 		glBindImageTexture(1, (GLuint)sdfValuesYSlice.force(), 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA32F);
 		glBindImageTexture(2, (GLuint)sdfValuesZSlice.force(), 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA32F);
@@ -36,8 +39,6 @@ public:
 		glBindImageTexture(3, (GLuint)sdfErrorXSlice.force(), 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA32F);
 		glBindImageTexture(4, (GLuint)sdfErrorYSlice.force(), 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA32F);
 		glBindImageTexture(5, (GLuint)sdfErrorZSlice.force(), 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA32F);
-
-		sdfSSBO.force().bindBufferRange(3);
 
 		saveableOctree->SetOctreeUniforms(*(differenceCalculateProgram()));
 		*(differenceCalculateProgram())
@@ -251,19 +252,14 @@ public:
 		glEnable(GL_CULL_FACE);
 	}
 
+	inline static void RecompileShaders()
+	{
+		// will recompile when getter called
+		_differenceCalculateProgram.release();
+	}
+
 private:
 	static inline std::shared_ptr<SaveableOctree> previouslyDrawnHeatmap;
-
-	static inline Lazy<eltecg::ogl::ShaderStorageBuffer> sdfSSBO = Lazy< eltecg::ogl::ShaderStorageBuffer>([]() 
-	{
-		auto sdfSSBO = eltecg::ogl::ShaderStorageBuffer();
-		std::vector<float> sdfValues(ERROR_HEATMAP_SIZE * ERROR_HEATMAP_SIZE * ERROR_HEATMAP_SIZE, 0.0f);
-
-		sdfSSBO.constructMutable(sdfValues, GL_DYNAMIC_READ);
-
-		return sdfSSBO;
-	});
-
 
 	inline static std::unique_ptr<df::ComputeProgramEditor> _differenceCalculateProgram;
 	static std::unique_ptr<df::ComputeProgramEditor>& differenceCalculateProgram()

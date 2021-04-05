@@ -191,15 +191,17 @@ void App::Render()
 	glm::vec3 dir = cam.GetDir();
 	glm::vec3 frontVertex = glm::vec3((dir.x < 0 ? modelScale.x : 0), (dir.y < 0 ? modelScale.y : 0), (dir.z < 0 ? modelScale.z : 0));
 	frontVertex += modelTrans;
+
+	timer.Start();
 	if (glm::dot(frontVertex, dir) < planeDist) // the bounding box' corner is clipped
 		// clip
 		*prog << df::NoVao(GL_TRIANGLE_FAN, 6, 3);
 	// bounding box
 
 	*prog << df::NoVao(GL_TRIANGLE_STRIP, 14, 9);
+	perfTest.addFrameTime(timer.StopMillis());
 
 	GL_CHECK;
-
 }
 
 void App::RenderGUI()
@@ -293,6 +295,53 @@ void App::RenderGUI()
 		if (ImGui::CollapsingHeader("Current construction params"))
 		{
 			currOctree->renderConstructionParamsGUI();
+
+			ImGui::Text("\n Data of last few frames:");
+			auto results = perfTest.getResults();
+			ImGui::Text("Render time min.: %f ms", results.min);
+			ImGui::Text("Render time avg.: %f ms", results.avg);
+			ImGui::Text("Render time max.: %f ms", results.max);
+
+			ImGui::Text("");
+			static ErrorStatistics::ErrorStatResult errorResults;
+
+			if (ImGui::Button("Calculate statistics"))
+			{
+				static ErrorStatistics stats;
+				static ErrorStatistics::StatSettings settings = {
+					glm::vec3(0), // border
+					true, // calcMedian
+					true // calcHistogram
+				};
+
+				auto ref = currOctree->sdfFunction()->discreteSDFValuesTexture2D();
+				auto data = currOctree->calculateSdf0thOrderTexture2D(ERROR_HEATMAP_SIZE);
+
+				errorResults = stats.CalcStatistics(ref, data, settings);
+			}
+
+			std::stringstream ss;
+			ss << "Mean:\t" << errorResults.mean << "\n"
+				<< "Min:\t" << errorResults.min << "\n"
+				<< "Max:\t" << errorResults.max << "\n"
+				<< "Median:\t" << errorResults.median << "\n"
+				<< "Sd:\t" << errorResults.sd << "\n"
+				<< "L2:\t" << errorResults.l2;
+			std::string outputString = ss.str();
+			ImGui::Text(outputString.c_str());
+
+			if (ImGui::Button("Copy text"))
+			{
+				const char* output = outputString.c_str();
+				const size_t len = strlen(output) + 1;
+				HGLOBAL hMem = GlobalAlloc(GMEM_MOVEABLE, len);
+				memcpy(GlobalLock(hMem), output, len);
+				GlobalUnlock(hMem);
+				OpenClipboard(0);
+				EmptyClipboard();
+				SetClipboardData(CF_TEXT, hMem);
+				CloseClipboard();
+			}
 		}
 
 		// ### Heatmaps
@@ -305,7 +354,6 @@ void App::RenderGUI()
 		// ### Debug settings
 		if (ImGui::CollapsingHeader("Debug settings"))
 		{
-
 #ifdef USE_0th_ORDER
 			ImGui::Checkbox("Show 0th order", &show0thOrder);
 			if (show0thOrder)
@@ -442,8 +490,6 @@ void App::RenderGUI()
 		state.activeSDF()->renderGUI();
 	}
 	ImGui::End();
-	
-	// ImGui::ShowDemoWindow();
 }
 
 bool App::HandleKeyDown(const SDL_KeyboardEvent& key)
@@ -548,6 +594,13 @@ void App::CompileShaders()
 		
 		<< LinkProgram;
 	std::cout << sdfProgram->GetErrors();
+
+	if (currOctree != nullptr)
+	{
+		currOctree->RecompileShaders();
+	}
+
+	SDFHeatmapVisualizer::RecompileShaders();
 
 #ifdef USE_0th_ORDER
 	delete sdf0thOrderProgram;

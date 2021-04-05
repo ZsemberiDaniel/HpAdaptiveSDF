@@ -1,0 +1,18 @@
+#version 450
+
+//?#include "../SDF/sdfOctree.glsl"
+
+layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
+
+layout(r32f, binding = 6) restrict writeonly uniform image2DArray outputImage;
+
+void main()
+{
+	ivec3 storePos = ivec3(gl_GlobalInvocationID.xyz);
+	vec3 realPos = storePos / (vec3(gl_NumWorkGroups.xyz) - vec3(1));
+
+	vec4 toWrite = vec4(getSample(realPos));
+
+
+	imageStore(outputImage, storePos, toWrite);
+}

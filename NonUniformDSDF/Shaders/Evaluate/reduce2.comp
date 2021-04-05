@@ -1,0 +1,29 @@
+#version 450
+
+layout (local_size_x = 32, local_size_y = 1, local_size_z = 1) in;
+
+uniform ivec3 gIdOffset;
+uniform ivec3 maxDim;
+
+restrict layout (binding=0, rg32f) readonly uniform image3D readImg;
+restrict layout (binding=1, rg32f) writeonly uniform image3D writeImg;
+
+void main()
+{
+	ivec3 storePos = gIdOffset + ivec3(gl_GlobalInvocationID.xyz);
+	if(!all(lessThan(storePos, maxDim)))
+		return;
+	
+	vec4 toWrite = vec4(0);
+	const ivec3 readPos = 2*storePos;
+	for(int i=0;i<2;++i) for(int j=0;j<2;++j) for(int k=0;k<2;++k){
+		vec2 data = imageLoad(readImg, readPos + ivec3(i,j,k)).xy;
+		toWrite.x += data.x * data.y;
+		toWrite.y += data.y; // coverage
+	}
+	float mul = toWrite.y == 0 ? 1 : 1/toWrite.y;
+	toWrite.x *= mul;
+	toWrite.y /= 8;
+
+	imageStore(writeImg, storePos, toWrite);
+}

@@ -6,6 +6,7 @@
 #include <sstream>
 
 #include <Dragonfly/detail/buffer.h>
+#include <Dragonfly/detail/Texture/Texture2DArray.h>
 #include "octree.h"
 #include "octreeGenerator.h"
 #include "../Math/PolynomialBases.h"
@@ -23,6 +24,25 @@ private:
 
 	std::unique_ptr<eltecg::ogl::ShaderStorageBuffer> branchSSBO;
 	std::unique_ptr<eltecg::ogl::ShaderStorageBuffer> leavesSSBO;
+
+	inline static std::unique_ptr<df::ComputeProgramEditor> texture2DArrayCalculator;
+	void initTexture2DArrayCalculator()
+	{
+		using namespace df;
+
+		// delete texture2DArrayCalculator;
+		texture2DArrayCalculator = std::make_unique<df::ComputeProgramEditor>("Texture2DArray-prog");
+		*texture2DArrayCalculator
+			<< "Shaders/defines.glsl"_comp
+			<< "Shaders/uniforms.glsl"_comp
+			<< "Shaders/Math/common.glsl"_comp
+			<< "Shaders/common.glsl"_comp
+			<< "Shaders/Octree/octree.glsl"_comp
+			<< "Shaders/SDF/sdfOctree.glsl"_comp
+			<< "Shaders/Evaluate/threeDimFromOctree.comp"_comp
+			<< df::LinkProgram;
+		std::cout << texture2DArrayCalculator->GetErrors();
+	}
 
 	/// <summary>
 	/// These need to be saved to a file
@@ -223,6 +243,11 @@ public:
 
 	SaveableOctree(int sdfIndex, int approxIndex, OctreeGenerator::ConstructionParameters& constructionParams);
 
+	void RecompileShaders()
+	{
+		initTexture2DArrayCalculator();
+	}
+
 	/// <summary>
 	/// Which SDF function was used to construct this octree
 	/// </summary>
@@ -301,6 +326,8 @@ public:
 		ImGui::Text("Maximum degree: %d", getConstructionParams().maxDegree);
 		ImGui::Text("Maximum level: %d", getConstructionParams().maxLevel);
 		ImGui::Text("Error threshold: %.9f", getConstructionParams().errorThreshold);
+		ImGui::Text("Storage size: %d byte", sizeof(GLuint) * (fileData.branchesGPU.size() + fileData.leavesGPU.size()));
+		
 		if (getConstructionParams().useHAdapt && getConstructionParams().usePAdapt)
 		{
 			ImGui::Text("Both P and H adapt were used.");
@@ -334,11 +361,11 @@ public:
 
 	const std::string& getName() { return name; }
 
-	std::unique_ptr<df::Texture3D<float>> calculateSdf0thOrderTexture(int size) const
+private:
+	void calculateSdf0thOrderTempVector(int size, std::vector<float>& sdfValues) const
 	{
-		std::unique_ptr<df::Texture3D<float>> out = std::make_unique<df::Texture3D<float>>();
-		out->InitTexture(size, size, size);
-		std::vector<float> sdfValues(size * size * size);
+		sdfValues.clear();
+		sdfValues.resize(size * size * size);
 
 		for (int x = 0; x < size; x++)
 		{
@@ -349,13 +376,35 @@ public:
 					glm::vec3 p = glm::vec3(x, y, z) / (size - 1.0f);
 					const Cell& cell = getValue(p);
 					glm::vec3 posInCell = (p - cell.bbox.min) / cell.bbox.size();
-					
+
 					sdfValues[x * size * size + y * size + z] = cell.poly(posInCell * 2.0f - 1.0f, approxType().resultingPolynomialType, cell.bbox.size());
 				}
 			}
 		}
+	}
+
+public:
+	std::shared_ptr<df::Texture3D<float>> calculateSdf0thOrderTexture(int size) const
+	{
+		std::shared_ptr<df::Texture3D<float>> out = std::make_shared<df::Texture3D<float>>(size, size, size);
+		std::vector<float> sdfValues;
+
+		calculateSdf0thOrderTempVector(size, sdfValues);
 		
 		out->LoadData(sdfValues);
+
+		return out;
+	}
+
+	std::shared_ptr<df::Texture2DArray<float>> calculateSdf0thOrderTexture2D(int size)
+	{
+		std::shared_ptr<df::Texture2DArray<float>> out = std::make_shared<df::Texture2DArray<float>>(size, size, size);
+		glBindImageTexture(6, out->operator GLuint(), 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_R32F);
+
+		SetOctreeUniforms(*texture2DArrayCalculator);
+
+		glDispatchCompute(size, size, size);
+		glMemoryBarrier(GL_TEXTURE_FETCH_BARRIER_BIT);
 
 		return out;
 	}

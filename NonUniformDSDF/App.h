@@ -30,6 +30,7 @@
 #include "SDF/SDFHeatmapVisualizer.h"
 #include "constants.h"
 #include "Utils/FileSelector.h"
+#include "Utils/ErrorStatistics.h"
 
 // #define USE_0th_ORDER
 

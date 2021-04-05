@@ -5,16 +5,17 @@
 #include <Dragonfly/editor.h>		 //inlcludes most features
 #include <Dragonfly/detail/buffer.h> //will be replaced
 #include <Dragonfly/detail/Texture/Texture3D.h>
+#include <Dragonfly/detail/Texture/Texture2DArray.h>
 #include "../constants.h"
 
 class SDFBase
 {
 private:
-	std::shared_ptr<vector3d<float>> sdfValues = std::make_shared<vector3d<float>>(ERROR_HEATMAP_SIZE, 0.0f);
 	float maxSDFValue = -std::numeric_limits<float>::max();
 
 	bool discreteSDFInitialized = false;
-	df::Texture3D<float> discreteSDFTexture;
+	std::shared_ptr<df::Texture3D<float>> discreteSDFTexture = nullptr;
+	std::shared_ptr<df::Texture2DArray<float>> discreteSDFTexture2D = nullptr;
 
 protected:
 	glm::vec3 _worldMinPos;
@@ -48,18 +49,21 @@ public:
 			{
 				for (int z = 0; z < ERROR_HEATMAP_SIZE; z++)
 				{
-					sdfValues->get(x, y, z) = this->operator()(glm::vec3(_worldSize) * glm::vec3(x, y, z) / heatMapSize);
-					temp[ERROR_HEATMAP_SIZE * ERROR_HEATMAP_SIZE * x + ERROR_HEATMAP_SIZE * y + z] = sdfValues->get(x, y, z);
+					float val = this->operator()(glm::vec3(_worldSize) * glm::vec3(x, y, z) / heatMapSize);
+					temp[ERROR_HEATMAP_SIZE * ERROR_HEATMAP_SIZE * x + ERROR_HEATMAP_SIZE * y + z] = val;
 
-					if (glm::abs(sdfValues->get(x, y, z)) > maxSDFValue) maxSDFValue = glm::abs(sdfValues->get(x, y, z));
+					if (glm::abs(val) > maxSDFValue) maxSDFValue = glm::abs(val);
 				}
 			}
 		}
 
 		discreteSDFInitialized = true;
 
-		discreteSDFTexture.InitTexture(ERROR_HEATMAP_SIZE, ERROR_HEATMAP_SIZE, ERROR_HEATMAP_SIZE);
-		discreteSDFTexture.LoadData(sdfValues->innerVector());
+		discreteSDFTexture = std::make_shared<df::Texture3D<float>>(ERROR_HEATMAP_SIZE, ERROR_HEATMAP_SIZE, ERROR_HEATMAP_SIZE);
+		discreteSDFTexture->LoadData(temp);
+
+		discreteSDFTexture2D = std::make_shared<df::Texture2DArray<float>>(ERROR_HEATMAP_SIZE, ERROR_HEATMAP_SIZE, ERROR_HEATMAP_SIZE);
+		discreteSDFTexture2D->LoadData(temp);
 		GL_CHECK;
 	}
 
@@ -67,13 +71,22 @@ public:
 	float worldSize() const { return _worldSize; }
 	std::string name() const { return _sdfName; }
 
-	std::shared_ptr<vector3d<float>> discreteSDFValues()
+	std::shared_ptr<df::Texture3D<float>> discreteSDFValuesTexture()
 	{
 		if (!discreteSDFInitialized)
 		{
 			initializeSDFDiscreteValues();
 		}
-		return sdfValues;
+		return discreteSDFTexture;
+	}
+
+	std::shared_ptr<df::Texture2DArray<float>> discreteSDFValuesTexture2D()
+	{
+		if (!discreteSDFInitialized)
+		{
+			initializeSDFDiscreteValues();
+		}
+		return discreteSDFTexture2D;
 	}
 
 	float discreteMaxSDFValue() 
