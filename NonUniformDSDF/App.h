@@ -61,6 +61,43 @@ private:
 	df::ShaderProgramEditorVF meshProgram = "Mesh-Prog";
 	df::ShaderProgramEditorVGF flatMeshProgram = "FlatMesh-Prog";
 	df::ShaderProgramEditorVF* sdfProgram = nullptr;
+
+	std::string octreeEvaluationToString()
+	{
+		if (currOctree == nullptr) return "";
+
+		std::stringstream ss;
+
+		auto results = perfTest.getResults();
+		ss << "Data of last few frames:\n";
+		ss << "Render time min.: " << results.min << "ms\n";
+		ss << "Render time max.: " << results.max << "ms\n";
+		ss << "Render time avg.: " << results.avg << "ms\n\n";
+
+		static ErrorStatistics::ErrorStatResult errorResults;
+
+		static ErrorStatistics stats;
+		static ErrorStatistics::StatSettings settings = {
+			glm::vec3(0), // border
+			true, // calcMedian
+			true // calcHistogram
+		};
+
+		auto ref = currOctree->sdfFunction()->discreteSDFValuesTexture2D();
+		auto data = currOctree->calculateSdf0thOrderTexture2D(ERROR_HEATMAP_SIZE);
+
+		errorResults = stats.CalcStatistics(ref, data, settings);
+
+		ss << "Error:\n";
+		ss << "Mean:\t" << errorResults.mean << "\n"
+			<< "Min:\t" << errorResults.min << "\n"
+			<< "Max:\t" << errorResults.max << "\n"
+			<< "Median:\t" << errorResults.median << "\n"
+			<< "Sd:\t" << errorResults.sd << "\n"
+			<< "L2:\t" << errorResults.l2;
+		
+		return ss.str();
+	}
 	
 	void CompilePreprocess();
 	void CompileShaders();

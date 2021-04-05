@@ -499,6 +499,9 @@ bool App::HandleKeyDown(const SDL_KeyboardEvent& key)
 		// toggle GUI
 		state.enableGUI = !state.enableGUI;
 		return true;
+	case SDLK_F3:
+		std::cout << octreeEvaluationToString();
+		return true;
 	}
 	return false;
 }
