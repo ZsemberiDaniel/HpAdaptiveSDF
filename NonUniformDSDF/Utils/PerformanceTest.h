@@ -11,7 +11,7 @@ class PerformanceTest
 	std::deque<double> times;
 public:
 	struct Results {
-		int frames; // number of frames
+		size_t frames; // number of frames
 		double avg; // avreage time
 		double dev; // sample standard deviation
 		double min;
@@ -39,7 +39,7 @@ void PerformanceTest::addFrameTime(double frameTime)
 }
 PerformanceTest::Results PerformanceTest::getResults()
 {
-	int frames = times.size();
+	size_t frames = times.size();
 	if (frames == 0) return {};
 
 	double sum = 0.0;

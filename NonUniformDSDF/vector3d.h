@@ -8,9 +8,9 @@ private:
     std::vector<T> data;
 
 public:
-    int dim1() const { return d1; }
-    int dim2() const { return d2; }
-    int dim3() const { return d3; }
+    int dim1() const { return static_cast<int>(d1); }
+    int dim2() const { return static_cast<int>(d2); }
+    int dim3() const { return static_cast<int>(d3); }
 
     const std::vector<T> innerVector() { return data; }
 

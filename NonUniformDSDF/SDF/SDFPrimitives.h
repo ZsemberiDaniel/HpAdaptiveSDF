@@ -28,7 +28,7 @@ public:
 
 	static float sdfPyramid(glm::vec3 p, float h)
 	{
-		float m2 = h * h + 0.25;
+		float m2 = h * h + 0.25f;
 
 		p.x = abs(p.x);
 		p.z = abs(p.z);
@@ -47,7 +47,7 @@ public:
 		float t = glm::clamp((q.y - 0.5f * p.z) / (m2 + 0.25f), 0.0f, 1.0f);
 
 		float a = m2 * (q.x + s) * (q.x + s) + q.y * q.y;
-		float b = m2 * (q.x + 0.5 * t) * (q.x + 0.5 * t) + (q.y - m2 * t) * (q.y - m2 * t);
+		float b = m2 * (q.x + 0.5f * t) * (q.x + 0.5f * t) + (q.y - m2 * t) * (q.y - m2 * t);
 
 		float d2 = glm::min(q.y, -q.x * m2 - q.y * 0.5f) > 0.0f ? 0.0f : glm::min(a, b);
 

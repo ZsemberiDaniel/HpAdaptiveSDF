@@ -94,7 +94,7 @@ private:
 			<< "Max:\t" << errorResults.max << "\n"
 			<< "Median:\t" << errorResults.median << "\n"
 			<< "Sd:\t" << errorResults.sd << "\n"
-			<< "L2:\t" << errorResults.l2;
+			<< "L2:\t" << errorResults.l2 << "\n";
 		
 		return ss.str();
 	}

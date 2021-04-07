@@ -59,10 +59,10 @@ public:
 
 		discreteSDFInitialized = true;
 
-		discreteSDFTexture = std::make_shared<df::Texture3D<float>>(ERROR_HEATMAP_SIZE, ERROR_HEATMAP_SIZE, ERROR_HEATMAP_SIZE);
+		discreteSDFTexture = std::make_shared<df::Texture3D<float>>(static_cast<GLuint>(ERROR_HEATMAP_SIZE), static_cast<GLuint>(ERROR_HEATMAP_SIZE), static_cast<GLuint>(ERROR_HEATMAP_SIZE));
 		discreteSDFTexture->LoadData(temp);
 
-		discreteSDFTexture2D = std::make_shared<df::Texture2DArray<float>>(ERROR_HEATMAP_SIZE, ERROR_HEATMAP_SIZE, ERROR_HEATMAP_SIZE);
+		discreteSDFTexture2D = std::make_shared<df::Texture2DArray<float>>(static_cast<GLuint>(ERROR_HEATMAP_SIZE), static_cast<GLuint>(ERROR_HEATMAP_SIZE), static_cast<GLuint>(ERROR_HEATMAP_SIZE));
 		discreteSDFTexture2D->LoadData(temp);
 		GL_CHECK;
 	}

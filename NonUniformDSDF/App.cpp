@@ -33,22 +33,22 @@ void testIntegrals()
 
 	std::cout << std::endl << std::endl << "------------------- I N T E G R A L   T E S T I N G -------------------" << std::endl;
 	std::cout << "Simpson's max. 100 points" << std::endl;
-	eval(fun1, avg, 100, 2.66667, glm::vec3(-1), glm::vec3(1));
-	eval(fun2, avg, 100, 8.00744, glm::vec3(-1), glm::vec3(1));
+	eval(fun1, avg, 100, 2.66667f, glm::vec3(-1), glm::vec3(1));
+	eval(fun2, avg, 100, 8.00744f, glm::vec3(-1), glm::vec3(1));
 
-	eval(fun1, avg, 100, 0.01826, glm::vec3(0), glm::vec3(0.4));
-	eval(fun2, avg, 100, 0.017771, glm::vec3(0.3), glm::vec3(0.5));
+	eval(fun1, avg, 100, 0.01826f, glm::vec3(0), glm::vec3(0.4f));
+	eval(fun2, avg, 100, 0.017771f, glm::vec3(0.3f), glm::vec3(0.5f));
 
 	std::cout << std::endl << "Gauss max. 100 points" << std::endl;
-	eval(fun1, quad, 20, 2.66667, glm::vec3(-1), glm::vec3(1));
-	eval(fun2, quad, 20, 8.00744, glm::vec3(-1), glm::vec3(1));
+	eval(fun1, quad, 20, 2.66667f, glm::vec3(-1), glm::vec3(1));
+	eval(fun2, quad, 20, 8.00744f, glm::vec3(-1), glm::vec3(1));
 
-	eval(fun1, quad, 20, 0.01826, glm::vec3(0), glm::vec3(0.4));
-	eval(fun2, quad, 20, 0.017771, glm::vec3(0.3), glm::vec3(0.5));
-	eval(fun3, quad, 20, -1.68663, glm::vec3(0.3), glm::vec3(0.5));
-	eval(fun3, quad, 20, -0.000200385, glm::vec3(0.3), glm::vec3(0.31));
-	eval(fun3, quad, 20, -0.00000192903, glm::vec3(0.801), glm::vec3(0.803));
-	eval(fun2, quad, 20, -0.0000000218018, glm::vec3(0.801), glm::vec3(0.803));
+	eval(fun1, quad, 20, 0.01826f, glm::vec3(0), glm::vec3(0.4f));
+	eval(fun2, quad, 20, 0.017771f, glm::vec3(0.3f), glm::vec3(0.5f));
+	eval(fun3, quad, 20, -1.68663f, glm::vec3(0.3f), glm::vec3(0.5f));
+	eval(fun3, quad, 20, -0.000200385f, glm::vec3(0.3f), glm::vec3(0.31f));
+	eval(fun3, quad, 20, -0.00000192903f, glm::vec3(0.801f), glm::vec3(0.803f));
+	eval(fun2, quad, 20, -0.0000000218018f, glm::vec3(0.801f), glm::vec3(0.803f));
 }
 
 App::App(df::Sample& s) : sam(s), noVao(GL_TRIANGLES, 3)

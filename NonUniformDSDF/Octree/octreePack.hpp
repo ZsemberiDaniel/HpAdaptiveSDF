@@ -88,7 +88,7 @@ inline void Octree<Cell, 2>::packForGPU(std::vector<unsigned int>& branchGPU, st
     for (int i = 0; i < leaves.size(); i++)
     {
         // mark where this starts in gpu storage
-        leaves[i]->indexInGPUArray = leavesGPU.size();
+        leaves[i]->indexInGPUArray = static_cast<unsigned int>(leavesGPU.size());
 
         leavesGPU.push_back(leaves[i]->level);
         leavesGPU.push_back(leaves[i]->value->degree());
@@ -114,11 +114,11 @@ inline void Octree<Cell, 2>::packForGPU(std::vector<unsigned int>& branchGPU, st
         branchGPU[BR_SIZE * i + 0] = branches[i]->level;
         for (int k = 1; k <= 8; k++)
         {
-            branchGPU[BR_SIZE * i + k] =
+            branchGPU[BR_SIZE * i + k] = static_cast<unsigned int>(
                 branches[i]->childrenIndex[k - 1] < 0 ? // is it a leaf?
                 //                                              + 1 since leaf id starts at 1 so negative trick can be used
                 leaves[abs(branches[i]->childrenIndex[k - 1] + 1)]->indexInGPUArray + branches.size() : // if so the index needs to be shifted
-                branches[i]->childrenIndex[k - 1];
+                branches[i]->childrenIndex[k - 1]);
         }
 
         delete branches[i];

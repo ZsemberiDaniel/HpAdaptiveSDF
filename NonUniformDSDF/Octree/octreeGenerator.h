@@ -47,7 +47,6 @@ void OctreeGenerator::constructField(std::unique_ptr<Octree<Cell>>& octree, gene
 	vector3d<std::shared_ptr<Octree<Cell>::Leaf>> generatedCells(INITIAL_CELL_COUNT);
 
 	float error = 0.0f;
-	// std::priority_queue< Cell, std::vector<Cell>, decltype(queueCellCompare) > pending(queueCellCompare);
 	std::vector<Cell> pendingVector;
 
 	for (int x = 0; x < INITIAL_CELL_COUNT; x++)
@@ -82,7 +81,6 @@ void OctreeGenerator::constructField(std::unique_ptr<Octree<Cell>>& octree, gene
 				
 				pendingVector.push_back(initialCells(x, y, z));
 				std::push_heap(pendingVector.begin(), pendingVector.end(), queueCellCompare);
-				// pending.push(initialCells(x, y, z));
 			}
 		}
 	}
@@ -90,8 +88,6 @@ void OctreeGenerator::constructField(std::unique_ptr<Octree<Cell>>& octree, gene
 	int step = 0;
 	while (!pendingVector.empty() && error > params.errorThreshold)
 	{
-		/*auto popped = pending.top();
-		pending.pop();*/
 		std::pop_heap(pendingVector.begin(), pendingVector.end(), queueCellCompare);
 		auto popped = pendingVector.back();
 		pendingVector.pop_back();
@@ -188,7 +184,7 @@ void OctreeGenerator::constructField(std::unique_ptr<Octree<Cell>>& octree, gene
 			currentCell.octreeLeaf->setValue(currentCell);
 
 			// pending.push(currentCell);
-			pendingVector.push_back(currentCell);
+			pendingVector.push_back(std::move(currentCell));
 			std::push_heap(pendingVector.begin(), pendingVector.end(), queueCellCompare);
 		}
 		// doing h-improvement otherwise
@@ -206,12 +202,11 @@ void OctreeGenerator::constructField(std::unique_ptr<Octree<Cell>>& octree, gene
 					for (int z = 0; z < 2; z++)
 					{
 						hImpSubdividedCell(x, y, z).octreeLeaf = leaves(x, y, z);
-						
-						// pending.push(hImpSubdividedCell(x, y, z));
-						pendingVector.push_back(hImpSubdividedCell(x, y, z));
-						std::push_heap(pendingVector.begin(), pendingVector.end(), queueCellCompare);
 
 						error += hImpSubdividedCell(x, y, z).error;
+						// pending.push(hImpSubdividedCell(x, y, z));
+						pendingVector.push_back(std::move(hImpSubdividedCell(x, y, z)));
+						std::push_heap(pendingVector.begin(), pendingVector.end(), queueCellCompare);
 					}
 				}
 			}

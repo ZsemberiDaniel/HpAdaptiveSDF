@@ -59,9 +59,9 @@ public:
 		std::vector<float> dataX(heatMapSize * heatMapSize * 4);
 		std::vector<float> dataY(heatMapSize * heatMapSize * 4);
 		std::vector<float> dataZ(heatMapSize * heatMapSize * 4);
-		glGetTextureImage((GLuint)sdfErrorXSlice.force(), 0, GL_RGBA, GL_FLOAT, sizeof(float) * dataX.size(), &dataX[0]);
-		glGetTextureImage((GLuint)sdfErrorYSlice.force(), 0, GL_RGBA, GL_FLOAT, sizeof(float) * dataY.size(), &dataY[0]);
-		glGetTextureImage((GLuint)sdfErrorZSlice.force(), 0, GL_RGBA, GL_FLOAT, sizeof(float) * dataZ.size(), &dataZ[0]);
+		glGetTextureImage((GLuint)sdfErrorXSlice.force(), 0, GL_RGBA, GL_FLOAT, static_cast<GLsizei>(sizeof(float) * dataX.size()), &dataX[0]);
+		glGetTextureImage((GLuint)sdfErrorYSlice.force(), 0, GL_RGBA, GL_FLOAT, static_cast<GLsizei>(sizeof(float) * dataY.size()), &dataY[0]);
+		glGetTextureImage((GLuint)sdfErrorZSlice.force(), 0, GL_RGBA, GL_FLOAT, static_cast<GLsizei>(sizeof(float) * dataZ.size()), &dataZ[0]);
 		GL_CHECK;
 		if (renderDiff) 
 		{
@@ -90,32 +90,33 @@ public:
 			ImGui::Text("The same gradient below can be applied for the approximation.");
 		}
 
-		ImGui::Image((void*)(intptr_t)(GLuint)sdfErrorXSlice.force(), ImVec2(heatMapSize, heatMapSize));
-		ImGui::SameLine(heatMapSize);
-		ImGui::Image((void*)(intptr_t)(GLuint)sdfErrorYSlice.force(), ImVec2(heatMapSize, heatMapSize));
-		ImGui::SameLine(2 * heatMapSize);
-		ImGui::Image((void*)(intptr_t)(GLuint)sdfErrorZSlice.force(), ImVec2(heatMapSize, heatMapSize));
+		auto imguiImSize = ImVec2(static_cast<float>(heatMapSize), static_cast<float>(heatMapSize));
+		ImGui::Image((void*)(intptr_t)(GLuint)sdfErrorXSlice.force(), imguiImSize);
+		ImGui::SameLine(static_cast<float>(heatMapSize));
+		ImGui::Image((void*)(intptr_t)(GLuint)sdfErrorYSlice.force(), imguiImSize);
+		ImGui::SameLine(2.0f * static_cast<float>(heatMapSize));
+		ImGui::Image((void*)(intptr_t)(GLuint)sdfErrorZSlice.force(), imguiImSize);
 
 
 		// Displays the SDF value textures
 		ImGui::Text("EXACT SDF VALUES");
 
 		ImGui::Text("X slice");
-		ImGui::SameLine(heatMapSize);
+		ImGui::SameLine(static_cast<float>(heatMapSize));
 		ImGui::Text("Y slice");
-		ImGui::SameLine(2 * heatMapSize);
+		ImGui::SameLine(2.0f * static_cast<float>(heatMapSize));
 		ImGui::Text("Z slice");
 
-		ImGui::Image((void*)(intptr_t)(GLuint)sdfValuesXSlice.force(), ImVec2(heatMapSize, heatMapSize));
-		ImGui::SameLine(heatMapSize);
-		ImGui::Image((void*)(intptr_t)(GLuint)sdfValuesYSlice.force(), ImVec2(heatMapSize, heatMapSize));
-		ImGui::SameLine(2 * heatMapSize);
-		ImGui::Image((void*)(intptr_t)(GLuint)sdfValuesZSlice.force(), ImVec2(heatMapSize, heatMapSize));
+		ImGui::Image((void*)(intptr_t)(GLuint)sdfValuesXSlice.force(), imguiImSize);
+		ImGui::SameLine(static_cast<float>(heatMapSize));
+		ImGui::Image((void*)(intptr_t)(GLuint)sdfValuesYSlice.force(), imguiImSize);
+		ImGui::SameLine(2.0f * static_cast<float>(heatMapSize));
+		ImGui::Image((void*)(intptr_t)(GLuint)sdfValuesZSlice.force(), imguiImSize);
 
 		ImGui::Text(std::to_string(saveableOctree->sdfFunction()->discreteMaxSDFValue()).c_str());
 		ImGui::SameLine();
 		{
-			ImVec2 gradient_size = ImVec2(ImGui::CalcItemWidth() * 0.4f, 20);
+			ImVec2 gradient_size = ImVec2(ImGui::CalcItemWidth() * 0.4f, 20.0f);
 			ImVec2 p0 = ImGui::GetCursorScreenPos();
 			ImVec2 p1 = ImVec2(p0.x + gradient_size.x, p0.y + gradient_size.y);
 			ImU32 col_a = ImGui::GetColorU32(ImVec4(1.0f, 0.0f, 0.0f, 1.0f));
