@@ -20,6 +20,7 @@ struct PolynomialBase
 	std::string shaderEvalFunctionName;
 	std::function<void(std::unique_ptr<Octree<Cell>>&, OctreeGenerator::ConstructionParameters&, SDFBase*)> cpuConstruction;
 	Polynomial::Type resultingPolynomialType;
+	bool calculatedOnGPU;
 };
 
 inline PolynomialBase approxTypes[] = {
@@ -39,7 +40,8 @@ inline PolynomialBase approxTypes[] = {
 				constr,
 				*sdfFunc);
 		 },
-		Polynomial::Type::LEGENDRE_NORMALIZED
+		Polynomial::Type::LEGENDRE_NORMALIZED,
+		false
 	},
 
 	// LEAST SQUARES WITH LEGENDRE
@@ -58,7 +60,8 @@ inline PolynomialBase approxTypes[] = {
 				constr,
 				*sdfFunc);
 		 },
-		Polynomial::Type::LEGENDRE
+		Polynomial::Type::LEGENDRE,
+		false
 	}, 
 
 	// GAUSS QUADRATURE WITH LEGENDRE
@@ -77,14 +80,15 @@ inline PolynomialBase approxTypes[] = {
 				constr,
 				*sdfFunc);
 		 },
-		Polynomial::Type::LEGENDRE_NORMALIZED
+		Polynomial::Type::LEGENDRE_NORMALIZED,
+		false
 	},
 
 	// GAUSS QUADRATURE WITH LEGENDRE GPU edition
 	PolynomialBase {
 		3,
 		"[GPU] Gauss Quadrature - normalized Legendre",
-		"Gauss",
+		"GPUGauss",
 		"evalPolynom_normLagrange",
 		[](std::unique_ptr<Octree<Cell>>& octree, OctreeGenerator::ConstructionParameters& constr, SDFBase* sdfFunc)
 		{
@@ -93,7 +97,8 @@ inline PolynomialBase approxTypes[] = {
 				constr,
 				*sdfFunc);
 		},
-		Polynomial::Type::LEGENDRE_NORMALIZED
+		Polynomial::Type::LEGENDRE_NORMALIZED,
+		true
 	}
 };
 #endif

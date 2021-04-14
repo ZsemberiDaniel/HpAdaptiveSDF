@@ -441,6 +441,11 @@ void App::RenderGUI()
 					state.constructionParams.useHAdapt = true;
 				}
 			}
+
+			if (state.activeApproxType().calculatedOnGPU)
+			{
+				ImGui::DragInt("Cell worker group size", &state.constructionParams.cellGroupSize, 0.3f, 1, 20);
+			}
 		}
 
 		// ### Shader editors

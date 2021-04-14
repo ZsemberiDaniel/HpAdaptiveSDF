@@ -21,6 +21,8 @@ public:
 		float errorThreshold = 0.005f;
 		bool useHAdapt = true;
 		bool usePAdapt = true;
+		// when calculating on GPU, how many to group together
+		int cellGroupSize = 1;
 	};
 
 	template<typename generator, typename sdf>
@@ -39,27 +41,30 @@ void OctreeGenerator::constructFieldGPU(std::unique_ptr<Octree<Cell>>& octree, c
 		std::cout << "Cannot construct octree without either h and p adapt! (Both set to false in constructPatams)" << std::endl;
 		return;
 	}
+	int K = std::max(params.cellGroupSize, 1);;
 
+	sdfFunction.writeAttributesToDefinesFile("Shaders/octreeGenerateDefines.glsl");
 	df::ComputeProgramEditor compShader("Octree compute shader");
 	compShader
 		<< "Shaders/defines.glsl"_comp
+		<< "Shaders/octreeGenerateDefines.glsl"_comp
 		<< "Shaders/Math/common.glsl"_comp
 		<< "Shaders/PolyGen/sdfPrimitives.comp"_comp
-		<< "SDFCPUandGU/SDF2Model1.h"_comp
+		<< df::detail::_CompShader{ sdfFunction.path().c_str() }
 		<< "Shaders/PolyGen/GaussPolyGen.comp"_comp
 		<< df::LinkProgram;
 	std::cout << compShader.GetErrors();
 
 	std::vector<int> ssbosPerDegreesSize;
-	GLuint ssboShaderCompute, ssboPolyError;
+	GLuint ssboShaderCompute, ssboPolyError, ssboPolyDescription;
 	{
-		for (int i = 0; i < 5; i++)
+		for (int i = 0; i <= params.maxDegree; i++)
 		{
 			ssbosPerDegreesSize.push_back(Polynomial::calculateCoeffCount(i + 1) + 8 * Polynomial::calculateCoeffCount(i));
 		}
 		glGenBuffers(1, &ssboShaderCompute);
 		glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssboShaderCompute);
-		std::vector<float> container(ssbosPerDegreesSize.back(), 0.0f);
+		std::vector<float> container(K * ssbosPerDegreesSize.back(), 0.0f);
 		int bufferSize = container.size() * sizeof(float);
 		glBufferStorage(GL_SHADER_STORAGE_BUFFER, bufferSize, (GLvoid*)container.data(), GL_MAP_WRITE_BIT);
 		glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
@@ -67,9 +72,17 @@ void OctreeGenerator::constructFieldGPU(std::unique_ptr<Octree<Cell>>& octree, c
 
 		glGenBuffers(1, &ssboPolyError);
 		glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssboPolyError);
-		container = std::vector<float>(9, 0.0f);
+		container = std::vector<float>(K * 9, 0.0f);
 		bufferSize = container.size() * sizeof(float);
 		glBufferStorage(GL_SHADER_STORAGE_BUFFER, bufferSize, (GLvoid*)container.data(), GL_MAP_WRITE_BIT);
+		glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+
+
+		glGenBuffers(1, &ssboPolyDescription);
+		glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssboPolyDescription);
+		std::vector<glm::vec4> container2 = std::vector<glm::vec4>(K * 2, glm::vec4(2.0f));
+		bufferSize = container2.size() * sizeof(glm::vec4);
+		glBufferStorage(GL_SHADER_STORAGE_BUFFER, bufferSize, (GLvoid*)container2.data(), GL_DYNAMIC_STORAGE_BIT | GL_MAP_READ_BIT);
 		glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 	}
 
@@ -97,12 +110,19 @@ void OctreeGenerator::constructFieldGPU(std::unique_ptr<Octree<Cell>>& octree, c
 					BoundingBox bbox = { cellCoord, cellCoord + gridCellSize };
 					const int initialDegree = 2;
 
+					std::vector<glm::vec4> polyDesc = {
+						glm::vec4(bbox.min.x, bbox.min.y, bbox.min.z, glm::intBitsToFloat(initialDegree - 1)),
+						glm::vec4(bbox.max.x, bbox.max.y, bbox.max.z, glm::intBitsToFloat(0))
+					};
+					glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssboPolyDescription);
+					glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, polyDesc.size() * sizeof(glm::vec4), (GLvoid*)polyDesc.data());
+					glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+
+
 					glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, ssboShaderCompute);
 					glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, ssboPolyError);
-					compShader 
-						<< "bboxStart" << cellCoord
-						<< "bboxEnd" << (cellCoord + gridCellSize)
-						<< "currentDeg" << (initialDegree - 1);
+					glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, ssboPolyDescription);
+					compShader << "a" << 0;
 					glDispatchCompute(1, 1, 9);
 					glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 
@@ -141,153 +161,184 @@ void OctreeGenerator::constructFieldGPU(std::unique_ptr<Octree<Cell>>& octree, c
 		}
 	}
 
+
+	std::vector<Cell> currentCellGroup(K);
+	std::vector<glm::vec4> polyDesc(2 * K);
 	int step = 0;
 	while (!pendingVector.empty() && error > params.errorThreshold)
 	{
-		std::pop_heap(pendingVector.begin(), pendingVector.end(), queueCellCompare);
-		auto popped = pendingVector.back();
-		pendingVector.pop_back();
+		// size of the ssbo returned from the worker compute shaders
+		// essentially the sum of the K cells
+		int returnedSSBOSize = 0, 
+			cellGroupSize = 0; // the size of the current cell group
+		for (cellGroupSize = 0; cellGroupSize < K && !pendingVector.empty(); cellGroupSize++)
+		{
+			std::pop_heap(pendingVector.begin(), pendingVector.end(), queueCellCompare);
+			auto popped = pendingVector.back();
+			pendingVector.pop_back();
 
-		Cell& currentCell = popped;
-		if (currentCell.degree() >= params.maxDegree && currentCell.level() >= params.maxLevel) continue;
+			if (popped.degree() >= params.maxDegree && popped.level() >= params.maxLevel)
+			{
+				cellGroupSize--;
+				continue;
+			}
 
-		float pImprovement = -std::numeric_limits<float>::max();
-		float hImprovement = -std::numeric_limits<float>::max();
+			currentCellGroup[cellGroupSize] = std::move(popped);
+			polyDesc[2 * cellGroupSize + 0] = glm::vec4(popped.bbox.min.x, popped.bbox.min.y, 
+											popped.bbox.min.z, glm::intBitsToFloat(popped.degree()));
+			polyDesc[2 * cellGroupSize + 1] = glm::vec4(popped.bbox.max.x, popped.bbox.max.y, 
+											popped.bbox.max.z, glm::intBitsToFloat(returnedSSBOSize));
 
-		// store the changed variables for p improvement so we don't have to calculate the again to
-		// commit these changes to the octree
-		Polynomial pImprovementPoly(currentCell.poly.getDegree() + 1);
-		float pImprovementError;
+			returnedSSBOSize += ssbosPerDegreesSize[popped.degree()];
+		}
 
-		// same storage as above but for h improvement
-		vector3d<Cell> hImpSubdividedCell(2);
+		glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssboPolyDescription);
+		glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, polyDesc.size() * sizeof(glm::vec4), (GLvoid*)polyDesc.data());
+		glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 
 		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, ssboShaderCompute);
 		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, ssboPolyError);
-		compShader
-			<< "bboxStart" << currentCell.bbox.min
-			<< "bboxEnd" << currentCell.bbox.max
-			<< "currentDeg" << currentCell.poly.getDegree();
-		glDispatchCompute(1, 1, 9);
+		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, ssboPolyDescription);
+		compShader << "a" << 0;
+		glDispatchCompute(1, cellGroupSize, 9);
 		glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 
-		std::vector<float> polyStorage(ssbosPerDegreesSize[currentCell.degree()]), errorStorage(9);
+
+		std::vector<float> polyStorage(returnedSSBOSize), errorStorage(9 * K);
 		glGetNamedBufferSubData(ssboShaderCompute, 0, polyStorage.size() * sizeof(float), polyStorage.data());
 		glGetNamedBufferSubData(ssboPolyError, 0, errorStorage.size() * sizeof(float), errorStorage.data());
 
-		// p-improvement
-		// estimate error when using a polynom that is a degree higher
-		if (params.usePAdapt) {
-			for (int i = 0; i < pImprovementPoly.coeffCount(); i++)
-			{
-				pImprovementPoly[i] = polyStorage[i];
-			}
-			pImprovementError = errorStorage[0];
+		for (int cellIdInGroup = 0, idInPolyStorage = 0; cellIdInGroup < cellGroupSize; cellIdInGroup++)
+		{
+			Cell& currentCell = currentCellGroup[cellIdInGroup];
+			float pImprovement = -std::numeric_limits<float>::max();
+			float hImprovement = -std::numeric_limits<float>::max();
 
-			// Equation (8), section 3.6
-			pImprovement = 1.0f / (Polynomial::calculateCoeffCount(currentCell.degree() + 1) - Polynomial::calculateCoeffCount(currentCell.degree())) *
-				(currentCell.error - 8 * pImprovementError);
-		}
+			// store the changed variables for p improvement so we don't have to calculate the again to
+			// commit these changes to the octree
+			Polynomial pImprovementPoly(currentCell.poly.getDegree() + 1);
+			float pImprovementError;
 
-		// h-improvement
-		// subdivide cell into 2x2x2
-		if (params.useHAdapt) {
-			// max error for subdivided cells, needed for eq. (9)
-			float maxError = -std::numeric_limits<float>::max();
-			// how big a subdivided cube's side is
-			float subdividedCubeSize = currentCell.bbox.size().x / 2.0f;
+			// same storage as above but for h improvement
+			vector3d<Cell> hImpSubdividedCell(2);
 
-			for (int x = 0, m = 0; x < 2; x++)
-			{
-				for (int y = 0; y < 2; y++)
+			// p-improvement
+			// estimate error when using a polynom that is a degree higher
+			if (params.usePAdapt) {
+				for (int i = 0; i < pImprovementPoly.coeffCount(); i++)
 				{
-					for (int z = 0; z < 2; z++, m++)
+					pImprovementPoly[i] = polyStorage[idInPolyStorage + i];
+				}
+				pImprovementError = errorStorage[cellIdInGroup * 9 + 0];
+
+				// Equation (8), section 3.6
+				pImprovement = 1.0f / (Polynomial::calculateCoeffCount(currentCell.degree() + 1) - Polynomial::calculateCoeffCount(currentCell.degree())) *
+					(currentCell.error - 8 * pImprovementError);
+			}
+
+			// h-improvement
+			// subdivide cell into 2x2x2
+			if (params.useHAdapt) {
+				// max error for subdivided cells, needed for eq. (9)
+				float maxError = -std::numeric_limits<float>::max();
+				// how big a subdivided cube's side is
+				float subdividedCubeSize = currentCell.bbox.size().x / 2.0f;
+
+				for (int x = 0, m = 0; x < 2; x++)
+				{
+					for (int y = 0; y < 2; y++)
 					{
-						// the subdivided cubes' coord is shifted from the bigger cube's coord
-						glm::vec3 cellCoord = currentCell.bbox.min + glm::vec3(x, y, z) * glm::vec3(subdividedCubeSize);
-						BoundingBox bbox = BoundingBox{ cellCoord, cellCoord + glm::vec3(subdividedCubeSize) };
-
-						Polynomial poly(currentCell.poly.getDegree());
-						int polyStartIndex = Polynomial::calculateCoeffCount(currentCell.degree() + 1) +
-											 Polynomial::calculateCoeffCount(currentCell.degree()) * m;
-						for (int i = 0; i < poly.coeffCount(); i++)
+						for (int z = 0; z < 2; z++, m++)
 						{
-							poly[i] = polyStorage[polyStartIndex + i];
-						}
-						float currentError = errorStorage[m + 1];
+							// the subdivided cubes' coord is shifted from the bigger cube's coord
+							glm::vec3 cellCoord = currentCell.bbox.min + glm::vec3(x, y, z) * glm::vec3(subdividedCubeSize);
+							BoundingBox bbox = BoundingBox{ cellCoord, cellCoord + glm::vec3(subdividedCubeSize) };
 
-						if (maxError < currentError)
+							Polynomial poly(currentCell.poly.getDegree());
+							int polyStartIndex = Polynomial::calculateCoeffCount(currentCell.degree() + 1) +
+												 Polynomial::calculateCoeffCount(currentCell.degree()) * m;
+							for (int i = 0; i < poly.coeffCount(); i++)
+							{
+								poly[i] = polyStorage[idInPolyStorage + polyStartIndex + i];
+							}
+							float currentError = errorStorage[cellIdInGroup * 9 + m + 1];
+
+							if (maxError < currentError)
+							{
+								maxError = currentError;
+							}
+
+							Cell cell = Cell{ bbox, poly, currentError };
+
+							hImpSubdividedCell(x, y, z) = cell;
+						}
+					}
+				}
+
+				// equation (9), section 3.6
+				hImprovement = 1.0f / 7.0f / Polynomial::calculateCoeffCount(currentCell.degree()) * (currentCell.error - 8 * maxError);
+			}
+
+			idInPolyStorage += ssbosPerDegreesSize[currentCell.degree()];
+
+			// both false not possible (checked at beginning of function)
+			bool refineP, refineH;
+			if (params.useHAdapt && !params.usePAdapt)
+			{
+				refineH = true;
+				refineP = false;
+			}
+			else if (params.usePAdapt && !params.useHAdapt)
+			{
+				refineP = true;
+				refineH = false;
+			}
+			else
+			{
+				refineP = currentCell.degree() < params.maxDegree && (currentCell.level() == params.maxLevel || pImprovement > hImprovement);
+				refineH = currentCell.level() < params.maxLevel && !refineP;
+			}
+
+			// deciding in favor of p-improvement
+			if (refineP/*pImprovement >= hImprovement*/)
+			{
+				error += pImprovementError - currentCell.error;
+
+				currentCell.poly = pImprovementPoly;
+				currentCell.error = pImprovementError;
+				// printPolynomial(currentCell.poly);
+
+				currentCell.octreeLeaf->setValue(currentCell);
+
+				// pending.push(currentCell);
+				pendingVector.push_back(std::move(currentCell));
+				std::push_heap(pendingVector.begin(), pendingVector.end(), queueCellCompare);
+			}
+			// doing h-improvement otherwise
+			if (refineH/*pImprovement < hImprovement*/)
+			{
+				error -= currentCell.error;
+
+				vector3d<std::shared_ptr<Octree<Cell>::Leaf>> leaves(2);
+				currentCell.octreeLeaf->subdivide(octree.get(), hImpSubdividedCell, leaves);
+
+				for (int x = 0; x < 2; x++)
+				{
+					for (int y = 0; y < 2; y++)
+					{
+						for (int z = 0; z < 2; z++)
 						{
-							maxError = currentError;
+							hImpSubdividedCell(x, y, z).octreeLeaf = leaves(x, y, z);
+
+							error += hImpSubdividedCell(x, y, z).error;
+							// pending.push(hImpSubdividedCell(x, y, z));
+							pendingVector.push_back(std::move(hImpSubdividedCell(x, y, z)));
+							std::push_heap(pendingVector.begin(), pendingVector.end(), queueCellCompare);
 						}
-
-						Cell cell = Cell{ bbox, poly, currentError };
-
-						hImpSubdividedCell(x, y, z) = cell;
 					}
 				}
 			}
 
-			// equation (9), section 3.6
-			hImprovement = 1.0f / 7.0f / Polynomial::calculateCoeffCount(currentCell.degree()) * (currentCell.error - 8 * maxError);
-		}
-
-		// both false not possible (checked at beginning of function)
-		bool refineP, refineH;
-		if (params.useHAdapt && !params.usePAdapt)
-		{
-			refineH = true;
-			refineP = false;
-		}
-		else if (params.usePAdapt && !params.useHAdapt)
-		{
-			refineP = true;
-			refineH = false;
-		}
-		else
-		{
-			refineP = currentCell.degree() < params.maxDegree && (currentCell.level() == params.maxLevel || pImprovement > hImprovement);
-			refineH = currentCell.level() < params.maxLevel && !refineP;
-		}
-
-		// deciding in favor of p-improvement
-		if (refineP/*pImprovement >= hImprovement*/)
-		{
-			error += pImprovementError - currentCell.error;
-
-			currentCell.poly = pImprovementPoly;
-			currentCell.error = pImprovementError;
-			// printPolynomial(currentCell.poly);
-
-			currentCell.octreeLeaf->setValue(currentCell);
-
-			// pending.push(currentCell);
-			pendingVector.push_back(std::move(currentCell));
-			std::push_heap(pendingVector.begin(), pendingVector.end(), queueCellCompare);
-		}
-		// doing h-improvement otherwise
-		if (refineH/*pImprovement < hImprovement*/)
-		{
-			error -= currentCell.error;
-
-			vector3d<std::shared_ptr<Octree<Cell>::Leaf>> leaves(2);
-			currentCell.octreeLeaf->subdivide(octree.get(), hImpSubdividedCell, leaves);
-
-			for (int x = 0; x < 2; x++)
-			{
-				for (int y = 0; y < 2; y++)
-				{
-					for (int z = 0; z < 2; z++)
-					{
-						hImpSubdividedCell(x, y, z).octreeLeaf = leaves(x, y, z);
-
-						error += hImpSubdividedCell(x, y, z).error;
-						// pending.push(hImpSubdividedCell(x, y, z));
-						pendingVector.push_back(std::move(hImpSubdividedCell(x, y, z)));
-						std::push_heap(pendingVector.begin(), pendingVector.end(), queueCellCompare);
-					}
-				}
-			}
 		}
 
 		// recalculate every 1000 step for precision
@@ -300,6 +351,7 @@ void OctreeGenerator::constructFieldGPU(std::unique_ptr<Octree<Cell>>& octree, c
 				error += cell.error;
 			}
 		}
+
 	}
 }
 

@@ -3,10 +3,6 @@
 //?#include "../Math/common.glsl"
 layout(local_size_x = 1, local_size_y = 1, local_size_z = 9) in;
 
-uniform vec3 bboxStart = vec3(-1);
-uniform vec3 bboxEnd = vec3(1);
-uniform int currentDeg = 2;
-
 
 writeonly layout(std430, binding = 0) buffer polynomials
 {
@@ -16,7 +12,15 @@ writeonly layout(std430, binding = 0) buffer polynomials
 };
 writeonly layout(std430, binding = 1) buffer polynomialsError
 {
-	float poly_errors[9];
+	float poly_errors[];
+};
+
+readonly layout(std430, binding = 2) buffer cells
+{
+	// gl_NumWorkGroups.y contains how many cells
+	// 2 * k + 0 vec4: bboxStart.x, bboxStart.y, bboxStart.z, currentDeg of cell
+	// 2 * k + 1 vec4: bboxEnd.x, bboxEnd.y, bboxEnd.z, start in poly_coeffs array
+	vec4 cell_data[];
 };
 
 const float gaussPoints1D[20][20] = {
@@ -136,28 +140,53 @@ void fitPolynomial(int polyStartIndex, int degree, vec3 bboxMin, vec3 bboxMax, o
 
 void main()
 {
+	vec3 bboxStart = cell_data[2 * gl_WorkGroupID.y + 0].xyz;
+	vec3 bboxEnd =   cell_data[2 * gl_WorkGroupID.y + 1].xyz;
+	int currentDeg =     floatBitsToInt(cell_data[2 * gl_WorkGroupID.y + 0].w);
+	int polyStartIndex = floatBitsToInt(cell_data[2 * gl_WorkGroupID.y + 1].w);
+	int polyErrorStartIndex = int(9 * gl_WorkGroupID.y);
+	
+
+//	poly_coeffs[polyStartIndex] = gl_WorkGroupID.x;
+//	poly_coeffs[polyStartIndex + 1] = gl_WorkGroupID.y;
+//	poly_coeffs[polyStartIndex + 2] = gl_WorkGroupID.z;
+//
+//	poly_coeffs[polyStartIndex + 4] = gl_NumWorkGroups.x;
+//	poly_coeffs[polyStartIndex + 5] = gl_NumWorkGroups.y;
+//	poly_coeffs[polyStartIndex + 6] = gl_NumWorkGroups.z;
+//
+//	poly_coeffs[polyStartIndex + 8] = float(currentDeg);
+//	poly_coeffs[polyStartIndex + 9] = float(polyStartIndex);
+//	poly_coeffs[polyStartIndex + 10] = cell_data[0].x;
+//	poly_coeffs[polyStartIndex + 11] = cell_data[0].y;
+//	poly_coeffs[polyStartIndex + 12] = cell_data[0].z;
+//	poly_coeffs[polyStartIndex + 13] = cell_data[1].x;
+//	poly_coeffs[polyStartIndex + 14] = cell_data[1].y;
+//	poly_coeffs[polyStartIndex + 15] = cell_data[1].z;
+//	return;
+
 	vec3 bboxSize = bboxEnd - bboxStart;
-		float error;
+	float error;
 
 	if (gl_LocalInvocationID.z == 0)
 	{
 		// p improvement (same bbox, +1 deg)
-		fitPolynomial(0, currentDeg + 1, bboxStart, bboxEnd, error);
-		poly_errors[0] = error;
+		fitPolynomial(polyStartIndex, currentDeg + 1, bboxStart, bboxEnd, error);
+		poly_errors[polyErrorStartIndex + 0] = error;
 	}
 	else
 	{
+		// h improvement (smaller bbox, same deg)
 		int temp = int(gl_LocalInvocationID.z - 1);
 		int x = temp / 4;
 		int y = (temp - 4 * x) / 2;
 		int z = (temp - 4 * x - 2 * y);
-		int polyStartIndex = getCoeffCountI(currentDeg + 1) + getCoeffCountI(currentDeg) * temp;
-		poly_coeffs[45 + temp] = polyStartIndex;
+		polyStartIndex += getCoeffCountI(currentDeg + 1) + getCoeffCountI(currentDeg) * temp;
 
 		vec3 bboxMin = bboxStart + bboxSize / 2.0f * vec3(x, y, z);
 		vec3 bboxMax = bboxMin + bboxSize / 2.0f;
 		fitPolynomial(polyStartIndex, currentDeg, bboxMin, bboxMax, error);
 
-		poly_errors[x * 4 + y * 2 + z + 1] = error;
+		poly_errors[polyErrorStartIndex + x * 4 + y * 2 + z + 1] = error;
 	}
 }

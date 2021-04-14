@@ -11,7 +11,7 @@ class SDF2Model1 : public SDFBase
 {
 public:
 	SDF2Model1(glm::vec3 worldMinPos = glm::vec3(0), float worldSize = 1.0f) :
-		SDFBase("Model1", worldMinPos, worldSize) {}
+		SDFBase("Model1", "SDFGPUandCPU/SDF2Model1.h", worldMinPos, worldSize) {}
 
 	float operator()(glm::vec3 p) const final
 	{

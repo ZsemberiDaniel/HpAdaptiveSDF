@@ -116,25 +116,10 @@
     <ClInclude Include="SDF\SDFBase.h">
       <Filter>SDF</Filter>
     </ClInclude>
-    <ClInclude Include="SDF\SDFTorus.h">
-      <Filter>SDF</Filter>
-    </ClInclude>
     <ClInclude Include="SDF\SDFHeader.h">
       <Filter>SDF</Filter>
     </ClInclude>
-    <ClInclude Include="SDF\SDFSphere.h">
-      <Filter>SDF</Filter>
-    </ClInclude>
-    <ClInclude Include="SDF\SDFPlane.h">
-      <Filter>SDF</Filter>
-    </ClInclude>
-    <ClInclude Include="SDF\SDFModel1.h">
-      <Filter>SDF</Filter>
-    </ClInclude>
     <ClInclude Include="SDF\SDFPrimitives.h">
-      <Filter>SDF</Filter>
-    </ClInclude>
-    <ClInclude Include="SDF\SDFCube.h">
       <Filter>SDF</Filter>
     </ClInclude>
     <ClInclude Include="Octree\SaveableOctree.h">
@@ -153,17 +138,8 @@
     <ClInclude Include="Utils\FileSelector.h">
       <Filter>Utils</Filter>
     </ClInclude>
-    <ClInclude Include="SDF\SDFModel3.h">
-      <Filter>SDF</Filter>
-    </ClInclude>
     <ClInclude Include="Utils\ErrorStatistics.h">
       <Filter>Utils</Filter>
-    </ClInclude>
-    <ClInclude Include="SDFCPUandGU\SDF2Model1.h">
-      <Filter>SDFGPUandCPU</Filter>
-    </ClInclude>
-    <ClInclude Include="SDFCPUandGU\SDF2Sphere.h">
-      <Filter>SDFGPUandCPU</Filter>
     </ClInclude>
     <ClInclude Include="Math\QuadratureEvaluator.h">
       <Filter>Math\Integral</Filter>
@@ -185,6 +161,21 @@
     </ClInclude>
     <ClInclude Include="Math\PolynomialGenerator.h">
       <Filter>Math\PolyGen</Filter>
+    </ClInclude>
+    <ClInclude Include="SDFGPUandCPU\SDF2Cube.h">
+      <Filter>SDFGPUandCPU</Filter>
+    </ClInclude>
+    <ClInclude Include="SDFGPUandCPU\SDF2Model1.h">
+      <Filter>SDFGPUandCPU</Filter>
+    </ClInclude>
+    <ClInclude Include="SDFGPUandCPU\SDF2Plane.h">
+      <Filter>SDFGPUandCPU</Filter>
+    </ClInclude>
+    <ClInclude Include="SDFGPUandCPU\SDF2Sphere.h">
+      <Filter>SDFGPUandCPU</Filter>
+    </ClInclude>
+    <ClInclude Include="SDFGPUandCPU\SDF2Torus.h">
+      <Filter>SDFGPUandCPU</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

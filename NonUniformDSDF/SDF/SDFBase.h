@@ -20,11 +20,20 @@ private:
 protected:
 	glm::vec3 _worldMinPos;
 	float _worldSize;
+	std::string _path;
 
 	std::string _sdfName = "Default SDF name";
+
+	virtual void writeAttributes(std::ofstream& out) const
+	{
+		/*for (auto const& define : defines)
+		{
+			out << "#define " << define.first << " " << define.second << "\n";
+		}*/
+	}
 public:
-	SDFBase(std::string sdfName, glm::vec3 worldMinPos = glm::vec3(0), float worldSize = 1.0f) :
-		_sdfName(sdfName), _worldMinPos(worldMinPos), _worldSize(worldSize) 
+	SDFBase(std::string sdfName, std::string path, glm::vec3 worldMinPos = glm::vec3(0), float worldSize = 1.0f) :
+		_sdfName(sdfName), _worldMinPos(worldMinPos), _worldSize(worldSize) , _path(path)
 	{
 		
 	}
@@ -37,6 +46,18 @@ public:
 	virtual ~SDFBase() 
 	{	
 		
+	}
+
+	void writeAttributesToDefinesFile(const std::string& path) const
+	{
+		std::ofstream out(path);
+		if (!out.is_open())
+		{
+			std::cout << "Could not open attributes defines file!" << std::endl;
+		}
+		writeAttributes(out);
+
+		out.close();
 	}
 
 	void initializeSDFDiscreteValues()
@@ -70,6 +91,7 @@ public:
 	glm::vec3 worldMinPos() const { return _worldMinPos; }
 	float worldSize() const { return _worldSize; }
 	std::string name() const { return _sdfName; }
+	const std::string& path() const { return _path; }
 
 	std::shared_ptr<df::Texture3D<float>> discreteSDFValuesTexture()
 	{
@@ -98,4 +120,13 @@ public:
 		return maxSDFValue;
 	}
 };
+
+namespace writeDefinesOperators
+{
+	inline std::ostream& operator<<(std::ostream& os, const glm::vec3 p)
+	{
+		os << "vec3(" << p.x << ", " << p.y << ", " << p.z << ")";
+		return os;
+	}
+}
 #endif
