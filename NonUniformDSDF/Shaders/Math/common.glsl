@@ -87,3 +87,8 @@ uint getCoeffCount(uint degree)
 {
 	return (degree * degree * degree + 6 * degree * degree + 11 * degree + 6) / 6;
 }
+
+int getCoeffCountI(int degree) 
+{
+	return (degree * degree * degree + 6 * degree * degree + 11 * degree + 6) / 6;
+}

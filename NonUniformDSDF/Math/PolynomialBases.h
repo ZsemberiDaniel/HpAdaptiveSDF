@@ -22,7 +22,7 @@ struct PolynomialBase
 	Polynomial::Type resultingPolynomialType;
 };
 
-inline PolynomialBase approxTypes[3] = {
+inline PolynomialBase approxTypes[] = {
 	// GAUSS QUADRATURE WITH LEGENDRE
 	PolynomialBase {
 		0,
@@ -77,6 +77,22 @@ inline PolynomialBase approxTypes[3] = {
 				constr,
 				*sdfFunc);
 		 },
+		Polynomial::Type::LEGENDRE_NORMALIZED
+	},
+
+	// GAUSS QUADRATURE WITH LEGENDRE GPU edition
+	PolynomialBase {
+		3,
+		"[GPU] Gauss Quadrature - normalized Legendre",
+		"Gauss",
+		"evalPolynom_normLagrange",
+		[](std::unique_ptr<Octree<Cell>>& octree, OctreeGenerator::ConstructionParameters& constr, SDFBase* sdfFunc)
+		{
+			OctreeGenerator::constructFieldGPU(
+				octree,
+				constr,
+				*sdfFunc);
+		},
 		Polynomial::Type::LEGENDRE_NORMALIZED
 	}
 };

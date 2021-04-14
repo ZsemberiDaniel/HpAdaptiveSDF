@@ -533,7 +533,9 @@ void App::CompilePreprocess()
 		// which type of evalutaion to use for the polynomials
 		{ "evalPolynom", currOctree->approxType().shaderEvalFunctionName },
 
-		{ "MAX_COEFF_SIZE", std::to_string(Polynomial::calculateCoeffCount(currOctree->getConstructionParams().maxLevel) + 1) }
+		{ "MAX_COEFF_SIZE", std::to_string(Polynomial::calculateCoeffCount(currOctree->getConstructionParams().maxLevel) + 1) },
+		// used for the SDFs that work for both CPU and GPU
+		{ "GPU_SIDE", "" }
 	};
 
 	if (state.showNormals)

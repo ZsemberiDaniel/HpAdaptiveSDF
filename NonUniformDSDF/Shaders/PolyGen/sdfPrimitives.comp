@@ -1,0 +1,87 @@
+
+float sdfSphere(vec3 p, vec3 c, float r) {
+	return length(p - c) - r;
+}
+
+float sdfSphere(vec3 p, float r) {
+	return length(p) - r;
+}
+
+float sdfBox(vec3 p, vec3 b)
+{
+	vec3 q = abs(p) - b;
+	return length(max(q, 0.0f)) + min(max(q.x, max(q.y, q.z)), 0.0f);
+}
+
+float sdfTorus(vec3 p, float R, float r)
+{
+	vec2 q = vec2(length(vec2(p.x, p.z)) - R, p.y);
+	return length(q) - r;
+}
+
+float sdfPyramid(vec3 p, float h)
+{
+	float m2 = h * h + 0.25f;
+
+	p.x = abs(p.x);
+	p.z = abs(p.z);
+	if (p.z > p.x)
+	{
+		float temp = p.x;
+		p.x = p.z;
+		p.z = temp;
+	}
+	p.x -= 0.5f;
+	p.z -= 0.5f;
+
+	vec3 q = vec3(p.z, h * p.y - 0.5f * p.x, h * p.x + 0.5f * p.y);
+
+	float s = max(-q.x, 0.0f);
+	float t = clamp((q.y - 0.5f * p.z) / (m2 + 0.25f), 0.0f, 1.0f);
+
+	float a = m2 * (q.x + s) * (q.x + s) + q.y * q.y;
+	float b = m2 * (q.x + 0.5f * t) * (q.x + 0.5f * t) + (q.y - m2 * t) * (q.y - m2 * t);
+
+	float d2 = min(q.y, -q.x * m2 - q.y * 0.5f) > 0.0f ? 0.0f : min(a, b);
+
+	return sqrt((d2 + q.z * q.z) / m2) * sign(max(q.z, -p.y));
+}
+
+float sdfPlane(vec3 p, vec3 n)
+{
+	return dot(p, normalize(n));
+}
+
+// Axis aligned planes
+float sdfPlaneYZ(vec3 p) { return p.x; }
+float sdfPlaneXZ(vec3 p) { return p.y; }
+float sdfPlaneXY(vec3 p) { return p.y; }
+
+// Infinite cylinders
+float sdfCylinderZ(vec3 p, float r) { return length(vec2(p.x, p.y)) - r; }
+float sdfCylinderX(vec3 p, float r) { return sdfCylinderZ(vec3(p.z, p.y, p.x), r); }
+float sdfCylinderY(vec3 p, float r) { return sdfCylinderZ(vec3(p.x, p.z, p.y), r); }
+
+// Finite cylinders
+float sdfCylinderZ(vec3 p, vec2 h)
+{
+	vec2 d = abs(vec2(length(vec2(p.x, p.y)), abs(p.z))) - h;
+	return min(max(d.x, d.y), 0.0f) + length(max(d, 0.0f));
+}
+float sdfCylinderX(vec3 p, vec2 h) { return sdfCylinderZ(vec3(p.z, p.y, p.x), h); }
+float sdfCylinderY(vec3 p, vec2 h) { return sdfCylinderZ(vec3(p.x, p.z, p.y), h); }
+
+float sdfUnion(float d1, float d2)
+{
+	return min(d1, d2);
+}
+
+float sdfSubtraction(float d1, float d2)
+{
+	return max(-d1, d2);
+}
+
+float sdfIntersect(float d1, float d2)
+{
+	return max(d1, d2);
+}

@@ -47,6 +47,18 @@
     <Filter Include="Shaders\SDF\SDFScenes">
       <UniqueIdentifier>{1610f35d-cecc-4a3f-b5d0-71f42ac393dd}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Shaders\PolyGen">
+      <UniqueIdentifier>{64919fdb-58eb-4be4-b1ce-c487cfc3ce87}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="SDFGPUandCPU">
+      <UniqueIdentifier>{73100344-8e59-4450-a918-caa94b869f84}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Math\Integral">
+      <UniqueIdentifier>{94fc1cb5-fc01-46c1-a229-fdf1de38ca43}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Math\PolyGen">
+      <UniqueIdentifier>{f38d33d7-5f70-4420-acbe-9efc27786afa}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
@@ -57,14 +69,14 @@
     <ClCompile Include="Math\Polynomial.cpp">
       <Filter>Math</Filter>
     </ClCompile>
-    <ClCompile Include="Math\QuadratureEvaluator.cpp">
-      <Filter>Math</Filter>
-    </ClCompile>
     <ClCompile Include="Octree\SaveableOctree.cpp">
       <Filter>Octree</Filter>
     </ClCompile>
     <ClCompile Include="Utils\ErrorStatistics.cpp">
       <Filter>Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="Math\QuadratureEvaluator.cpp">
+      <Filter>Math\Integral</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -98,20 +110,8 @@
     <ClInclude Include="Math\Polynomial.h">
       <Filter>Math</Filter>
     </ClInclude>
-    <ClInclude Include="Math\QuadratureEvaluator.h">
-      <Filter>Math</Filter>
-    </ClInclude>
     <ClInclude Include="Octree\octreeGenerator.h">
       <Filter>Octree</Filter>
-    </ClInclude>
-    <ClInclude Include="Math\GaussPolynomialGenerator.h">
-      <Filter>Math</Filter>
-    </ClInclude>
-    <ClInclude Include="Math\PolynomialGenerator.h">
-      <Filter>Math</Filter>
-    </ClInclude>
-    <ClInclude Include="Math\LSQPolyGenerator.h">
-      <Filter>Math</Filter>
     </ClInclude>
     <ClInclude Include="SDF\SDFBase.h">
       <Filter>SDF</Filter>
@@ -156,17 +156,35 @@
     <ClInclude Include="SDF\SDFModel3.h">
       <Filter>SDF</Filter>
     </ClInclude>
-    <ClInclude Include="Math\IntegralEvaluator.h">
-      <Filter>Math</Filter>
-    </ClInclude>
-    <ClInclude Include="Math\AverageIntegralEvaluator.h">
-      <Filter>Math</Filter>
-    </ClInclude>
-    <ClInclude Include="ChebyshevIntegralEvaluator.h">
-      <Filter>Math</Filter>
-    </ClInclude>
     <ClInclude Include="Utils\ErrorStatistics.h">
       <Filter>Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="SDFCPUandGU\SDF2Model1.h">
+      <Filter>SDFGPUandCPU</Filter>
+    </ClInclude>
+    <ClInclude Include="SDFCPUandGU\SDF2Sphere.h">
+      <Filter>SDFGPUandCPU</Filter>
+    </ClInclude>
+    <ClInclude Include="Math\QuadratureEvaluator.h">
+      <Filter>Math\Integral</Filter>
+    </ClInclude>
+    <ClInclude Include="ChebyshevIntegralEvaluator.h">
+      <Filter>Math\Integral</Filter>
+    </ClInclude>
+    <ClInclude Include="Math\AverageIntegralEvaluator.h">
+      <Filter>Math\Integral</Filter>
+    </ClInclude>
+    <ClInclude Include="Math\IntegralEvaluator.h">
+      <Filter>Math\Integral</Filter>
+    </ClInclude>
+    <ClInclude Include="Math\LSQPolyGenerator.h">
+      <Filter>Math\PolyGen</Filter>
+    </ClInclude>
+    <ClInclude Include="Math\GaussPolynomialGenerator.h">
+      <Filter>Math\PolyGen</Filter>
+    </ClInclude>
+    <ClInclude Include="Math\PolynomialGenerator.h">
+      <Filter>Math\PolyGen</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -412,6 +430,12 @@
     </None>
     <None Include="Shaders\Evaluate\threeDimFromOctree.comp">
       <Filter>Shaders\Evaluate</Filter>
+    </None>
+    <None Include="Shaders\PolyGen\GaussPolyGen.comp">
+      <Filter>Shaders\PolyGen</Filter>
+    </None>
+    <None Include="Shaders\PolyGen\sdfPrimitives.comp">
+      <Filter>Shaders\PolyGen</Filter>
     </None>
   </ItemGroup>
 </Project>
