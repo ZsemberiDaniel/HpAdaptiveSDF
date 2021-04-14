@@ -20,11 +20,16 @@ uniform float smallestStep;
 uniform float biggestStep;
 uniform float stepMultiplier;
 
+// 0 - basic with refine root
+// 1 - relaxed
+// 2 - enhanced
+uniform int sphereTraceType = 0;
+
 //!#include "common.glsl"
 //?#include "Math/box_ray_intersection.glsl"
 //?#include "Shade/basic_shade.glsl"
 
-TraceResult basicSphereTrace(RayCone cone, SphereTraceDesc params);
+TraceResult doSphereTrace(RayCone cone, SphereTraceDesc params);
 
 uniform float octreeSize;
 float sdfInside(vec3 p)
@@ -88,7 +93,7 @@ bool cube_main(vec3 in_vec, bool pos_or_dir, bool calc_t_min, out vec3 out_col, 
 	SphereTraceDesc params = SphereTraceDesc(epsilon, maxStep);
 
 	// Basic sphere trace
-	TraceResult tret = basicSphereTrace(cone, params);
+	TraceResult tret = doSphereTrace(cone, params);
 
 	// Shading from now on
 	Material mat;
@@ -132,14 +137,73 @@ bool cube_main(vec3 in_vec, bool pos_or_dir, bool calc_t_min, out vec3 out_col, 
 	return true;
 }
 
-TraceResult basicSphereTrace(in RayCone cone, SphereTraceDesc params)
+#define STEP_SIZE_REDUCTION 0.95
+TraceResult enhancedSphereTrace(in RayCone cone, SphereTraceDesc params)
 {
-	// trace in local model coordinates
-//	cone.ray.Origin -= sTranslation + sdfTexCorner;
-//	cone.ray.Origin /= sScale;
-//	cone.ray.Tmin /= sScale;
-//	cone.ray.Tmax /= sScale;
+	TraceResult ret = TraceResult(cone.ray.Tmin, 0);
+	float rp = 0, rc = 0, rn = 0; //prev, curr, next
+	float di = 0;
+	int i = 0;
+	do {
+		di = rc + STEP_SIZE_REDUCTION * rc * max( (di - rp + rc) / (di + rp - rc), 0.6);
+		rn = sdfInside(cone.ray.Origin + cone.ray.Direction * (ret.T + di));
 
+		if(di > rc + rn)
+		{
+			di = rc;
+			rn = sdfInside(cone.ray.Origin + cone.ray.Direction * (ret.T + di));
+		}
+		di = clamp(stepMultiplier * di, smallestStep, biggestStep);
+		ret.T += di;
+		rp = rc; rc = rn;
+		++i;
+	} while (
+		ret.T < cone.ray.Tmax &&       			// Stay within bound box
+		rn	  > params.epsilon * ret.T &&	// Stop if cone is close to surface
+		i     < params.maxiters);
+
+	ret.flags =  int(ret.T >= cone.ray.Tmax)
+              | (int(rn <= params.epsilon)  << 1)
+              | (int(i >= params.maxiters) << 2); 
+
+	return ret;
+}
+
+#define TRACE_OR 1.6
+TraceResult relaxedSphereTracing(in RayCone cone, in SphereTraceDesc params)
+{
+	TraceResult ret = TraceResult(cone.ray.Tmin, 0);
+
+	float rc = 0, rn;
+	float di = 0;
+	int i = 0;
+	do
+	{
+		di = rc * TRACE_OR;
+		rn = sdfInside(cone.ray.Origin + cone.ray.Direction * (ret.T + di)); 
+		if(di > rc + rn)
+		{
+			di = rc;
+			rn = sdfInside(cone.ray.Origin + cone.ray.Direction * (ret.T + di));
+		}
+		di = clamp(stepMultiplier * di, smallestStep, biggestStep);
+		ret.T += di;
+		rc = rn;
+		++i;
+	} while (
+		ret.T < cone.ray.Tmax &&       					// Stay within bound box
+		rn	  > params.epsilon * (ret.T + di) &&	// Stop if cone is close to surface
+		i     < params.maxiters);
+
+	ret.flags =  int(ret.T >= cone.ray.Tmax)
+              | (int(di <= params.epsilon * (ret.T + di))  << 1)
+              | (int(i >= params.maxiters) << 2);
+
+	return ret;
+}
+
+TraceResult basicSphereTrace(in RayCone cone, in SphereTraceDesc params)
+{
 	TraceResult ret = TraceResult(cone.ray.Tmin, 0);
 
 	int i = 0;
@@ -193,5 +257,31 @@ TraceResult basicSphereTrace(in RayCone cone, SphereTraceDesc params)
 	// restore global coordinates
 	// ret.T *= sScale;
 	return ret;
+}
 
+
+TraceResult doSphereTrace(in RayCone cone, SphereTraceDesc params)
+{
+	// trace in local model coordinates
+//	cone.ray.Origin -= sTranslation + sdfTexCorner;
+//	cone.ray.Origin /= sScale;
+//	cone.ray.Tmin /= sScale;
+//	cone.ray.Tmax /= sScale;
+	if (sphereTraceType == 0)
+	{
+		return basicSphereTrace(cone, params);
+	}
+	else 
+	if (sphereTraceType == 1)
+	{
+		return relaxedSphereTracing(cone, params);
+	}
+	else if (sphereTraceType == 2)
+	{
+		return enhancedSphereTrace(cone, params);
+	}
+	else
+	{
+		return basicSphereTrace(cone, params);
+	}
 }

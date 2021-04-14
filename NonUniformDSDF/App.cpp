@@ -184,7 +184,8 @@ void App::Render()
 		<< "epsilon" << state.settings.epsilonToSurface
 		<< "smallestStep" << state.settings.smallestStep
 		<< "biggestStep" << state.settings.biggestStep
-		<< "stepMultiplier" << state.settings.stepMultiplier;
+		<< "stepMultiplier" << state.settings.stepMultiplier
+		<< "sphereTraceType" << state.settings.sphereTraceType;
 
 	GL_CHECK;
 
@@ -411,7 +412,15 @@ void App::RenderGUI()
 
 		if (ImGui::CollapsingHeader("Render settings"))
 		{
-			ImGui::Checkbox("Refine root", &state.settings.refineRoot);
+			ImGui::Text("Sphere trace type:");
+			ImGui::RadioButton("Basic", &state.settings.sphereTraceType, 0); ImGui::SameLine();
+			ImGui::RadioButton("Relaxed", &state.settings.sphereTraceType, 1); ImGui::SameLine();
+			ImGui::RadioButton("Enhanced", &state.settings.sphereTraceType, 2);
+
+			if (state.settings.sphereTraceType == 0)
+			{
+				ImGui::Checkbox("Refine root", &state.settings.refineRoot);
+			}
 			ImGui::InputInt("Max step", &state.settings.maxStep);
 			ImGui::InputFloat("Epsilon to surface", &state.settings.epsilonToSurface, 0, 0, "%.7f");
 			ImGui::InputFloat("Smallest allowed step", &state.settings.smallestStep, 0, 0, "%.7f");

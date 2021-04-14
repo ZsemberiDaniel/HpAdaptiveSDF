@@ -167,6 +167,10 @@ private:
 		struct RenderSettings {
 			glm::vec3 gLightPos = glm::vec3(10, 66, -200);
 
+			// 0 - basic with refine root
+			// 1 - relaxed
+			// 2 - enhanced
+			int sphereTraceType = 0;
 			int gAOMaxIters = 5;
 			float gAOStepSize = 0.4f;
 			float gAOStrength = 0.7f;

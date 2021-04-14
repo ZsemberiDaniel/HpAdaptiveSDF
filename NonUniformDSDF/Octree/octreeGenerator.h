@@ -65,7 +65,7 @@ void OctreeGenerator::constructFieldGPU(std::unique_ptr<Octree<Cell>>& octree, c
 		glGenBuffers(1, &ssboShaderCompute);
 		glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssboShaderCompute);
 		std::vector<float> container(K * ssbosPerDegreesSize.back(), 0.0f);
-		int bufferSize = container.size() * sizeof(float);
+		int bufferSize = static_cast<int>(container.size() * sizeof(float));
 		glBufferStorage(GL_SHADER_STORAGE_BUFFER, bufferSize, (GLvoid*)container.data(), GL_MAP_WRITE_BIT);
 		glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 
@@ -73,7 +73,7 @@ void OctreeGenerator::constructFieldGPU(std::unique_ptr<Octree<Cell>>& octree, c
 		glGenBuffers(1, &ssboPolyError);
 		glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssboPolyError);
 		container = std::vector<float>(K * 9, 0.0f);
-		bufferSize = container.size() * sizeof(float);
+		bufferSize = static_cast<int>(container.size() * sizeof(float));
 		glBufferStorage(GL_SHADER_STORAGE_BUFFER, bufferSize, (GLvoid*)container.data(), GL_MAP_WRITE_BIT);
 		glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 
@@ -81,7 +81,7 @@ void OctreeGenerator::constructFieldGPU(std::unique_ptr<Octree<Cell>>& octree, c
 		glGenBuffers(1, &ssboPolyDescription);
 		glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssboPolyDescription);
 		std::vector<glm::vec4> container2 = std::vector<glm::vec4>(K * 2, glm::vec4(2.0f));
-		bufferSize = container2.size() * sizeof(glm::vec4);
+		bufferSize = static_cast<int>(container2.size() * sizeof(glm::vec4));
 		glBufferStorage(GL_SHADER_STORAGE_BUFFER, bufferSize, (GLvoid*)container2.data(), GL_DYNAMIC_STORAGE_BIT | GL_MAP_READ_BIT);
 		glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 	}
