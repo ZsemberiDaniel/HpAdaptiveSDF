@@ -1,0 +1,82 @@
+#version 450
+
+//?#include "../Math/common.glsl"
+layout(local_size_x = 1, local_size_y = 1, local_size_z = 9) in;
+
+writeonly layout(std430, binding = 0) buffer polynomials
+{
+	// starting with (currentDeg + 1) polynomial with p fit
+	// then 8 polynomials with currentDeg with h fit
+	float poly_coeffs[];
+};
+writeonly layout(std430, binding = 1) buffer polynomialsError
+{
+	float poly_errors[];
+};
+
+readonly layout(std430, binding = 2) buffer cells
+{
+	// gl_NumWorkGroups.y contains how many cells
+	// 2 * k + 0 vec4: bboxStart.x, bboxStart.y, bboxStart.z, currentDeg of cell
+	// 2 * k + 1 vec4: bboxEnd.x, bboxEnd.y, bboxEnd.z, start in poly_coeffs array
+	vec4 cell_data[];
+};
+
+float evalSDFIntegral(ivec3 degs, int pointCount, vec3 intervalStarting, vec3 intervalEnding);
+
+
+void fitPolynomial(int polyStartIndex, int degree, vec3 bboxMin, vec3 bboxMax, out float error)
+{
+	error = 0.0f;
+	for (int i = 0; i <= degree; i++)
+	{
+		for (int k = 0; i + k <= degree; k++)
+		{
+			for (int j = 0; i + k + j <= degree; j++, polyStartIndex++)
+			{
+				float coeff = evalSDFIntegral(ivec3(i, k, j), 20, bboxMin, bboxMax);
+
+				if (i + j + k == degree)
+				{
+					error += coeff * coeff;
+				}
+
+				poly_coeffs[polyStartIndex] = coeff;
+			}
+		}
+	}
+}
+
+void main()
+{
+	vec3 bboxStart = cell_data[2 * gl_WorkGroupID.y + 0].xyz;
+	vec3 bboxEnd =   cell_data[2 * gl_WorkGroupID.y + 1].xyz;
+	int currentDeg =     floatBitsToInt(cell_data[2 * gl_WorkGroupID.y + 0].w);
+	int polyStartIndex = floatBitsToInt(cell_data[2 * gl_WorkGroupID.y + 1].w);
+	int polyErrorStartIndex = int(9 * gl_WorkGroupID.y);
+	
+	vec3 bboxSize = bboxEnd - bboxStart;
+	float error;
+
+	if (gl_LocalInvocationID.z == 0)
+	{
+		// p improvement (same bbox, +1 deg)
+		fitPolynomial(polyStartIndex, currentDeg + 1, bboxStart, bboxEnd, error);
+		poly_errors[polyErrorStartIndex + 0] = error;
+	}
+	else
+	{
+		// h improvement (smaller bbox, same deg)
+		int temp = int(gl_LocalInvocationID.z - 1);
+		int x = temp / 4;
+		int y = (temp - 4 * x) / 2;
+		int z = (temp - 4 * x - 2 * y);
+		polyStartIndex += getCoeffCountI(currentDeg + 1) + getCoeffCountI(currentDeg) * temp;
+
+		vec3 bboxMin = bboxStart + bboxSize / 2.0f * vec3(x, y, z);
+		vec3 bboxMax = bboxMin + bboxSize / 2.0f;
+		fitPolynomial(polyStartIndex, currentDeg, bboxMin, bboxMax, error);
+
+		poly_errors[polyErrorStartIndex + x * 4 + y * 2 + z + 1] = error;
+	}
+}

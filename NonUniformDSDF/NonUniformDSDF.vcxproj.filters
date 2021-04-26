@@ -177,6 +177,15 @@
     <ClInclude Include="SDFGPUandCPU\SDF2Torus.h">
       <Filter>SDFGPUandCPU</Filter>
     </ClInclude>
+    <ClInclude Include="Math\GaussGPUPolyGenerator.h">
+      <Filter>Math\PolyGen</Filter>
+    </ClInclude>
+    <ClInclude Include="Math\LSQGPUPolyGenerator.h">
+      <Filter>Math\PolyGen</Filter>
+    </ClInclude>
+    <ClInclude Include="Math\GPUPolyGenerator.h">
+      <Filter>Math\PolyGen</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="Shaders\main_cube.glsl">
@@ -426,6 +435,12 @@
       <Filter>Shaders\PolyGen</Filter>
     </None>
     <None Include="Shaders\PolyGen\sdfPrimitives.comp">
+      <Filter>Shaders\PolyGen</Filter>
+    </None>
+    <None Include="Shaders\PolyGen\LSQPolyGen.comp">
+      <Filter>Shaders\PolyGen</Filter>
+    </None>
+    <None Include="Shaders\PolyGen\PolyGen.comp">
       <Filter>Shaders\PolyGen</Filter>
     </None>
   </ItemGroup>

@@ -15,7 +15,7 @@ public:
 	}
 
 	template<typename sdf>
-	Polynomial fitPolynomial(const BoundingBox& bbox, int degree, sdf& sdfFunction);
+	std::vector<Polynomial> fitPolynomials(std::vector<std::pair<BoundingBox, int>>& bboxes, sdf& sdfFunction);
 
 private:
 	std::shared_ptr<IntegralEvaluator> quadratureEvaluator;
@@ -31,11 +31,14 @@ private:
 
 		return value;
 	}
+
+	template<typename sdf>
+	Polynomial fitOnePoly(BoundingBox& bbox, int degree, sdf& sdfFunction);
 };
 
 /* Equation 5 */
 template<typename sdf>
-Polynomial GaussPolynomialGenerator::fitPolynomial(const BoundingBox& bbox, int degree, sdf& sdfFunction)
+Polynomial GaussPolynomialGenerator::fitOnePoly(BoundingBox& bbox, int degree, sdf& sdfFunction)
 {
 	Polynomial polynomial(degree);
 
@@ -56,5 +59,37 @@ Polynomial GaussPolynomialGenerator::fitPolynomial(const BoundingBox& bbox, int 
 	}
 
 	return polynomial;
+}
+
+
+template<typename sdf>
+std::vector<Polynomial> GaussPolynomialGenerator::fitPolynomials(std::vector<std::pair<BoundingBox, int>>& bboxes, sdf& sdfFunction)
+{
+	std::vector<Polynomial> polys(9 * bboxes.size());
+	int i = 0;
+	for (auto& pair : bboxes)
+	{
+		polys[9 * i + 0] = fitOnePoly(pair.first, pair.second + 1, sdfFunction);
+
+		float subdividedCubeSize = pair.first.size().x / 2.0f;
+		for (int x = 0, m = 0; x < 2; x++)
+		{
+			for (int y = 0; y < 2; y++)
+			{
+				for (int z = 0; z < 2; z++, m++)
+				{
+					// the subdivided cubes' coord is shifted from the bigger cube's coord
+					glm::vec3 cellCoord = pair.first.min + glm::vec3(x, y, z) * glm::vec3(subdividedCubeSize);
+					BoundingBox bbox = BoundingBox{ cellCoord, cellCoord + glm::vec3(subdividedCubeSize) };
+
+					polys[9 * i + m + 1] = fitOnePoly(bbox, pair.second, sdfFunction);
+				}
+			}
+		}
+
+		i++;
+	}
+
+	return polys;
 }
 #endif

@@ -3,6 +3,7 @@
 #include <functional>
 #include <string>
 #include "GaussPolynomialGenerator.h"
+#include "GaussGPUPolyGenerator.h"
 #include "LSQPolyGenerator.h"
 
 #include "AverageIntegralEvaluator.h"
@@ -34,6 +35,7 @@ inline PolynomialBase approxTypes[] = {
 		 {
 			static GaussPolynomialGenerator generator(std::make_shared<QuadratureEvaluator>());
 
+			constr.cellGroupSize = 1;
 			OctreeGenerator::constructField<GaussPolynomialGenerator>(
 				octree,
 				generator,
@@ -54,6 +56,7 @@ inline PolynomialBase approxTypes[] = {
 		 {
 			static LSQPolyGenerator generator;
 
+			constr.cellGroupSize = 1;
 			OctreeGenerator::constructField<LSQPolyGenerator>(
 				octree,
 				generator,
@@ -74,6 +77,7 @@ inline PolynomialBase approxTypes[] = {
 		 {
 			static GaussPolynomialGenerator generator(std::make_shared<AverageIntegralEvaluator>());
 
+			constr.cellGroupSize = 1;
 			OctreeGenerator::constructField<GaussPolynomialGenerator>(
 				octree,
 				generator,
@@ -92,8 +96,11 @@ inline PolynomialBase approxTypes[] = {
 		"evalPolynom_normLagrange",
 		[](std::unique_ptr<Octree<Cell>>& octree, OctreeGenerator::ConstructionParameters& constr, SDFBase* sdfFunc)
 		{
-			OctreeGenerator::constructFieldGPU(
+			GaussGPUPolyGenerator generator = GaussGPUPolyGenerator(constr.maxDegree, constr.cellGroupSize, *sdfFunc);
+
+			OctreeGenerator::constructField(
 				octree,
+				generator,
 				constr,
 				*sdfFunc);
 		},

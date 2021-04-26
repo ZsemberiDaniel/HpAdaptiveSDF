@@ -258,8 +258,11 @@
     <ClInclude Include="ChebyshevIntegralEvaluator.h" />
     <ClInclude Include="constants.h" />
     <ClInclude Include="Math\AverageIntegralEvaluator.h" />
+    <ClInclude Include="Math\GaussGPUPolyGenerator.h" />
     <ClInclude Include="Math\GaussPolynomialGenerator.h" />
+    <ClInclude Include="Math\GPUPolyGenerator.h" />
     <ClInclude Include="Math\IntegralEvaluator.h" />
+    <ClInclude Include="Math\LSQGPUPolyGenerator.h" />
     <ClInclude Include="Math\LSQPolyGenerator.h" />
     <ClInclude Include="Math\Polynomial.h" />
     <ClInclude Include="Math\PolynomialBases.h" />
@@ -341,6 +344,8 @@
     <None Include="Shaders\mesh.vert" />
     <None Include="Shaders\Octree\octree.glsl" />
     <None Include="Shaders\PolyGen\GaussPolyGen.comp" />
+    <None Include="Shaders\PolyGen\LSQPolyGen.comp" />
+    <None Include="Shaders\PolyGen\PolyGen.comp" />
     <None Include="Shaders\PolyGen\sdfPrimitives.comp" />
     <None Include="Shaders\Primitives\plane.frag" />
     <None Include="Shaders\Primitives\plane.vert" />
