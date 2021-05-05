@@ -12,10 +12,10 @@
 #include "../Math/PolynomialBases.h"
 #include "../Structures.h"
 #include "../SDF/SDFHeader.h"
+#include <filesystem>
 
 class SaveableOctree
 {
-
 private:
 	SaveableOctree() { }
 
@@ -25,15 +25,19 @@ private:
 	std::unique_ptr<eltecg::ogl::ShaderStorageBuffer> branchSSBO;
 	std::unique_ptr<eltecg::ogl::ShaderStorageBuffer> leavesSSBO;
 
-	inline static std::unique_ptr<df::ComputeProgramEditor> texture2DArrayCalculator;
+	std::unique_ptr<df::ComputeProgramEditor> texture2DArrayCalculator;
+
 	void initTexture2DArrayCalculator()
 	{
 		using namespace df;
 
-		// delete texture2DArrayCalculator;
+		std::map<std::string, std::string> m;
+		saveDefinesFile(m, "Shaders/tempDefinesSaveableOctreeTemp.glsl");
+
+		std::cout << "Compiling SaveableOctree texture2DArray calculator" << std::endl;
 		texture2DArrayCalculator = std::make_unique<df::ComputeProgramEditor>("Texture2DArray-prog");
 		*texture2DArrayCalculator
-			<< "Shaders/defines.glsl"_comp
+			<< "Shaders/tempDefinesSaveableOctreeTemp.glsl"_comp
 			<< "Shaders/uniforms.glsl"_comp
 			<< "Shaders/Math/common.glsl"_comp
 			<< "Shaders/common.glsl"_comp
@@ -42,6 +46,7 @@ private:
 			<< "Shaders/Evaluate/threeDimFromOctree.comp"_comp
 			<< df::LinkProgram;
 		std::cout << texture2DArrayCalculator->GetErrors();
+		std::filesystem::remove("Shaders/tempDefinesSaveableOctreeTemp.glsl");
 	}
 
 	/// <summary>
@@ -243,11 +248,6 @@ public:
 
 	SaveableOctree(int sdfIndex, int approxIndex, OctreeGenerator::ConstructionParameters& constructionParams);
 
-	void RecompileShaders()
-	{
-		initTexture2DArrayCalculator();
-	}
-
 	/// <summary>
 	/// Which SDF function was used to construct this octree
 	/// </summary>
@@ -315,6 +315,7 @@ public:
 		file.close();
 
 		auto out = initFromFileData(data);
+		out->initTexture2DArrayCalculator();
 		return out;
 	}
 
@@ -340,6 +341,38 @@ public:
 		{
 			ImGui::Text("Used only H adapt.");
 		}
+	}
+
+	/* Writes the given values in the map to a glsl file as define directives, the key of the map being
+	the identifier and the value being the token-string.
+	*/
+	void saveDefinesFile(std::map<std::string, std::string> additionalDefines, std::string path = "Shaders/defines.glsl")
+	{
+		std::map<std::string, std::string> defines{
+			// which type of evalutaion to use for the polynomials
+			{ "evalPolynom", approxType().shaderEvalFunctionName },
+
+			{ "MAX_DEGREE", std::to_string(getConstructionParams().maxDegree) },
+			{ "MAX_COEFF_SIZE", std::to_string(Polynomial::calculateCoeffCount(getConstructionParams().maxDegree)) },
+			// used for the SDFs that work for both CPU and GPU
+			{ "GPU_SIDE", "" }
+		};
+		for (auto& pair : additionalDefines)
+		{
+			defines[pair.first] = pair.second;
+		}
+
+		std::ofstream out(path);
+		if (!out.is_open())
+		{
+			std::cout << "Could not open defines file!" << std::endl;
+		}
+		for (auto const& define : defines)
+		{
+			out << "#define " << define.first << " " << define.second << "\n";
+		}
+
+		out.close();
 	}
 
 	template<typename S, typename U>
@@ -421,8 +454,8 @@ void SaveableOctree::SetOctreeUniforms(df::ProgramEditor<S, U>& program)
 		<< "sdfTexCorner" << getConstructionParams().minPos 
 		<< "modelScale" << glm::vec3(getConstructionParams().sizeInWorld)
 		<< "modelTrans" << getConstructionParams().minPos
-		<< "sTranslation" << glm::vec3(0) // state.octreeConstructionParams.minPos
-		<< "sScale" << glm::vec3(1)
+		//<< "sTranslation" << glm::vec3(0) // state.octreeConstructionParams.minPos
+		//<< "sScale" << glm::vec3(1)
 		// << "octreeSize" << state.octreeConstructionParams.sizeInWorld
 		<< "coeffCompressAmount" << compressCoefficient()
 		<< "branchCount" << branchCount();

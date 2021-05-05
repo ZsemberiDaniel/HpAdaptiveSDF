@@ -1,33 +1,39 @@
 //?#version 450
+#define MAX_POINT_COUNT_LSQ 5
 
-readonly layout(std430, binding = 3) buffer pseudoInverse1
+//?#include "../defines.glsl"
+
+readonly layout(std430, binding = 3) buffer pseudoInverse
 {
-	float pseudoInverseCurrDeg[][];
+	// float pseudoInverses[][MAX_COEFF_SIZE][MAX_POINT_COUNT_LSQ * MAX_POINT_COUNT_LSQ * MAX_POINT_COUNT_LSQ];
+	float pseudoInverses[];
 };
 
-readonly layout(std430, binding = 4) buffer pseudoInverse2
+readonly layout(std430, binding = 4) buffer lsqPointsBuff
 {
-	float pseudoInverseNextDeg[][];
+	vec4 lsqPoints[];
 };
-
-readonly layout(std430, binding = 5) buffer lsqPointsBuff
-{
-	vec3 lsqPoints[];
-};
-uniform int pointCount;
 
 float SceneSDF(vec3 p);
 
-float evalSDFIntegral(ivec3 degs, int pointCount, vec3 intervalStarting, vec3 intervalEnding)
+float getPseudoInverseVal(int polyDeg, int degId, int sampleId)
+{
+	return pseudoInverses[polyDeg * MAX_COEFF_SIZE * MAX_POINT_COUNT_LSQ * MAX_POINT_COUNT_LSQ * MAX_POINT_COUNT_LSQ +
+						  degId * MAX_POINT_COUNT_LSQ * MAX_POINT_COUNT_LSQ * MAX_POINT_COUNT_LSQ +
+						  sampleId];
+}
+
+float evalSDFIntegral(ivec3 degs, int degId, int polyDeg, int pointCount_, vec3 intervalStarting, vec3 intervalEnding)
 {
 	vec3 intervalSize = intervalEnding - intervalStarting;
 	float value = 0.0f;
+	//return 0.0f;
 
-	for (int sampleId = 0; sampleId < pointCount; sampleId)
+	for (int sampleId = 0; sampleId < lsqPoints.length(); sampleId++)
 	{
-		float sampleVal = SceneSDF((lsqPoints[sampleId] * 0.5f + 0.5f) * (intervalEnding - intervalStarting) + intervalStarting);
-		value += mat(i, sampleId) * sampleVal;
+		float sampleVal = SceneSDF((lsqPoints[sampleId].xyz * 0.5f + 0.5f) * intervalSize + intervalStarting);
+		value += getPseudoInverseVal(polyDeg, degId, sampleId) * sampleVal;
 	}
 	
-	return value * intervalSize.x * intervalSize.y * intervalSize.z / 8.0f;
+	return value;
 }

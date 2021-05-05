@@ -443,5 +443,8 @@
     <None Include="Shaders\PolyGen\PolyGen.comp">
       <Filter>Shaders\PolyGen</Filter>
     </None>
+    <None Include="Shaders\defines.glsl">
+      <Filter>Shaders</Filter>
+    </None>
   </ItemGroup>
 </Project>

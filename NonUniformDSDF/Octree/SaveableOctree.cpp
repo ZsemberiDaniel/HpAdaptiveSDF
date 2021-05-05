@@ -2,11 +2,6 @@
 
 SaveableOctree::SaveableOctree(int sdfIndex_, int approxIndex_, OctreeGenerator::ConstructionParameters& constructionParams_)
 {
-	if (texture2DArrayCalculator == nullptr)
-	{
-		initTexture2DArrayCalculator();
-	}
-
 	fileData.dat.sdfIndex = sdfIndex_;
 	fileData.dat.approxTypeIndex = approxIndex_;
 	fileData.dat.constructionParams = constructionParams_;
@@ -18,4 +13,5 @@ SaveableOctree::SaveableOctree(int sdfIndex_, int approxIndex_, OctreeGenerator:
 	octree->packForGPU(fileData.branchesGPU, fileData.leavesGPU, fileData.dat.branchCount, fileData.dat.compressCoefficient);
 
 	initClassFromFileData();
+	initTexture2DArrayCalculator();
 }

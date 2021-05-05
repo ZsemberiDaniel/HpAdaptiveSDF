@@ -9,7 +9,7 @@
 class LSQPolyGenerator : public PolynomialGenerator
 {
 public:
-	LSQPolyGenerator(int pointCount = 3, int maxDegree = 5)
+	LSQPolyGenerator(int pointCount = 5, int maxDegree = 5)
 		: maxDegree(maxDegree)
 	{
 		if (pointCount < 2)

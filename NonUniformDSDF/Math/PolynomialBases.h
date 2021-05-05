@@ -5,6 +5,7 @@
 #include "GaussPolynomialGenerator.h"
 #include "GaussGPUPolyGenerator.h"
 #include "LSQPolyGenerator.h"
+#include "LSQGPUPolyGenerator.h"
 
 #include "AverageIntegralEvaluator.h"
 #include "QuadratureEvaluator.h"
@@ -105,6 +106,26 @@ inline PolynomialBase approxTypes[] = {
 				*sdfFunc);
 		},
 		Polynomial::Type::LEGENDRE_NORMALIZED,
+		true
+	},
+
+	// LSQ WITH LEGENDRE GPU edition
+	PolynomialBase {
+		4,
+		"[GPU] LSQ - Legendre",
+		"GPULSQ",
+		"evalPolynom_lagrange",
+		[](std::unique_ptr<Octree<Cell>>& octree, OctreeGenerator::ConstructionParameters& constr, SDFBase* sdfFunc)
+		{
+			LSQGPUPolyGenerator generator = LSQGPUPolyGenerator(constr.maxDegree, constr.cellGroupSize, *sdfFunc);
+
+			OctreeGenerator::constructField(
+				octree,
+				generator,
+				constr,
+				*sdfFunc);
+		},
+		Polynomial::Type::LEGENDRE,
 		true
 	}
 };

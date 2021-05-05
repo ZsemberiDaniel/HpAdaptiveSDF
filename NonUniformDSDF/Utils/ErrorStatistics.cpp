@@ -30,14 +30,15 @@ std::vector<int64_t> CalcHistogram(std::vector<float>::const_iterator begin, std
 
 ErrorStatistics::ErrorStatistics()
 {
+	std::cout << std::endl << "Compiling Error shaders" << std::endl;
 	initDiff1Prog << "Shaders/Evaluate/initDiff1.comp"_comp << df::LinkProgram;
-	std::cout << initDiff1Prog.GetErrors();
+	std::cout << initDiff1Prog.GetErrors() << std::endl;
 	reduce1Prog << "Shaders/Evaluate/reduce1.comp"_comp << df::LinkProgram;
-	std::cout << reduce1Prog.GetErrors();
+	std::cout << reduce1Prog.GetErrors() << std::endl;
 	initDiff2Prog << "Shaders/Evaluate/initDiff2.comp"_comp << df::LinkProgram;
-	std::cout << initDiff2Prog.GetErrors();
+	std::cout << initDiff2Prog.GetErrors() << std::endl;
 	reduce2Prog << "Shaders/Evaluate/reduce2.comp"_comp << df::LinkProgram;
-	std::cout << reduce2Prog.GetErrors();
+	std::cout << reduce2Prog.GetErrors() << std::endl;
 }
 
 ErrorStatistics::ErrorStatResult ErrorStatistics::CalcStatistics(std::shared_ptr<df::Texture2DArray<float>> ref, std::shared_ptr<df::Texture2DArray<float>> data, const StatSettings& settings)

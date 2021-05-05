@@ -23,6 +23,8 @@ public:
 		bool usePAdapt = true;
 		// when calculating on GPU, how many to group together
 		int cellGroupSize = 1;
+		// starting degree of the polynomials in cells
+		int startDegree = 2;
 	};
 
 	template<typename generator, typename sdf>
@@ -61,8 +63,7 @@ void OctreeGenerator::constructField(std::unique_ptr<Octree<Cell>>& octree, gene
 				{
 					glm::vec3 cellCoord = params.minPos + gridCellSize * glm::vec3(x, y, z);
 					BoundingBox bbox = { cellCoord, cellCoord + gridCellSize };
-					const int initialDegree = 2;
-					auto vec = std::vector<std::pair<BoundingBox, int>>{ {bbox, initialDegree - 1} };
+					auto vec = std::vector<std::pair<BoundingBox, int>>{ {bbox, params.startDegree - 1} };
 
 					Polynomial poly = polynomialGenerator.fitPolynomials(vec, sdfFunction)[0];
 

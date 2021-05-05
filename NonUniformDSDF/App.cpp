@@ -51,7 +51,7 @@ void testIntegrals()
 	eval(fun2, quad, 20, -0.0000000218018f, glm::vec3(0.801f), glm::vec3(0.803f));
 }
 
-App::App(df::Sample& s) : sam(s), noVao(GL_TRIANGLES, 3)
+App::App(df::Sample& s, int perfTestFrameCount, std::shared_ptr<SaveableOctree> octree) : sam(s), noVao(GL_TRIANGLES, 3), perfTest(perfTestFrameCount)
 {
 	glClearColor(0.125f, 0.25f, 0.5f, 1.0f);
 	glEnable(GL_CULL_FACE);
@@ -60,8 +60,14 @@ App::App(df::Sample& s) : sam(s), noVao(GL_TRIANGLES, 3)
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	
-	CalculateOctreeSendToGPU();
-	CompileShaders();
+	if (octree == nullptr)
+	{
+		CalculateOctreeSendToGPU();
+	}
+	else
+	{
+		currOctreeSet(octree);
+	}
 
 	sam.AddHandlerClass(state.cam);
 
@@ -72,7 +78,6 @@ App::App(df::Sample& s) : sam(s), noVao(GL_TRIANGLES, 3)
 
 void App::CalculateOctreeSendToGPU()
 {
-	std::cout << state.activeApproxTypeIndex << std::endl;
 	currOctreeSet(std::make_shared<SaveableOctree>(state.activeSDFIndex, state.activeApproxTypeIndex, state.constructionParams));
 
 	if (state.printOctree) PrintCurrentOctree();
@@ -123,7 +128,7 @@ void App::Render()
 	glm::mat4 mvp = state.cam.GetViewProj();
 
 	// Draw grid of octree
-	if (state.drawOctreeGrid)
+	if (!state.inTestMode && state.drawOctreeGrid)
 	{
 		DrawOctree(cubeWireProgram, currOctree->getOctree()->root(), state.drawOctreeLevel);
 
@@ -207,7 +212,7 @@ void App::Render()
 
 void App::RenderGUI()
 {
-	if (!state.enableGUI) return;
+	if (!state.enableGUI || state.inTestMode) return;
 
 	if (state.enableSDFShadersEditor)
 	{
@@ -431,6 +436,7 @@ void App::RenderGUI()
 		// Construction settings
 		if (ImGui::CollapsingHeader("Construction settings"))
 		{
+			ImGui::DragInt("Start degree", &state.constructionParams.startDegree, 0.3f, 0, 10);
 			ImGui::DragInt("Max degree", &state.constructionParams.maxDegree, 0.3f, 2, 10);
 			ImGui::DragInt("Max level", &state.constructionParams.maxLevel, 0.3f, 2, 10);
 			ImGui::DragFloat("Error threshold", &state.constructionParams.errorThreshold, 0.000005f, 0.0000001f, 1.0f, "%.9f");
@@ -520,73 +526,46 @@ bool App::HandleKeyDown(const SDL_KeyboardEvent& key)
 	return false;
 }
 
-
-/* Writes the given values in the map to a glsl file as define directives, the key of the map being
-the identifier and the value being the token-string.
-*/
-void writeDefines(std::map<std::string, std::string> defines, std::string path = "Shaders/defines.glsl")
-{
-	std::ofstream out(path);
-	if (!out.is_open())
-	{
-		std::cout << "Could not open defines file!" << std::endl;
-	}
-	for (auto const& define : defines)
-	{
-		out << "#define " << define.first << " " << define.second << "\n";
-	}
-
-	out.close();
-}
-
 /* Called before the compile step
 */
 void App::CompilePreprocess()
 {
-	std::map<std::string, std::string> defines{
-		// which type of evalutaion to use for the polynomials
-		{ "evalPolynom", currOctree->approxType().shaderEvalFunctionName },
-
-		{ "MAX_COEFF_SIZE", std::to_string(Polynomial::calculateCoeffCount(currOctree->getConstructionParams().maxLevel) + 1) },
-		// used for the SDFs that work for both CPU and GPU
-		{ "GPU_SIDE", "" }
-	};
-
+	std::map<std::string, std::string> defines;
 	if (state.showNormals)
 	{
 		defines["SHOW_NORMALS"] = "";
 	}
 	
-	writeDefines(defines);
+	currOctree->saveDefinesFile(defines);
 }
 
 void App::CompileShaders()
 {
 	CompilePreprocess();
 	
-	std::cout << "Compiling cube wire program...  ";
+	std::cout << "Compiling cube wire program...  " << std::endl;
 	cubeWireProgram
 		<< "Shaders/cube.vert"_vs
 		<< "Shaders/cube.frag"_fs
 		<< LinkProgram;
-	std::cout << cubeWireProgram.GetErrors();
+	std::cout << cubeWireProgram.GetErrors() << std::endl;
 
-	std::cout << "Compiling cube mesh program...  ";
+	std::cout << "Compiling cube mesh program...  " << std::endl;
 	meshProgram
 		<< "Shaders/mesh.vert"_vs
 		<< "Shaders/mesh.frag"_fs
 		<< LinkProgram;
-	std::cout << meshProgram.GetErrors();
+	std::cout << meshProgram.GetErrors() << std::endl;
 
-	std::cout << "Compiling mesh program...  ";
+	std::cout << "Compiling mesh program...  " << std::endl;
 	flatMeshProgram
 		<< "Shaders/mesh.vert"_vs
 		<< "Shaders/flatMesh.geom"_geom
 		<< "Shaders/mesh.frag"_fs
 		<< LinkProgram;
-	std::cout << flatMeshProgram.GetErrors();
+	std::cout << flatMeshProgram.GetErrors() << std::endl;
 
-	std::cout << "Compiling sdf trace program...  ";
+	std::cout << "Compiling sdf trace program...  " << std::endl;
 	
 	delete sdfProgram;
 	sdfProgram = new df::ShaderProgramEditorVF("SDF-prog");
@@ -612,14 +591,10 @@ void App::CompileShaders()
 		<< "Shaders/SDF/sdfOctree.glsl"_fs
 		
 		<< LinkProgram;
-	std::cout << sdfProgram->GetErrors();
+	std::cout << sdfProgram->GetErrors() << std::endl;
 
-	if (currOctree != nullptr)
-	{
-		currOctree->RecompileShaders();
-	}
-
-	SDFHeatmapVisualizer::RecompileShaders();
+	if (!state.inTestMode)
+		SDFHeatmapVisualizer::RecompileShaders();
 
 #ifdef USE_0th_ORDER
 	delete sdf0thOrderProgram;

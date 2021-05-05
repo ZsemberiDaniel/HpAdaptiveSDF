@@ -34,22 +34,9 @@
 
 // #define USE_0th_ORDER
 
-class App {
-public:
-	App(df::Sample&);
-	~App();
+class App 
+{
 
-	void Update();
-	void Render();
-	void RenderGUI();
-
-//	bool HandleKeyUp(const SDL_KeyboardEvent&);
-	bool HandleKeyDown(const SDL_KeyboardEvent&);
-//	bool HandleMouseDown(const SDL_MouseButtonEvent&);
-//	bool HandleMouseMotion(const SDL_MouseMotionEvent&);
-//	bool HandleMouseUp(const SDL_MouseButtonEvent&);
-//	bool HandleMouseWheel(const SDL_MouseWheelEvent&);
-//	void HandleResize(int, int);
 private:
 	df::Sample& sam;
 	df::NoVao noVao;
@@ -62,42 +49,6 @@ private:
 	df::ShaderProgramEditorVGF flatMeshProgram = "FlatMesh-Prog";
 	df::ShaderProgramEditorVF* sdfProgram = nullptr;
 
-	std::string octreeEvaluationToString()
-	{
-		if (currOctree == nullptr) return "";
-
-		std::stringstream ss;
-
-		auto results = perfTest.getResults();
-		ss << "Data of last few frames:\n";
-		ss << "Render time min.: " << results.min << "ms\n";
-		ss << "Render time max.: " << results.max << "ms\n";
-		ss << "Render time avg.: " << results.avg << "ms\n\n";
-
-		static ErrorStatistics::ErrorStatResult errorResults;
-
-		static ErrorStatistics stats;
-		static ErrorStatistics::StatSettings settings = {
-			glm::vec3(0), // border
-			true, // calcMedian
-			true // calcHistogram
-		};
-
-		auto ref = currOctree->sdfFunction()->discreteSDFValuesTexture2D();
-		auto data = currOctree->calculateSdf0thOrderTexture2D(ERROR_HEATMAP_SIZE);
-
-		errorResults = stats.CalcStatistics(ref, data, settings);
-
-		ss << "Error:\n";
-		ss << "Mean:\t" << errorResults.mean << "\n"
-			<< "Min:\t" << errorResults.min << "\n"
-			<< "Max:\t" << errorResults.max << "\n"
-			<< "Median:\t" << errorResults.median << "\n"
-			<< "Sd:\t" << errorResults.sd << "\n"
-			<< "L2:\t" << errorResults.l2 << "\n";
-		
-		return ss.str();
-	}
 	
 	void CompilePreprocess();
 	void CompileShaders();
@@ -120,17 +71,6 @@ private:
 		if (historyIndex < 0 || historyIndex >= octreeHistory.size()) return;
 
 		octreeHistory[historyIndex].swap(currOctree);
-#ifdef USE_0th_ORDER
-		sdf0thOrderCurrOctree = currOctree->calculateSdf0thOrderTexture(sdf0thOrderResolution);
-#endif
-		
-		CompileShaders();
-	}
-	void currOctreeSet(std::shared_ptr<SaveableOctree> newCurrOctree)
-	{
-		if (currOctree != nullptr) octreeHistory.push_back(currOctree);
-		
-		currOctree.swap(newCurrOctree);
 #ifdef USE_0th_ORDER
 		sdf0thOrderCurrOctree = currOctree->calculateSdf0thOrderTexture(sdf0thOrderResolution);
 #endif
@@ -185,7 +125,7 @@ private:
 			float biggestStep = 100.0f;
 			float stepMultiplier = 1.0f;
 			int maxStep = 40;
-			bool refineRoot = false;
+			bool refineRoot = true;
 		} settings;
 
 		OctreeGenerator::ConstructionParameters constructionParams = {
@@ -196,11 +136,104 @@ private:
 			3, //maxLevel
 			0.05f // errorThreshold
 		};
+		bool inTestMode = false;
 	} state;
 
 	void SceneCameraRecenter() { state.cam.SetView(glm::vec3(5), glm::vec3(0), glm::vec3(0, 1, 0)); }
 	void SceneLightToCamera() { state.settings.gLightPos = state.cam.GetEye(); }
 	void PrintCurrentOctree() { currOctree->printOctree(); }
+public:
+	App(df::Sample&, int perfTestFrameCount = 50, std::shared_ptr<SaveableOctree> octree = nullptr);
+	~App();
+
+	void Update();
+	void Render();
+	void RenderGUI();
+
+	//	bool HandleKeyUp(const SDL_KeyboardEvent&);
+	bool HandleKeyDown(const SDL_KeyboardEvent&);
+	//	bool HandleMouseDown(const SDL_MouseButtonEvent&);
+	//	bool HandleMouseMotion(const SDL_MouseMotionEvent&);
+	//	bool HandleMouseUp(const SDL_MouseButtonEvent&);
+	//	bool HandleMouseWheel(const SDL_MouseWheelEvent&);
+	//	void HandleResize(int, int);
+
+	void EnterTestMode(glm::vec3 camPos, int traceType)
+	{
+		state.cam.SetView(camPos, glm::vec3(0), glm::vec3(0, 1, 0));
+		state.enableGUI = false;
+		state.inTestMode = true;
+		state.settings.sphereTraceType = traceType;
+	}
+	void currOctreeSet(std::shared_ptr<SaveableOctree> newCurrOctree)
+	{
+		if (currOctree != nullptr) octreeHistory.push_back(currOctree);
+
+		currOctree.swap(newCurrOctree);
+#ifdef USE_0th_ORDER
+		sdf0thOrderCurrOctree = currOctree->calculateSdf0thOrderTexture(sdf0thOrderResolution);
+#endif
+
+		CompileShaders();
+	}
+
+	std::string octreeEvaluationToString(bool tabular = false)
+	{
+		if (currOctree == nullptr) return "";
+
+		std::stringstream ss;
+
+		auto results = perfTest.getResults();
+		if (tabular)
+		{
+			ss << "Min time\t Avg time\t Max time" << std::endl;
+			ss << results.min << "ms\t" << results.avg << "ms\t" << results.max << "ms" << std::endl;
+		}
+		else
+		{
+			ss << "Data of last few frames:\n";
+			ss << "Render time min.: " << results.min << "ms\n";
+			ss << "Render time max.: " << results.max << "ms\n";
+			ss << "Render time avg.: " << results.avg << "ms\n\n";
+		}
+
+		ErrorStatistics::ErrorStatResult errorResults;
+
+		ErrorStatistics stats;
+		ErrorStatistics::StatSettings settings = {
+			glm::vec3(0), // border
+			true, // calcMedian
+			true // calcHistogram
+		};
+
+		auto ref = currOctree->sdfFunction()->discreteSDFValuesTexture2D();
+		auto data = currOctree->calculateSdf0thOrderTexture2D(ERROR_HEATMAP_SIZE);
+
+		errorResults = stats.CalcStatistics(ref, data, settings);
+
+		if (tabular)
+		{
+			ss << "Mean err\tMin err\tMax err\tMedian err\tSd err\tL2 err" << std::endl;
+			ss  << errorResults.mean << "\t"
+				<< errorResults.min << "\t"
+				<< errorResults.max << "\t"
+				<< errorResults.median << "\t"
+				<< errorResults.sd << "\t"
+				<< errorResults.l2 << std::endl;
+		}
+		else
+		{
+			ss << "Error:\n";
+			ss << "Mean:\t" << errorResults.mean << "\n"
+				<< "Min:\t" << errorResults.min << "\n"
+				<< "Max:\t" << errorResults.max << "\n"
+				<< "Median:\t" << errorResults.median << "\n"
+				<< "Sd:\t" << errorResults.sd << "\n"
+				<< "L2:\t" << errorResults.l2 << "\n";
+		}
+
+		return ss.str();
+	}
 };
 
 #endif

@@ -22,19 +22,26 @@ readonly layout(std430, binding = 2) buffer cells
 	vec4 cell_data[];
 };
 
-float evalSDFIntegral(ivec3 degs, int pointCount, vec3 intervalStarting, vec3 intervalEnding);
+/* degs: the degree of the currently evaluated polynomial variables
+*  degId: the id of the polynomial coefficient 0 to coeffCount - 1
+*  polyDeg: the degree of the polynomial
+*  pointCount: how many points to evaluate the integral on
+*  intervalStarting: start of interval to evaluate on
+*  intervalEnding: end of interval to evaluate on
+*/
+float evalSDFIntegral(ivec3 degs, int degId, int polyDeg, int pointCount, vec3 intervalStarting, vec3 intervalEnding);
 
 
 void fitPolynomial(int polyStartIndex, int degree, vec3 bboxMin, vec3 bboxMax, out float error)
 {
 	error = 0.0f;
-	for (int i = 0; i <= degree; i++)
+	for (int i = 0, m = 0; i <= degree; i++)
 	{
 		for (int k = 0; i + k <= degree; k++)
 		{
-			for (int j = 0; i + k + j <= degree; j++, polyStartIndex++)
+			for (int j = 0; i + k + j <= degree; j++, polyStartIndex++, m++)
 			{
-				float coeff = evalSDFIntegral(ivec3(i, k, j), 20, bboxMin, bboxMax);
+				float coeff = evalSDFIntegral(ivec3(i, k, j), m, degree, 20, bboxMin, bboxMax);
 
 				if (i + j + k == degree)
 				{

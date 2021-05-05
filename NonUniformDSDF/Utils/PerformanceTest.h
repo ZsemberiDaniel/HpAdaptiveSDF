@@ -5,11 +5,13 @@
 
 class PerformanceTest
 {
-	int maxFrame = 50;
+	int maxFrame;
 	int storedFrameCount = 0;
 
 	std::deque<double> times;
 public:
+	PerformanceTest(int maxFrame_ = 50) : maxFrame(maxFrame_) {}
+
 	struct Results {
 		size_t frames; // number of frames
 		double avg; // avreage time

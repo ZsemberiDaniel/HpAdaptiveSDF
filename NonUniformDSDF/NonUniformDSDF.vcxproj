@@ -327,6 +327,7 @@
     <None Include="Shaders\cube.frag" />
     <None Include="Shaders\cube.vert" />
     <None Include="Shaders\cube_solid.vert" />
+    <None Include="Shaders\defines.glsl" />
     <None Include="Shaders\Evaluate\initDiff1.comp" />
     <None Include="Shaders\Evaluate\initDiff2.comp" />
     <None Include="Shaders\Evaluate\reduce1.comp" />

@@ -64,7 +64,7 @@ float shifedNormalizedLegendre(vec3 p, ivec3 degs, vec3 intervalStarting, vec3 i
 	return value;
 }
 
-float evalSDFIntegral(ivec3 degs, int pointCount, vec3 intervalStarting, vec3 intervalEnding)
+float evalSDFIntegral(ivec3 degs, int polyDeg, int degId, int pointCount, vec3 intervalStarting, vec3 intervalEnding)
 {
 	vec3 intervalSize = intervalEnding - intervalStarting;
 	float value = 0.0f;

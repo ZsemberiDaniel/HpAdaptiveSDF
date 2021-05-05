@@ -1,11 +1,13 @@
 #ifndef GPUPOLYNOMIALGENERATOR_H
 #define GPUPOLYNOMIALGENERATOR_H
 
+#include <filesystem>
 #include "PolynomialGenerator.h"
 #include "../Structures.h"
 #include "IntegralEvaluator.h"
 #include <glm/glm.hpp>
 #include <Dragonfly/editor.h>		 //inlcludes most features
+#include <Dragonfly/detail/Events/renderdoc_load_api.h>
 
 template<typename sdf>
 class GPUPolyGenerator : public PolynomialGenerator
@@ -16,13 +18,28 @@ protected:
 	df::ComputeProgramEditor compShader = df::ComputeProgramEditor("Polynomial compute shader");
 
 	virtual void addWhileShaderCompile() { }
+	virtual void beforeCompShaderRun() { }
 
 public:
 	GPUPolyGenerator(std::string pathToPolyGenShader, int maxDegree, int maxK, sdf& sdfFunction)
 	{
+		// write sdf func defines
 		sdfFunction.writeAttributesToDefinesFile("Shaders/octreeGenerateDefines.glsl");
+
+		// write other attribute defines
+		std::ofstream out("Shaders/gpuGenDefines.glsl");
+		if (!out.is_open())
+		{
+			std::cout << "Could not open gpu generator defines file!" << std::endl;
+		}
+		out << "#define GPU_SIDE " << std::endl;
+		out << "#define MAX_COEFF_SIZE " << std::to_string(Polynomial::calculateCoeffCount(maxDegree)) << std::endl;
+		out << "#define MAX_DEGREE " << std::to_string(maxDegree) << std::endl;
+		out << "#define evalPolynom evalPolynom_lagrange" << std::endl;
+		out.close();
+
 		compShader
-			<< "Shaders/defines.glsl"_comp
+			<< "Shaders/gpuGenDefines.glsl"_comp
 			<< "Shaders/octreeGenerateDefines.glsl"_comp
 			<< "Shaders/Math/common.glsl"_comp
 			<< "Shaders/PolyGen/sdfPrimitives.comp"_comp;
@@ -33,6 +50,7 @@ public:
 			<< "Shaders/PolyGen/PolyGen.comp"_comp
 			<< df::LinkProgram;
 		std::cout << compShader.GetErrors();
+		std::filesystem::remove("Shaders/gpuGenDefines.glsl");
 
 		for (int i = 0; i <= maxDegree; i++)
 		{
@@ -84,17 +102,25 @@ std::vector<Polynomial> GPUPolyGenerator<sdf>::fitPolynomials(std::vector<std::p
 		cellGroupSize = 0; // the size of the current cell group
 	std::vector<Cell> currentCellGroup(data.size());
 	std::vector<glm::vec4> polyDesc(2 * data.size());
-
-	for (cellGroupSize = 0; cellGroupSize < data.size(); cellGroupSize++)
+	
+	int polyIndex = 0;
+	for (cellGroupSize = 0; cellGroupSize < data.size(); cellGroupSize++, polyIndex++)
 	{
-		polyDesc[2 * cellGroupSize + 0] = glm::vec4(data[cellGroupSize].first.min.x, data[cellGroupSize].first.min.y,
-			data[cellGroupSize].first.min.z, glm::intBitsToFloat(data[cellGroupSize].second));
-		polyDesc[2 * cellGroupSize + 1] = glm::vec4(data[cellGroupSize].first.max.x, data[cellGroupSize].first.max.y,
-			data[cellGroupSize].first.max.z, glm::intBitsToFloat(returnedSSBOSize));
+		if (data[polyIndex].second < 0)
+		{
+			std::cerr << "COULD NOT FIT POLYNOMIAL WITH DEG " << data[polyIndex].second << std::endl;
+			return polys;
+		}
 
-		returnedSSBOSize += ssbosPerDegreesSize[data[cellGroupSize].second];
+		polyDesc[2 * polyIndex + 0] = glm::vec4(data[polyIndex].first.min.x, data[polyIndex].first.min.y,
+			data[polyIndex].first.min.z, glm::intBitsToFloat(data[polyIndex].second));
+		polyDesc[2 * polyIndex + 1] = glm::vec4(data[polyIndex].first.max.x, data[polyIndex].first.max.y,
+			data[polyIndex].first.max.z, glm::intBitsToFloat(returnedSSBOSize));
+
+		returnedSSBOSize += ssbosPerDegreesSize[data[polyIndex].second];
 	}
 
+	// rdoc::API->StartFrameCapture(NULL, NULL);
 	// running comp shaders
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssboPolyDescription);
 	glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, polyDesc.size() * sizeof(glm::vec4), (GLvoid*)polyDesc.data());
@@ -103,10 +129,14 @@ std::vector<Polynomial> GPUPolyGenerator<sdf>::fitPolynomials(std::vector<std::p
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, ssboShaderCompute);
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, ssboPolyError);
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, ssboPolyDescription);
+	beforeCompShaderRun();
 	compShader << "a" << 0;
 	glDispatchCompute(1, cellGroupSize, 9);
 	glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+	// rdoc::API->EndFrameCapture(NULL, NULL);
 
+	/*if (rdoc::API != nullptr && !rdoc::API->IsTargetControlConnected())
+		rdoc::API->LaunchReplayUI(1, nullptr);*/
 
 	// getting data from GPU
 	std::vector<float> polyStorage(returnedSSBOSize), errorStorage(9 * data.size());

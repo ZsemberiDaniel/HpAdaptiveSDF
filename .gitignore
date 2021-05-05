@@ -390,3 +390,5 @@ MigrationBackup/
 .ionide/
 
 Saves/
+
+RenderTimes.xlsx
