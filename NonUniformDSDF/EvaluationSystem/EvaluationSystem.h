@@ -38,7 +38,7 @@ namespace Evaluation
 			return stream;
 		}
 
-		std::string name()
+		std::string name() const
 		{
 			std::string path = std::string(pathToSaveFile);
 			// Remove directory if present.
@@ -58,15 +58,15 @@ namespace Evaluation
 			std::string traceType;
 			switch (sphereTraceType)
 			{
-			case 0: traceType = "DEF"; break;
-			case 1: traceType = "REL"; break;
-			case 2: traceType = "ENH"; break;
+			case 0: traceType = "_DEF"; break;
+			case 1: traceType = "_REL"; break;
+			case 2: traceType = "_ENH"; break;
 			}
 
-			std::string lookupTable = useLookupTable ? "LT" : "";
+			std::string lookupTable = useLookupTable ? "_LT" : "";
 
 			std::stringstream ss;
-			ss << path << "_" << traceType << "_" << lookupTable;
+			ss << path << traceType << lookupTable;
 			return ss.str();
 		}
 	};
@@ -76,9 +76,9 @@ namespace Evaluation
 	public:
 		TestCase testCase;
 
-		float minRenderTime;
-		float maxRenderTime;
-		float avgRenderTime;
+		double minRenderTime;
+		double maxRenderTime;
+		double avgRenderTime;
 
 		float minError;
 		float maxError;
@@ -106,12 +106,7 @@ namespace Evaluation
 
 	class EvaluationResults
 	{
-	private:
-		std::vector<TestCaseResult> results;
-
 	public:
-		EvaluationResults(std::vector<TestCaseResult> results_) : results(results_) {}
-
 		/* Helper class to print data from TestCaseResult class. See more in PrintResult static class.
 		*/
 		class ResultDataPrinter
@@ -143,27 +138,27 @@ namespace Evaluation
 
 		/* Its' static fields define how test results can be printed.
 		*/
-		static class PrintResult
+		class PrintResult
 		{
 		public:
 			inline static const ResultDataPrinter TIME_MIN = ResultDataPrinter("TMin", [](TestCaseResult& testCaseResult) -> std::string {
 				return std::to_string(testCaseResult.minRenderTime);
-			});
+				});
 			inline static const ResultDataPrinter TIME_MAX = ResultDataPrinter("TMax", [](TestCaseResult& testCaseResult) -> std::string {
 				return std::to_string(testCaseResult.maxRenderTime);
-			});
+				});
 			inline static const ResultDataPrinter TIME_AVG = ResultDataPrinter("TAvg", [](TestCaseResult& testCaseResult) -> std::string {
 				return std::to_string(testCaseResult.avgRenderTime);
-			});
+				});
 			inline static const ResultDataPrinter ERROR_MIN = ResultDataPrinter("EMin", [](TestCaseResult& testCaseResult) -> std::string {
 				return std::to_string(testCaseResult.minError);
-			});
+				});
 			inline static const ResultDataPrinter ERROR_MAX = ResultDataPrinter("EMax", [](TestCaseResult& testCaseResult) -> std::string {
 				return std::to_string(testCaseResult.maxError);
-			});
+				});
 			inline static const ResultDataPrinter ERROR_AVG = ResultDataPrinter("EAvg", [](TestCaseResult& testCaseResult) -> std::string {
 				return std::to_string(testCaseResult.avgError);
-			});
+				});
 			inline static const ResultDataPrinter ERROR_MEDIAN = ResultDataPrinter("EMed", [](TestCaseResult& testCaseResult) -> std::string {
 				return std::to_string(testCaseResult.medianError);
 				});
@@ -193,38 +188,75 @@ namespace Evaluation
 			{
 				return ResultSorter([&](const TestCaseResult& tr1, const TestCaseResult& tr2) -> int {
 					int result = this->comparator(tr1, tr2);
-					if (result == 0) 
+					if (result == 0)
 					{
 						return sorter.comparator(tr1, tr2);
 					}
 
 					return result;
-				});
+					});
 			}
 
 			void sortResults(std::vector<TestCaseResult>& results)
 			{
 				std::sort(results.begin(), results.end(), [&](const TestCaseResult& tr1, const TestCaseResult& tr2) -> bool
-				{
-					return this->comparator(tr1, tr2) > 0;
-				});
+					{
+						return this->comparator(tr1, tr2) > 0;
+					});
 			}
 		};
 
-		/* Contains comparators for test results to sort them. They can be chained via operator >>. 
+		/* Contains comparators for test results to sort them. They can be chained via operator >>.
 		 * a >> b means first sort by a, then sort by b.
 		*/
-		static class ResultSorters
+		class ResultSorters
 		{
 		public:
 			inline static const ResultSorter TRACE_TYPE = ResultSorter([](const TestCaseResult& tr1, const TestCaseResult& tr2) {
 				return tr1.testCase.sphereTraceType - tr2.testCase.sphereTraceType;
-			});
+				});
 			inline static const ResultSorter USE_LOOKUP_TABLE = ResultSorter([](const TestCaseResult& tr1, const TestCaseResult& tr2) {
 				return tr1.testCase.useLookupTable - tr2.testCase.useLookupTable;
-			});
+				});
 			inline static const ResultSorter DEFAULT = TRACE_TYPE >> USE_LOOKUP_TABLE;
 		};
+
+	private:
+		std::ostream& out;
+		trl::TablePrinter tablePrinter;
+		std::vector<ResultDataPrinter> printResult;
+		ResultSorter sorter;
+	public:
+		EvaluationResults(
+			std::ostream& os,
+			std::initializer_list<ResultDataPrinter> printResult_ = { PrintResult::TIME_MIN, PrintResult::TIME_AVG, PrintResult::TIME_MAX },
+			ResultSorter sorter_ = ResultSorters::DEFAULT) : tablePrinter(os), printResult(printResult_), sorter(sorter_), out(os)
+		{
+			// add table columns (the result names)
+			tablePrinter.AddColumn("Testcase name", 25);
+			for (ResultDataPrinter printer : printResult)
+			{
+				tablePrinter.AddColumn(printer.name(), 15);
+			}
+
+			tablePrinter.PrintHeader();
+		}
+
+		~EvaluationResults() 
+		{
+			tablePrinter.PrintFooter();
+		}
+
+		void printNextResult(TestCaseResult& result)
+		{
+			tablePrinter << result.testCase.name();
+
+			for (ResultDataPrinter printer : printResult)
+			{
+				tablePrinter << printer(result);
+			}
+			out.flush();
+		}
 
 		/* Prints the results in a table:
 		*	             || result1 | result2 | ... | resultLast
@@ -232,7 +264,8 @@ namespace Evaluation
 		*   || testCase2 || 0.354   | 0.56    | ... | 0.123
 		*   ...
 		*/
-		void printResultsTo(
+		inline static void printResultsTo(
+			std::vector<TestCaseResult>& results,
 			std::ostream& stream, 
 			std::initializer_list<ResultDataPrinter> printResult = { PrintResult::TIME_MIN, PrintResult::TIME_AVG, PrintResult::TIME_MAX },
 			ResultSorter sorter = ResultSorters::DEFAULT)
@@ -263,7 +296,7 @@ namespace Evaluation
 		}
 	};
 
-	static class EvaluationSystem
+	class EvaluationSystem
 	{
 	public:
 		static void evaluate(const std::string& testFilePath, const std::string& outPath, int frameCount)
@@ -284,6 +317,8 @@ namespace Evaluation
 
 			std::vector<TestCaseResult> results;
 			TestCase tc;
+
+			EvaluationResults evalResults(ostream);
 			while (istream >> tc)
 			{
 				auto param = df::Sample::FLAGS::WINDOW_BORDERLESS;
@@ -310,11 +345,9 @@ namespace Evaluation
 					}
 				);
 
-				results.push_back(TestCaseResult(tc, app.getPerfTestResults(), app.getErrorResults()));
+				auto tcr = TestCaseResult(tc, app.getPerfTestResults(), app.getErrorResults());
+				evalResults.printNextResult(tcr);
 			}
-
-			EvaluationResults evalResults(results);
-			evalResults.printResultsTo(ostream);
 
 			istream.close();
 			ostream.close();

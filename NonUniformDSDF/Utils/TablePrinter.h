@@ -115,8 +115,7 @@ namespace trl
          * @return
          */
         int GetColumnCount() const {
-
-            return m_columnTitles.size();
+            return static_cast<int>(m_columnTitles.size());
         }
 
         /**
@@ -166,7 +165,7 @@ namespace trl
 
             m_columnTitles.emplace_back(columnTitle);
             m_columnWidths.emplace_back(columnWidth);
-            m_tableWidth += columnWidth + m_columnSeparator.size(); // for the separator
+            m_tableWidth += columnWidth + static_cast<int>(m_columnSeparator.size()); // for the separator
         }
 
         /**
@@ -177,7 +176,7 @@ namespace trl
 
             auto totalWidth = 0;
             for (auto& it : m_columnWidths) totalWidth += it;
-            totalWidth += m_columnWidths.size() - 1;
+            totalWidth += static_cast<int>(m_columnWidths.size()) - 1;
 
             auto tit = title;
             auto titleWidth = tit.length();
