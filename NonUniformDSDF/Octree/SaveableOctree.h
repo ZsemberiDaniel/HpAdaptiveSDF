@@ -311,6 +311,11 @@ public:
 	inline static std::shared_ptr<SaveableOctree> loadFrom(std::wstring path)
 	{
 		std::ifstream file(path, std::ios::in | std::ios::binary);
+		if (!file.is_open())
+		{
+			std::cerr << "Could not open save file " << std::string(path.begin(), path.end()) << std::endl;
+			throw new std::invalid_argument("Could not open save file");
+		}
 
 		FileData data;
 

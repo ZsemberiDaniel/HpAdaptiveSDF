@@ -392,3 +392,5 @@ MigrationBackup/
 Saves/
 
 RenderTimes.xlsx
+
+NonUniformDSDF/output.txt

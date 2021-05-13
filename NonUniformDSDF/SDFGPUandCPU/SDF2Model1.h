@@ -20,18 +20,18 @@ public:
 #else
 	float SceneSDF(vec3 p) {
 #endif
-		p -= vec3(0.5f, 0.0f, 0.5f);
-		float r0 = sdfCylinderX(p - vec3(0.0f, 0.5f, 0.0f), vec2(0.2f, 0.38f));
+		p -= vec3(0.5f, 0.0f, 0.5f); 
+		float r0 = sdfCylinderX(p - vec3(0, 0.55f, 0), vec2(0.15f, 0.45f));
 		r0 -= 0.01f;//offset
-		float r1 = sdfCylinderZ(p - vec3(0.0f, 0.5f, 0.0f), vec2(0.2f, 0.38f));
+		float r1 = sdfCylinderZ(p - vec3(0, 0.55f, 0), vec2(0.15f, 0.45f));
 		r1 -= 0.01f;//offset
 		r0 = min(r0, r1); //union 1
-		float r2 = sdfSphere(p - vec3(0.0f, 0.5f, 0.0f), 0.35f);
+		float r2 = sdfSphere(p - vec3(0, 0.55f, 0), 0.35f);
 		r0 = min(r0, r2); //union 2
-		float r3 = sdfCylinderY(p - vec3(0.0f, 0.5f, 0.0f), vec2(0.2f, 0.5f));
+		float r3 = sdfCylinderY(p - vec3(0, 0.45f, 0), vec2(0.15f, 0.45f));
 		r3 -= 0.01f;//offset
 		r0 = min(r0, r3); //union 3
-		float r4 = sdfBox(p, vec3(0.35f, 0.075f, 0.35f));
+		float r4 = sdfBox(p, vec3(0.3f, 0.075f, 0.3f));
 		r4 -= 0.01f;//offset
 		r0 = min(r0, r4); //union 4
 		return r0;
