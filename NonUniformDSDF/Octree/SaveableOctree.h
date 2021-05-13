@@ -84,6 +84,7 @@ private:
 
 		saveable->fileData = data;
 		saveable->octree = std::make_unique<Octree<Cell>>();
+		saveable->octree->setBbox(data.dat.constructionParams.minPos, data.dat.constructionParams.sizeInWorld);
 
 		// later used for subdivision
 		Cell empty;
