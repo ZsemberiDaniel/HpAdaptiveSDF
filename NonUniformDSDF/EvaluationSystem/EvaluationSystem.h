@@ -9,6 +9,7 @@
 #include <functional>
 #include <algorithm>
 #include <sstream>
+#include <filesystem>
 
 #include "../Utils/TablePrinter.h"
 #include "../Utils/PerformanceTest.h"
@@ -321,32 +322,45 @@ namespace Evaluation
 			EvaluationResults evalResults(ostream);
 			while (istream >> tc)
 			{
-				auto param = df::Sample::FLAGS::WINDOW_BORDERLESS;
-				df::Sample sam("Non-uniform DSDF TESTS", 1920, 1080, param);
+				if (!std::filesystem::exists(tc.pathToSaveFile))
+				{
+					std::cerr << "Cannot open savefile that needs to be tested " << tc.pathToSaveFile << std::endl;
+					continue;
+				}
 
-				// sam.AddHandlerClass<df::ImGuiHandler>(10);
-				App app(sam, frameCount,
-					SaveableOctree::loadFrom(std::wstring(tc.pathToSaveFile.begin(), tc.pathToSaveFile.end())));
-				sam.AddHandlerClass(app, 5);
+				try {
+					auto param = df::Sample::FLAGS::WINDOW_BORDERLESS;
+					df::Sample sam("Non-uniform DSDF TESTS", 1920, 1080, param);
 
-				app.EnterTestMode(tc.camPos, tc.sphereTraceType, tc.useLookupTable);
+					// sam.AddHandlerClass<df::ImGuiHandler>(10);
+					App app(sam, frameCount,
+						SaveableOctree::loadFrom(std::wstring(tc.pathToSaveFile.begin(), tc.pathToSaveFile.end())));
+					sam.AddHandlerClass(app, 5);
 
-				int count = 0;
-				sam.Run([&](float deltaTime) //delta time in ms
-					{
-						app.Update();
-						app.Render();
-						app.RenderGUI();
+					app.EnterTestMode(tc.camPos, tc.sphereTraceType, tc.useLookupTable);
 
-						if (++count >= frameCount + 10)
+					int count = 0;
+					sam.Run([&](float deltaTime) //delta time in ms
 						{
-							sam.Quit();
-						}
-					}
-				);
+							app.Update();
+							app.Render();
+							app.RenderGUI();
 
-				auto tcr = TestCaseResult(tc, app.getPerfTestResults(), app.getErrorResults());
-				evalResults.printNextResult(tcr);
+							if (++count >= frameCount + 10)
+							{
+								sam.Quit();
+							}
+						}
+					);
+
+					auto tcr = TestCaseResult(tc, app.getPerfTestResults(), app.getErrorResults());
+					evalResults.printNextResult(tcr);
+				} 
+				catch (const std::exception& ex)
+				{
+					std::cerr << "ERROR WHILE RUNNING " << tc.name() << std::endl;
+					std::cerr << ex.what() << std::endl;
+				}
 			}
 
 			istream.close();
