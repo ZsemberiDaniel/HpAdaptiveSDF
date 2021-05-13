@@ -49,15 +49,6 @@ public:
 		}
 
 		calculatePseudoInverseMatrices(pseudoInverseMatrices, maxDegree);
-		/*std::vector<std::vector<std::vector<float>>> passToSSBO(maxDegree + 1);
-		for (int deg = 0; deg <= maxDegree; deg++)
-		{
-			passToSSBO[deg].resize(pseudoInverseMatrices.back().rows());
-			for (int coeff = 0; coeff < pseudoInverseMatrices.back().rows(); coeff++)
-			{
-				passToSSBO[deg][coeff].resize(points.size(), 0.0f);
-			}
-		}*/
 		int maxCoeffSize = pseudoInverseMatrices.back().rows();
 		std::vector<float> passToSSBO((maxDegree + 1) * maxCoeffSize * points.size());
 

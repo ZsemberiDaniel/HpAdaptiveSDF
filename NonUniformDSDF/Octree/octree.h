@@ -10,6 +10,7 @@
 #include <glm/glm.hpp>
 
 #include "../vector3d.h"
+#include <Dragonfly/detail/buffer.h>
 
 template< typename T, int P = 2 >
 class Octree
@@ -100,7 +101,20 @@ public:
     std::shared_ptr<Node>& root();
     const std::shared_ptr<Node> root() const;
 
+    float bboxSizeInWorld() const {
+        // all should be kept the same
+        return worldSize;
+    }
+    void setBbox(glm::vec3 minPos, float size) {
+        worldMinPos = minPos;
+        worldSize = size;
+    }
+    glm::vec3 bboxMinPos() const {
+        return worldMinPos;
+    }
+
     void packForGPU(std::vector<unsigned int>& branchGPU, std::vector<unsigned int>& leavesGPU, int& branchCount, float& compressAmount);
+    void generate3DLookupTable(std::vector<df::integral<uint32_t>>& lookupTable, int& lookupTableDim1Size);
     void print(glm::vec3 bboxMin, glm::vec3 bboxMax);
 
 private:
@@ -108,6 +122,8 @@ private:
     void initLeavesRecursive(std::shared_ptr<Node>& currNode, vector3d<T>& init, vector3d<std::shared_ptr<Leaf>>& generatedLeaves, int x, int y, int z);
 
     std::shared_ptr<Node> root_;
+    glm::vec3 worldMinPos;
+    float worldSize;
 };
 
 #include "octree.hpp"

@@ -41,7 +41,6 @@ void OctreeGenerator::constructField(std::unique_ptr<Octree<Cell>>& octree, gene
 		return;
 	}
 	int K = std::max(params.cellGroupSize, 1);
-
 	float gridCellSize = params.sizeInWorld / INITIAL_CELL_COUNT;
 
 	auto queueCellCompare = [](const Cell& c1, const Cell& c2) -> bool
@@ -91,6 +90,8 @@ void OctreeGenerator::constructField(std::unique_ptr<Octree<Cell>>& octree, gene
 			}
 		}
 	}
+
+	octree->setBbox(params.minPos, params.sizeInWorld);
 
 	int step = 0;
 	while (!pendingVector.empty() && error > params.errorThreshold)

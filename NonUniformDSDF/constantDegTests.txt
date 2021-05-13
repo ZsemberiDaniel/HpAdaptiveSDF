@@ -1,54 +1,108 @@
-../Saves/Sphere/gauss_deg0 3 3 3 2
-../Saves/Sphere/gauss_deg1 3 3 3 2
-../Saves/Sphere/gauss_deg2 3 3 3 2
-../Saves/Sphere/gauss_deg3 3 3 3 2
-../Saves/Sphere/gauss_deg4 3 3 3 2
-../Saves/Sphere/gaussgpu_deg1 3 3 3 2
-../Saves/Sphere/gaussgpu_deg2 3 3 3 2
-../Saves/Sphere/gaussgpu_deg3 3 3 3 2
-../Saves/Sphere/gaussgpu_deg4 3 3 3 2
-../Saves/Sphere/lsq_deg0 3 3 3 2
-../Saves/Sphere/lsq_deg1 3 3 3 2
-../Saves/Sphere/lsq_deg2 3 3 3 2
-../Saves/Sphere/lsq_deg3 3 3 3 2
-../Saves/Sphere/lsq_deg4 3 3 3 2
-../Saves/Sphere/lsqgpu_deg1 3 3 3 2
-../Saves/Sphere/lsqgpu_deg2 3 3 3 2
-../Saves/Sphere/lsqgpu_deg3 3 3 3 2
-../Saves/Sphere/lsqgpu_deg4 3 3 3 2
-../Saves/Sphere/gauss_deg0 3 3 3 1
-../Saves/Sphere/gauss_deg1 3 3 3 1
-../Saves/Sphere/gauss_deg2 3 3 3 1
-../Saves/Sphere/gauss_deg3 3 3 3 1
-../Saves/Sphere/gauss_deg4 3 3 3 1
-../Saves/Sphere/gaussgpu_deg1 3 3 3 1
-../Saves/Sphere/gaussgpu_deg2 3 3 3 1
-../Saves/Sphere/gaussgpu_deg3 3 3 3 1
-../Saves/Sphere/gaussgpu_deg4 3 3 3 1
-../Saves/Sphere/lsq_deg0 3 3 3 1
-../Saves/Sphere/lsq_deg1 3 3 3 1
-../Saves/Sphere/lsq_deg2 3 3 3 1
-../Saves/Sphere/lsq_deg3 3 3 3 1
-../Saves/Sphere/lsq_deg4 3 3 3 1
-../Saves/Sphere/lsqgpu_deg1 3 3 3 1
-../Saves/Sphere/lsqgpu_deg2 3 3 3 1
-../Saves/Sphere/lsqgpu_deg3 3 3 3 1
-../Saves/Sphere/lsqgpu_deg4 3 3 3 1
-../Saves/Sphere/gauss_deg0 3 3 3 0
-../Saves/Sphere/gauss_deg1 3 3 3 0
-../Saves/Sphere/gauss_deg2 3 3 3 0
-../Saves/Sphere/gauss_deg3 3 3 3 0
-../Saves/Sphere/gauss_deg4 3 3 3 0
-../Saves/Sphere/gaussgpu_deg1 3 3 3 0
-../Saves/Sphere/gaussgpu_deg2 3 3 3 0
-../Saves/Sphere/gaussgpu_deg3 3 3 3 0
-../Saves/Sphere/gaussgpu_deg4 3 3 3 0
-../Saves/Sphere/lsq_deg0 3 3 3 1
-../Saves/Sphere/lsq_deg1 3 3 3 1
-../Saves/Sphere/lsq_deg2 3 3 3 1
-../Saves/Sphere/lsq_deg3 3 3 3 1
-../Saves/Sphere/lsq_deg4 3 3 3 1
-../Saves/Sphere/lsqgpu_deg1 3 3 3 0
-../Saves/Sphere/lsqgpu_deg2 3 3 3 0
-../Saves/Sphere/lsqgpu_deg3 3 3 3 0
-../Saves/Sphere/lsqgpu_deg4 3 3 3 0
+../Saves/Sphere/gauss_deg0 3 3 3 2 0
+../Saves/Sphere/gauss_deg1 3 3 3 2 0
+../Saves/Sphere/gauss_deg2 3 3 3 2 0
+../Saves/Sphere/gauss_deg3 3 3 3 2 0
+../Saves/Sphere/gauss_deg4 3 3 3 2 0
+../Saves/Sphere/gaussgpu_deg1 3 3 3 2 0
+../Saves/Sphere/gaussgpu_deg2 3 3 3 2 0
+../Saves/Sphere/gaussgpu_deg3 3 3 3 2 0
+../Saves/Sphere/gaussgpu_deg4 3 3 3 2 0
+../Saves/Sphere/lsq_deg0 3 3 3 2 0
+../Saves/Sphere/lsq_deg1 3 3 3 2 0
+../Saves/Sphere/lsq_deg2 3 3 3 2 0
+../Saves/Sphere/lsq_deg3 3 3 3 2 0
+../Saves/Sphere/lsq_deg4 3 3 3 2 0
+../Saves/Sphere/lsqgpu_deg1 3 3 3 2 0
+../Saves/Sphere/lsqgpu_deg2 3 3 3 2 0
+../Saves/Sphere/lsqgpu_deg3 3 3 3 2 0
+../Saves/Sphere/lsqgpu_deg4 3 3 3 2 0
+../Saves/Sphere/gauss_deg0 3 3 3 1 0
+../Saves/Sphere/gauss_deg1 3 3 3 1 0
+../Saves/Sphere/gauss_deg2 3 3 3 1 0
+../Saves/Sphere/gauss_deg3 3 3 3 1 0
+../Saves/Sphere/gauss_deg4 3 3 3 1 0
+../Saves/Sphere/gaussgpu_deg1 3 3 3 1 0
+../Saves/Sphere/gaussgpu_deg2 3 3 3 1 0
+../Saves/Sphere/gaussgpu_deg3 3 3 3 1 0
+../Saves/Sphere/gaussgpu_deg4 3 3 3 1 0
+../Saves/Sphere/lsq_deg0 3 3 3 1 0
+../Saves/Sphere/lsq_deg1 3 3 3 1 0
+../Saves/Sphere/lsq_deg2 3 3 3 1 0
+../Saves/Sphere/lsq_deg3 3 3 3 1 0
+../Saves/Sphere/lsq_deg4 3 3 3 1 0
+../Saves/Sphere/lsqgpu_deg1 3 3 3 1 0
+../Saves/Sphere/lsqgpu_deg2 3 3 3 1 0
+../Saves/Sphere/lsqgpu_deg3 3 3 3 1 0
+../Saves/Sphere/lsqgpu_deg4 3 3 3 1 0
+../Saves/Sphere/gauss_deg0 3 3 3 0 0
+../Saves/Sphere/gauss_deg1 3 3 3 0 0
+../Saves/Sphere/gauss_deg2 3 3 3 0 0
+../Saves/Sphere/gauss_deg3 3 3 3 0 0
+../Saves/Sphere/gauss_deg4 3 3 3 0 0
+../Saves/Sphere/gaussgpu_deg1 3 3 3 0 0
+../Saves/Sphere/gaussgpu_deg2 3 3 3 0 0
+../Saves/Sphere/gaussgpu_deg3 3 3 3 0 0
+../Saves/Sphere/gaussgpu_deg4 3 3 3 0 0
+../Saves/Sphere/lsq_deg0 3 3 3 0 0
+../Saves/Sphere/lsq_deg1 3 3 3 0 0
+../Saves/Sphere/lsq_deg2 3 3 3 0 0
+../Saves/Sphere/lsq_deg3 3 3 3 0 0
+../Saves/Sphere/lsq_deg4 3 3 3 0 0
+../Saves/Sphere/lsqgpu_deg1 3 3 3 0 0
+../Saves/Sphere/lsqgpu_deg2 3 3 3 0 0
+../Saves/Sphere/lsqgpu_deg3 3 3 3 0 0
+../Saves/Sphere/lsqgpu_deg4 3 3 3 0 0
+../Saves/Sphere/gauss_deg0 3 3 3 2 1
+../Saves/Sphere/gauss_deg1 3 3 3 2 1
+../Saves/Sphere/gauss_deg2 3 3 3 2 1
+../Saves/Sphere/gauss_deg3 3 3 3 2 1
+../Saves/Sphere/gauss_deg4 3 3 3 2 1
+../Saves/Sphere/gaussgpu_deg1 3 3 3 2 1
+../Saves/Sphere/gaussgpu_deg2 3 3 3 2 1
+../Saves/Sphere/gaussgpu_deg3 3 3 3 2 1
+../Saves/Sphere/gaussgpu_deg4 3 3 3 2 1
+../Saves/Sphere/lsq_deg0 3 3 3 2 1
+../Saves/Sphere/lsq_deg1 3 3 3 2 1
+../Saves/Sphere/lsq_deg2 3 3 3 2 1
+../Saves/Sphere/lsq_deg3 3 3 3 2 1
+../Saves/Sphere/lsq_deg4 3 3 3 2 1
+../Saves/Sphere/lsqgpu_deg1 3 3 3 2 1
+../Saves/Sphere/lsqgpu_deg2 3 3 3 2 1
+../Saves/Sphere/lsqgpu_deg3 3 3 3 2 1
+../Saves/Sphere/lsqgpu_deg4 3 3 3 2 1
+../Saves/Sphere/gauss_deg0 3 3 3 1 1
+../Saves/Sphere/gauss_deg1 3 3 3 1 1
+../Saves/Sphere/gauss_deg2 3 3 3 1 1
+../Saves/Sphere/gauss_deg3 3 3 3 1 1
+../Saves/Sphere/gauss_deg4 3 3 3 1 1
+../Saves/Sphere/gaussgpu_deg1 3 3 3 1 1
+../Saves/Sphere/gaussgpu_deg2 3 3 3 1 1
+../Saves/Sphere/gaussgpu_deg3 3 3 3 1 1
+../Saves/Sphere/gaussgpu_deg4 3 3 3 1 1
+../Saves/Sphere/lsq_deg0 3 3 3 1 1
+../Saves/Sphere/lsq_deg1 3 3 3 1 1
+../Saves/Sphere/lsq_deg2 3 3 3 1 1
+../Saves/Sphere/lsq_deg3 3 3 3 1 1
+../Saves/Sphere/lsq_deg4 3 3 3 1 1
+../Saves/Sphere/lsqgpu_deg1 3 3 3 1 1
+../Saves/Sphere/lsqgpu_deg2 3 3 3 1 1
+../Saves/Sphere/lsqgpu_deg3 3 3 3 1 1
+../Saves/Sphere/lsqgpu_deg4 3 3 3 1 1
+../Saves/Sphere/gauss_deg0 3 3 3 0 1
+../Saves/Sphere/gauss_deg1 3 3 3 0 1
+../Saves/Sphere/gauss_deg2 3 3 3 0 1
+../Saves/Sphere/gauss_deg3 3 3 3 0 1
+../Saves/Sphere/gauss_deg4 3 3 3 0 1
+../Saves/Sphere/gaussgpu_deg1 3 3 3 0 1
+../Saves/Sphere/gaussgpu_deg2 3 3 3 0 1
+../Saves/Sphere/gaussgpu_deg3 3 3 3 0 1
+../Saves/Sphere/gaussgpu_deg4 3 3 3 0 1
+../Saves/Sphere/lsq_deg0 3 3 3 0 1
+../Saves/Sphere/lsq_deg1 3 3 3 0 1
+../Saves/Sphere/lsq_deg2 3 3 3 0 1
+../Saves/Sphere/lsq_deg3 3 3 3 0 1
+../Saves/Sphere/lsq_deg4 3 3 3 0 1
+../Saves/Sphere/lsqgpu_deg1 3 3 3 0 1
+../Saves/Sphere/lsqgpu_deg2 3 3 3 0 1
+../Saves/Sphere/lsqgpu_deg3 3 3 3 0 1
+../Saves/Sphere/lsqgpu_deg4 3 3 3 0 1

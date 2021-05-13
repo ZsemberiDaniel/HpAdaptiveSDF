@@ -92,6 +92,7 @@ private:
 		PolynomialBase activeApproxType() { return approxTypes[activeApproxTypeIndex]; }
 
 		df::Camera cam;
+		bool useLookupTable = false;
 		bool enableHeatmapShaderEditor = false;
 		bool enableSDFShadersEditor = false;
 		bool printOctree = false;
@@ -158,12 +159,13 @@ public:
 	//	bool HandleMouseWheel(const SDL_MouseWheelEvent&);
 	//	void HandleResize(int, int);
 
-	void EnterTestMode(glm::vec3 camPos, int traceType)
+	void EnterTestMode(glm::vec3 camPos, int traceType, bool useLookup)
 	{
 		state.cam.SetView(camPos, glm::vec3(0), glm::vec3(0, 1, 0));
 		state.enableGUI = false;
 		state.inTestMode = true;
 		state.settings.sphereTraceType = traceType;
+		state.useLookupTable = useLookup;
 	}
 	void currOctreeSet(std::shared_ptr<SaveableOctree> newCurrOctree)
 	{
@@ -177,26 +179,9 @@ public:
 		CompileShaders();
 	}
 
-	std::string octreeEvaluationToString(bool tabular = false)
+	PerformanceTest::Results getPerfTestResults() { return perfTest.getResults(); }
+	ErrorStatistics::ErrorStatResult getErrorResults() 
 	{
-		if (currOctree == nullptr) return "";
-
-		std::stringstream ss;
-
-		auto results = perfTest.getResults();
-		if (tabular)
-		{
-			ss << "Min time\t Avg time\t Max time" << std::endl;
-			ss << results.min << "ms\t" << results.avg << "ms\t" << results.max << "ms" << std::endl;
-		}
-		else
-		{
-			ss << "Data of last few frames:\n";
-			ss << "Render time min.: " << results.min << "ms\n";
-			ss << "Render time max.: " << results.max << "ms\n";
-			ss << "Render time avg.: " << results.avg << "ms\n\n";
-		}
-
 		ErrorStatistics::ErrorStatResult errorResults;
 
 		ErrorStatistics stats;
@@ -210,6 +195,32 @@ public:
 		auto data = currOctree->calculateSdf0thOrderTexture2D(ERROR_HEATMAP_SIZE);
 
 		errorResults = stats.CalcStatistics(ref, data, settings);
+
+		return errorResults;
+	}
+
+	std::string octreeEvaluationToString(bool writeError = true, bool tabular = false)
+	{
+		if (currOctree == nullptr) return "";
+
+		std::stringstream ss;
+
+		PerformanceTest::Results results = getPerfTestResults();
+		if (tabular)
+		{
+			ss << "Min time\t Avg time\t Max time" << std::endl;
+			ss << results.min << "ms\t" << results.avg << "ms\t" << results.max << "ms" << std::endl;
+		}
+		else
+		{
+			ss << "Data of last few frames:\n";
+			ss << "Render time min.: " << results.min << "ms\n";
+			ss << "Render time max.: " << results.max << "ms\n";
+			ss << "Render time avg.: " << results.avg << "ms\n\n";
+		}
+		if (!writeError) return ss.str();
+
+		ErrorStatistics::ErrorStatResult errorResults = getErrorResults();
 
 		if (tabular)
 		{

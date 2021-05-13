@@ -7,6 +7,7 @@
 
 #include <Dragonfly/detail/buffer.h>
 #include <Dragonfly/detail/Texture/Texture2DArray.h>
+#include <Dragonfly/detail/Texture/Texture3D.h>
 #include "octree.h"
 #include "octreeGenerator.h"
 #include "../Math/PolynomialBases.h"
@@ -26,6 +27,15 @@ private:
 	std::unique_ptr<eltecg::ogl::ShaderStorageBuffer> leavesSSBO;
 
 	std::unique_ptr<df::ComputeProgramEditor> texture2DArrayCalculator;
+
+	struct LookupTable
+	{
+		std::shared_ptr<df::Texture3D<df::integral<uint32_t>>> texture;
+		float lookupTableNormalizedCellSize;
+		// how many cells per side
+		int lookupTableDim1Size;
+	} lookupTable;
+
 
 	void initTexture2DArrayCalculator()
 	{
@@ -140,16 +150,21 @@ private:
 			{
 				int leafIndexInSSBO = i - saveable->branchCount();
 				leaf->value().octreeLeaf = leaf;
-				// TODO: unpack data to leaf
 
-				assert(leaf->value().level() == saveable->fileData.leavesGPU[leafIndexInSSBO + 0]);
+				glm::vec3 readPos;
+				unsigned int level = saveable->fileData.leavesGPU[leafIndexInSSBO + 0];
+				readPos.x = glm::uintBitsToFloat(saveable->fileData.leavesGPU[leafIndexInSSBO + 1]);
+				readPos.y = glm::uintBitsToFloat(saveable->fileData.leavesGPU[leafIndexInSSBO + 2]);
+				readPos.z = glm::uintBitsToFloat(saveable->fileData.leavesGPU[leafIndexInSSBO + 3]);
 
-				int degree = saveable->fileData.leavesGPU[leafIndexInSSBO + 1];
+				assert(leaf->value().level() == level);
+
+				int degree = saveable->fileData.leavesGPU[leafIndexInSSBO + 4];
 				Polynomial poly(degree);
 
 				for (int i = 0; i < poly.coeffCount(); i += 2)
 				{
-					glm::vec2 coeffs = glm::unpackSnorm2x16(saveable->fileData.leavesGPU[leafIndexInSSBO + 2 + i / 2]);
+					glm::vec2 coeffs = glm::unpackSnorm2x16(saveable->fileData.leavesGPU[leafIndexInSSBO + 5 + i / 2]);
 					poly[i + 0] = coeffs.x * saveable->compressCoefficient();
 					if (i + 1 < poly.coeffCount()) poly[i + 1] = coeffs.y * saveable->compressCoefficient();
 				}
@@ -344,7 +359,7 @@ public:
 	}
 
 	/* Writes the given values in the map to a glsl file as define directives, the key of the map being
-	the identifier and the value being the token-string.
+	the identifier and the value being the token-string. Also writes additional directives for this octree.
 	*/
 	void saveDefinesFile(std::map<std::string, std::string> additionalDefines, std::string path = "Shaders/defines.glsl")
 	{
@@ -373,6 +388,26 @@ public:
 		}
 
 		out.close();
+	}
+
+	LookupTable getLookupTable()
+	{
+		if (lookupTable.texture != nullptr) return lookupTable;
+
+		// generate lookup table
+		lookupTable.texture = std::make_shared<df::Texture3D<df::integral<uint32_t>>>();
+
+		std::vector<df::integral<uint32_t>> pointers;
+		int lookupTableDim1Size = 0;
+		octree->generate3DLookupTable(pointers, lookupTableDim1Size);
+
+		// set values
+		lookupTable.texture->InitTexture(lookupTableDim1Size, lookupTableDim1Size, lookupTableDim1Size, 1);
+		lookupTable.texture->LoadData(pointers, false);
+		lookupTable.lookupTableDim1Size = lookupTableDim1Size;
+		lookupTable.lookupTableNormalizedCellSize = 1.0f / lookupTableDim1Size;
+
+		return lookupTable;
 	}
 
 	template<typename S, typename U>
@@ -449,6 +484,7 @@ void SaveableOctree::SetOctreeUniforms(df::ProgramEditor<S, U>& program)
 {
 	branchSSBO->bindBufferRange(0);
 	leavesSSBO->bindBufferRange(1);
+	getLookupTable().texture->bind(2);
 
 	program << "sdfTexSize" << glm::vec3(getConstructionParams().sizeInWorld)
 		<< "sdfTexCorner" << getConstructionParams().minPos 
@@ -458,7 +494,8 @@ void SaveableOctree::SetOctreeUniforms(df::ProgramEditor<S, U>& program)
 		//<< "sScale" << glm::vec3(1)
 		// << "octreeSize" << state.octreeConstructionParams.sizeInWorld
 		<< "coeffCompressAmount" << compressCoefficient()
-		<< "branchCount" << branchCount();
+		<< "branchCount" << branchCount()
+		<< "lookupTableSize" << lookupTable.lookupTableDim1Size;
 }
 
 template<typename generator>

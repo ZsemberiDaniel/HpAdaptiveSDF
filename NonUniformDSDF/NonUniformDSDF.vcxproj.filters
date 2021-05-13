@@ -59,6 +59,9 @@
     <Filter Include="Math\PolyGen">
       <UniqueIdentifier>{f38d33d7-5f70-4420-acbe-9efc27786afa}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Evaluate">
+      <UniqueIdentifier>{1a06c79c-9237-421e-a276-8167191e6374}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
@@ -185,6 +188,15 @@
     </ClInclude>
     <ClInclude Include="Math\GPUPolyGenerator.h">
       <Filter>Math\PolyGen</Filter>
+    </ClInclude>
+    <ClInclude Include="EvaluationSystem\EvaluationSystem.h">
+      <Filter>Evaluate</Filter>
+    </ClInclude>
+    <ClInclude Include="Utils\TablePrinter.h">
+      <Filter>Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="Utils\rang.h">
+      <Filter>Utils</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

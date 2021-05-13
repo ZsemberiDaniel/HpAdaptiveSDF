@@ -3,6 +3,7 @@
 //?#include "../common.glsl"
 //?#include "../Math/common.glsl"
 
+#ifndef USE_LOOKUP_TABLE
 readonly layout(std430, binding = 0) buffer branches
 {
 	uint br_data[];
@@ -13,26 +14,30 @@ readonly layout(std430, binding = 0) buffer branches
 // size in uints of a branch in SSBO
 const int BR_SIZE = 1 + 8;
 uniform int branchCount = -1;
+#else
+// the lookup table
+uniform int lookupTableSize = 2;
+layout(binding = 2) uniform usampler3D lookupTable;
+#endif
 
 uniform float coeffCompressAmount;
 readonly layout(std430, binding = 1) buffer leaves
 {
-	uint l_leaves[]; // level in octree; degree; (coeffs1, coeffs2, ...); ...;
+	uint l_leaves[]; // level in octree and pos.x; pos.y and pos.z; degree; (coeffs1, coeffs2, ...); ...;
 };
 
-//uniform uint br_data[];
-//uniform uint l_leaves[];
+struct Leaf {
+	uint level;
+	vec3 pos;
+	Polynom	poly;
+};
 
 struct Branch {
 	uint level;
 	uint[8] pointers;
 };
 
-struct Leaf {
-	uint level;
-	Polynom	poly;
-};
-
+#ifndef USE_LOOKUP_TABLE
 Branch getBranch(in uint branchId)
 {
 	Branch br;
@@ -48,26 +53,26 @@ uint getBranchLevel(in uint branchId)
 {
 	return br_data[branchId * BR_SIZE];
 }
+#endif
 
 Leaf getLeaf(in uint leafIndexInArray)
 {
 	// IF THIS IS CHANGED:
 	// the loading a save file part needs to be changed as well
+	// namely inline static std::shared_ptr<SaveableOctree> initFromFileData(FileData& data)
 	Leaf leaf; 
 	Polynom poly;
-	leaf.level =  l_leaves[leafIndexInArray + 0];
-	poly.degree = l_leaves[leafIndexInArray + 1];
+	leaf.level = l_leaves[leafIndexInArray + 0];
+	leaf.pos.x = uintBitsToFloat(l_leaves[leafIndexInArray + 1]);
+	leaf.pos.y = uintBitsToFloat(l_leaves[leafIndexInArray + 2]);
+	leaf.pos.z = uintBitsToFloat(l_leaves[leafIndexInArray + 3]);
+	poly.degree = l_leaves[leafIndexInArray + 4];
+
 	poly.coeffCount = getCoeffCount(poly.degree);
 
 	for (int i = 0; i < poly.coeffCount; i += 2)
 	{
-//		vec4 coeffs = unpackSnorm4x8(l_leaves[leafIndexInArray + 2 + i / 4]);
-//		poly.coeffs[i + 0] = coeffs.x;
-//		poly.coeffs[i + 1] = coeffs.y;
-//		poly.coeffs[i + 2] = coeffs.z;
-//		poly.coeffs[i + 3] = coeffs.w;
-
-		vec2 coeffs = unpackSnorm2x16(l_leaves[leafIndexInArray + 2 + i / 2]);
+		vec2 coeffs = unpackSnorm2x16(l_leaves[leafIndexInArray + 5 + i / 2]);
 		poly.coeffs[i + 0] = coeffs.x * coeffCompressAmount;
 		poly.coeffs[i + 1] = coeffs.y * coeffCompressAmount;
 	}
@@ -81,6 +86,18 @@ const uint twoPow[25] = {1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096
 
 Leaf searchForLeaf(vec3 p, out vec3 boxMin, out vec3 boxMax)
 {
+#ifdef USE_LOOKUP_TABLE
+	ivec3 posInGrid = clamp(ivec3(floor(p * lookupTableSize)), ivec3(0), ivec3(lookupTableSize - 1));
+	uint pointerToLeaf = texelFetch(lookupTable, posInGrid, 0).x;
+
+	Leaf l = getLeaf(pointerToLeaf);
+
+	boxMin = l.pos;
+	boxMax = boxMin + vec3(1.0f / (1 << l.level));
+
+	return l;
+#else
+
 	vec3 localP = p;
 	// last element is the root
 	uint currentBranchId = branchCount - 1;
@@ -137,4 +154,5 @@ Leaf searchForLeaf(vec3 p, out vec3 boxMin, out vec3 boxMax)
 	}
 
 	return getLeaf(currentBranchId - branchCount);
+#endif
 }

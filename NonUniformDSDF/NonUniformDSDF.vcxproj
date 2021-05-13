@@ -257,6 +257,7 @@
     <ClInclude Include="App.h" />
     <ClInclude Include="ChebyshevIntegralEvaluator.h" />
     <ClInclude Include="constants.h" />
+    <ClInclude Include="EvaluationSystem\EvaluationSystem.h" />
     <ClInclude Include="Math\AverageIntegralEvaluator.h" />
     <ClInclude Include="Math\GaussGPUPolyGenerator.h" />
     <ClInclude Include="Math\GaussPolynomialGenerator.h" />
@@ -291,6 +292,8 @@
     <ClInclude Include="Utils\gpuTimer.h" />
     <ClInclude Include="Utils\Lazy.hpp" />
     <ClInclude Include="Utils\PerformanceTest.h" />
+    <ClInclude Include="Utils\rang.h" />
+    <ClInclude Include="Utils\TablePrinter.h" />
     <ClInclude Include="vector3d.h" />
   </ItemGroup>
   <ItemGroup>

@@ -20,7 +20,3 @@ uniform vec3 sdfTexBorder = vec3(0);
 
 // the usual proj*view matrix
 uniform mat4 viewProj;
-
-// procedural sdf parameters
-uniform vec3 param1;
-uniform vec3 param2;

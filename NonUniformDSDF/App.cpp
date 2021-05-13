@@ -168,11 +168,8 @@ void App::Render()
 	
 	Backbuffer << *prog
 		<< "viewProj" << cam.GetViewProj()
-		/*<< "modelTrans" << modelTrans
-		<< "modelScale" << modelScale*/
 		<< "planeDist" << planeDist
 		<< "gInverseViewProj" << cam.GetInverseViewProj()
-		// << "gTanPixelAngle" << cam.GetTanPixelFow()
 		<< "gCameraPos" << cam.GetEye()
 		<< "gCameraDir" << cam.GetDir()
 		<< "gLightPos" << settings.gLightPos
@@ -431,6 +428,11 @@ void App::RenderGUI()
 			ImGui::InputFloat("Smallest allowed step", &state.settings.smallestStep, 0, 0, "%.7f");
 			ImGui::InputFloat("Biggest allowed step", &state.settings.biggestStep, 0, 0, "%.5f");
 			ImGui::InputFloat("Step multiplier", &state.settings.stepMultiplier, 0, 0, "%.5f");
+
+			if (ImGui::Checkbox("Use lookup table", &state.useLookupTable))
+			{
+				CompileShaders();
+			}
 		}
 
 		// Construction settings
@@ -534,6 +536,10 @@ void App::CompilePreprocess()
 	if (state.showNormals)
 	{
 		defines["SHOW_NORMALS"] = "";
+	}
+	if (state.useLookupTable) 
+	{
+		defines["USE_LOOKUP_TABLE"] = "";
 	}
 	
 	currOctree->saveDefinesFile(defines);
