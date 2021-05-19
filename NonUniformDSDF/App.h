@@ -126,7 +126,7 @@ private:
 			float biggestStep = 100.0f;
 			float stepMultiplier = 1.0f;
 			int maxStep = 40;
-			bool refineRoot = true;
+			int refineRoot = 2;
 		} settings;
 
 		OctreeGenerator::ConstructionParameters constructionParams = {

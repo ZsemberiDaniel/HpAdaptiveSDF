@@ -13,7 +13,7 @@
 //}
 //not convex optimized version
 float sdf(vec3 p) {
-	return getSample((p - sdfTexCorner) / sdfTexSize);
+	return getSample((p - sdfTexCorner) * oneOverSdfTexSize );
 	// return sdf(p,vec3(0,0,0)).x;
 }
 //
@@ -24,7 +24,7 @@ float sdf(vec3 p) {
 //	vec3 v = vec2sdfTexInnerBox(p);
 //	float vv = dot(v,v);
 //	if(vv < 0.001){ // inside the inner box
-//		vec3 x = (p - sdfTexCorner) / sdfTexSize;
+//		vec3 x = (p - sdfTexCorner) * oneOverSdfTexSize;
 //		float samp =  getSample(x);
 //		return samp.xx;
 //	}else{

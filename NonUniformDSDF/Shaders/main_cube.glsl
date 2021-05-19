@@ -34,7 +34,7 @@ TraceResult doSphereTrace(RayCone cone, SphereTraceDesc params);
 uniform float octreeSize;
 float sdfInside(vec3 p)
 {
-	vec3 texCoord = (p - sdfTexCorner) / sdfTexSize;
+	vec3 texCoord = (p - sdfTexCorner) * oneOverSdfTexSize;
 	return getSample(texCoord);
 }
 
@@ -86,7 +86,7 @@ bool cube_main(vec3 in_vec, bool pos_or_dir, bool calc_t_min, out vec3 out_col, 
 	
 	// DEBUG START
 //	vec3 p_temp = cone.ray.Origin + (cone.ray.Tmin + 0.001f) * cone.ray.Direction;
-//	vec3 deg1 = debug1((p_temp - sdfTexCorner) / sdfTexSize);
+//	vec3 deg1 = debug1((p_temp - sdfTexCorner) * oneOverSdfTexSize);
 //	out_col = deg1;
 //	return true;
 	// DEBUG END
@@ -137,6 +137,50 @@ bool cube_main(vec3 in_vec, bool pos_or_dir, bool calc_t_min, out vec3 out_col, 
 	return true;
 }
 
+void refineRoots( in RayCone cone, in float prevT, in float prevSign, inout float retT, inout float dd )
+{
+	if ( prevSign > 0 && dd < 0 )
+	{
+		if ( refineRoot == 1 )
+		{
+			// refine N times
+			float a = prevT;
+			float b = retT;
+			float fa = prevSign;
+			float fb = dd;
+
+			for ( int j = 0; j < 10 && fa * fb < 0; ++j )
+			{
+				float h = ( a + b ) * 0.5;
+				float fh = sdfInside( cone.ray.Origin + h * cone.ray.Direction );
+
+				if ( fh < 0 )
+				{
+					// replace right endpoint
+					b = h;
+					fb = fh;
+				}
+				else
+				{
+					// replace left endpoint
+					a = h;
+					fa = fh;
+				}
+			}
+			retT = a;
+			dd = fa;
+		}
+		else if ( refineRoot == 2 )
+		{
+			float f0 = prevSign;
+			float f1 = dd;
+			float t = ( f0 - f1 == 0.0 ) ? 1.0 : f0 / ( f0 - f1 );
+			retT = mix( prevT, retT, t );
+			dd = mix( f0, f1, t );
+		}
+	}
+}
+
 #define STEP_SIZE_REDUCTION 0.95
 TraceResult enhancedSphereTrace(in RayCone cone, SphereTraceDesc params)
 {
@@ -162,6 +206,9 @@ TraceResult enhancedSphereTrace(in RayCone cone, SphereTraceDesc params)
 		rn	  > params.epsilon * ret.T &&	// Stop if cone is close to surface
 		i     < params.maxiters);
 
+	// TODO: fix signature
+	//refineRoots( cone, prevT, prevSign, ret.T, dd );
+
 	ret.flags =  int(ret.T >= cone.ray.Tmax)
               | (int(rn <= params.epsilon)  << 1)
               | (int(i >= params.maxiters) << 2); 
@@ -186,7 +233,7 @@ TraceResult relaxedSphereTracing(in RayCone cone, in SphereTraceDesc params)
 			di = rc;
 			rn = sdfInside(cone.ray.Origin + cone.ray.Direction * (ret.T + di));
 		}
-		di = clamp(stepMultiplier * di, smallestStep, biggestStep);
+		di = stepMultiplier * di; // clamp( stepMultiplier * di, smallestStep, biggestStep );
 		ret.T += di;
 		rc = rn;
 		++i;
@@ -194,6 +241,9 @@ TraceResult relaxedSphereTracing(in RayCone cone, in SphereTraceDesc params)
 		ret.T < cone.ray.Tmax &&       					// Stay within bound box
 		rn	  > params.epsilon * (ret.T + di) &&	// Stop if cone is close to surface
 		i     < params.maxiters);
+
+	// TODO: fix signature
+	//refineRoots( cone, prevT, prevSign, ret.T, dd );
 
 	ret.flags =  int(ret.T >= cone.ray.Tmax)
               | (int(di <= params.epsilon * (ret.T + di))  << 1)
@@ -220,35 +270,7 @@ TraceResult basicSphereTrace(in RayCone cone, in SphereTraceDesc params)
 		debugDist = dd.xxx;
 	}
 
-	if (refineRoot == 1 && prevSign > 0 && dd < 0)
-	{
-		// refine N times
-		float a = prevT;
-		float b = ret.T;
-		float fa = prevSign;
-		float fb = dd;
-
-		for (int j = 0; j < 10 && fa*fb < 0; ++j)
-		{
-			float h = (a + b)*0.5;
-			float fh = sdfInside(cone.ray.Origin + h * cone.ray.Direction);
-
-			if (fh < 0)
-			{
-				// replace right endpoint
-				b = h;
-				fb = fh;
-			}
-			else
-			{
-				// replace left endpoint
-				a = h;
-				fa = fh;
-			}
-		}
-		ret.T = a;
-		dd = fa;
-	}
+	refineRoots( cone, prevT, prevSign, ret.T, dd );
 
 	ret.flags = int(ret.T >= cone.ray.Tmax)
 			  | (int(abs(dd) <= params.epsilon) << 1)
@@ -271,8 +293,7 @@ TraceResult doSphereTrace(in RayCone cone, SphereTraceDesc params)
 	{
 		return basicSphereTrace(cone, params);
 	}
-	else 
-	if (sphereTraceType == 1)
+	else if (sphereTraceType == 1)
 	{
 		return relaxedSphereTracing(cone, params);
 	}

@@ -4,7 +4,7 @@
 //?#include "../Math/common.glsl"
 
 #ifndef USE_LOOKUP_TABLE
-readonly layout(std430, binding = 0) buffer branches
+readonly restrict layout(std430, binding = 0) buffer branches
 {
 	uint br_data[];
 	// level, pointer1, pointer2, ..., pointer8
@@ -21,7 +21,7 @@ layout(binding = 2) uniform usampler3D lookupTable;
 #endif
 
 uniform float coeffCompressAmount;
-readonly layout(std430, binding = 1) buffer leaves
+readonly restrict layout(std430, binding = 1) buffer leaves
 {
 	uint l_leaves[]; // level in octree and pos.x; pos.y and pos.z; degree; (coeffs1, coeffs2, ...); ...;
 };
@@ -82,8 +82,6 @@ Leaf getLeaf(in uint leafIndexInArray)
 	return leaf;
 }
 
-const uint twoPow[25] = {1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768, 65536, 131072, 262144, 524288, 1048576, 2097153, 4194304, 8388608, 16777216};
-
 Leaf searchForLeaf(vec3 p, out vec3 boxMin, out vec3 boxMax)
 {
 #ifdef USE_LOOKUP_TABLE
@@ -107,11 +105,27 @@ Leaf searchForLeaf(vec3 p, out vec3 boxMin, out vec3 boxMax)
 
 	while (currentBranchId < branchCount)
 	{
-		Branch br = getBranch(currentBranchId);
+		Branch br = getBranch(currentBranchId);		
 
-		vec3 halfBoxSize = vec3(1.0f / twoPow[getBranchLevel(currentBranchId) + 1]);
+		vec3 halfBoxSize = vec3(1.0f / float( 1 << ( 1 + getBranchLevel( currentBranchId ) ) ) );
 		// int pointerId = int(localP.z >= 0.5f) * 4 + int(localP.y >= 0.5f) * 2 + int(localP.x >= 0.5f);
 		int pointerId = 0;
+
+		// clamp to [0,1] may be free on certain architectures and otherwise very fast; usually, ternary provokes
+		// a conditional move instead of an actual branch, so if you have lots of branching, it is worth a shot
+		// to rephrase them into conditional moves and wave-coherent operations
+		int xG = ( localP.x > 0.5f ) ? 1 : 0;
+		int yG = ( localP.y > 0.5f ) ? 1 : 0;
+		int zG = ( localP.z > 0.5f ) ? 1 : 0;
+
+		pointerId += xG + 2 * yG + 4 * zG;
+		localP -= 0.5f * vec3( xG, yG, zG );
+
+		boxMin += vec3( xG, yG, zG ) * halfBoxSize;
+		boxMax += ( vec3( xG, yG, zG ) - 1 ) * halfBoxSize;
+
+		/*
+		// the conditionals above replace these branches:
 		if (localP.z > 0.5f) 
 		{
 			localP.z -= 0.5f;
@@ -146,8 +160,7 @@ Leaf searchForLeaf(vec3 p, out vec3 boxMin, out vec3 boxMax)
 		else
 		{
 			boxMax.x -= halfBoxSize.x;
-		}
-
+		}*/
 
 		localP *= 2.0f;
 		currentBranchId = br.pointers[pointerId];

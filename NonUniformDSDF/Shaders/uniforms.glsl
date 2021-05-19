@@ -5,7 +5,7 @@
 uniform float sScale;
 // translation
 uniform vec3 sTranslation;
-/*const */float sOneOverScale = 1.0 / sScale;
+float sOneOverScale = 1.0 / sScale;
 
 // inner bounding box size
 uniform vec3 modelScale;
@@ -14,6 +14,8 @@ uniform vec3 modelTrans;
 
 // outer bouinding box size
 uniform vec3 sdfTexSize;
+vec3 oneOverSdfTexSize = 1.0 / sdfTexSize;
+
 // outer bouinding box min corner in model coordinates
 uniform vec3 sdfTexCorner;
 uniform vec3 sdfTexBorder = vec3(0);

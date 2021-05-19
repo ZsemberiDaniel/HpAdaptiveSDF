@@ -182,7 +182,7 @@ void App::Render()
 		<< "gCookIOR" << settings.gCookIOR
 		<< "gNormEps" << glm::vec3(0.01f)
 		<< "maxStep" << settings.maxStep
-		<< "refineRoot" << (state.settings.refineRoot ? 1 : 0)
+		<< "refineRoot" << state.settings.refineRoot
 		<< "epsilon" << state.settings.epsilonToSurface
 		<< "smallestStep" << state.settings.smallestStep
 		<< "biggestStep" << state.settings.biggestStep
@@ -421,7 +421,10 @@ void App::RenderGUI()
 
 			if (state.settings.sphereTraceType == 0)
 			{
-				ImGui::Checkbox("Refine root", &state.settings.refineRoot);
+				ImGui::Text( "Root refinement type:" );
+				ImGui::RadioButton( "None", &state.settings.refineRoot, 0 ); ImGui::SameLine();
+				ImGui::RadioButton( "Bisection", &state.settings.refineRoot, 1 ); ImGui::SameLine();
+				ImGui::RadioButton( "Linear", &state.settings.refineRoot, 2 ); 
 			}
 			ImGui::InputInt("Max step", &state.settings.maxStep);
 			ImGui::InputFloat("Epsilon to surface", &state.settings.epsilonToSurface, 0, 0, "%.7f");
