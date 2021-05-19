@@ -198,6 +198,24 @@
     <ClInclude Include="Utils\rang.h">
       <Filter>Utils</Filter>
     </ClInclude>
+    <ClInclude Include="SDFGPUandCPU\SDF2Model2.h">
+      <Filter>SDFGPUandCPU</Filter>
+    </ClInclude>
+    <ClInclude Include="SDFGPUandCPU\SDF2Model3.h">
+      <Filter>SDFGPUandCPU</Filter>
+    </ClInclude>
+    <ClInclude Include="SDFGPUandCPU\SDF2Model4.h">
+      <Filter>SDFGPUandCPU</Filter>
+    </ClInclude>
+    <ClInclude Include="SDFGPUandCPU\SDF2Model5.h">
+      <Filter>SDFGPUandCPU</Filter>
+    </ClInclude>
+    <ClInclude Include="SDFGPUandCPU\SDF2Model6.h">
+      <Filter>SDFGPUandCPU</Filter>
+    </ClInclude>
+    <ClInclude Include="SDFGPUandCPU\SDF2Model7.h">
+      <Filter>SDFGPUandCPU</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="Shaders\main_cube.glsl">

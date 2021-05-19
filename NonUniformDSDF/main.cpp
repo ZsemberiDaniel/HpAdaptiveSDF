@@ -5,7 +5,7 @@
 #include "EvaluationSystem/EvaluationSystem.h"
 #include "App.h"
 
-#define TEST
+// #define TEST
 
 /* File desc: 
  * path_to_save_file   camera_pos    trace_type (0 - default, 1 - relaxed, 2 - enhanced)    useLookup (0 or 1)

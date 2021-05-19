@@ -279,6 +279,12 @@
     <ClInclude Include="Octree\SaveableOctree.h" />
     <ClInclude Include="SDFGPUandCPU\SDF2Cube.h" />
     <ClInclude Include="SDFGPUandCPU\SDF2Model1.h" />
+    <ClInclude Include="SDFGPUandCPU\SDF2Model2.h" />
+    <ClInclude Include="SDFGPUandCPU\SDF2Model3.h" />
+    <ClInclude Include="SDFGPUandCPU\SDF2Model4.h" />
+    <ClInclude Include="SDFGPUandCPU\SDF2Model5.h" />
+    <ClInclude Include="SDFGPUandCPU\SDF2Model6.h" />
+    <ClInclude Include="SDFGPUandCPU\SDF2Model7.h" />
     <ClInclude Include="SDFGPUandCPU\SDF2Plane.h" />
     <ClInclude Include="SDFGPUandCPU\SDF2Sphere.h" />
     <ClInclude Include="SDFGPUandCPU\SDF2Torus.h" />
