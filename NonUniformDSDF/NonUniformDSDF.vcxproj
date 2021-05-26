@@ -255,7 +255,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="App.h" />
-    <ClInclude Include="ChebyshevIntegralEvaluator.h" />
     <ClInclude Include="constants.h" />
     <ClInclude Include="EvaluationSystem\EvaluationSystem.h" />
     <ClInclude Include="Math\AverageIntegralEvaluator.h" />
@@ -303,6 +302,7 @@
     <ClInclude Include="vector3d.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="ClassDiagram.cd" />
     <None Include="Eigen\Cholesky" />
     <None Include="Eigen\CholmodSupport" />
     <None Include="Eigen\Core" />

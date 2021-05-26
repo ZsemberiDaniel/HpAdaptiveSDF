@@ -83,16 +83,6 @@ void Polynomial::print(float epsilon) const
 	std::cout << std::endl;
 }
 
-float& Polynomial::operator()(int i)
-{
-	return coeffs[i];
-}
-
-const float& Polynomial::operator()(int i) const
-{
-	return coeffs[i];
-}
-
 float& Polynomial::operator[](int i)
 {
 	return coeffs[i];

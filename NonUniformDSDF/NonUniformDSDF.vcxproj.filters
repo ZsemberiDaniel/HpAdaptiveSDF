@@ -147,9 +147,6 @@
     <ClInclude Include="Math\QuadratureEvaluator.h">
       <Filter>Math\Integral</Filter>
     </ClInclude>
-    <ClInclude Include="ChebyshevIntegralEvaluator.h">
-      <Filter>Math\Integral</Filter>
-    </ClInclude>
     <ClInclude Include="Math\AverageIntegralEvaluator.h">
       <Filter>Math\Integral</Filter>
     </ClInclude>
@@ -476,5 +473,6 @@
     <None Include="Shaders\defines.glsl">
       <Filter>Shaders</Filter>
     </None>
+    <None Include="ClassDiagram.cd" />
   </ItemGroup>
 </Project>

@@ -90,26 +90,12 @@ float box(vec3 p, vec3 size)
 vec2 box(vec3 p, vec3 v, vec3 size)
 {
     vec3 d = abs(p) - size; //signed distances to planes
-    //vec3 dd = sign(p) * max(d, 0); //outside 'normal' // sign is slow...
-    //vec3 dd = (p < 0 ? vec3(-1) : vec3(1)) * max(d, 0); //outside 'normal'
     vec3 dd = (2.0 * vec3(greaterThan(p, vec3(0.0))) - 1.0) * max(d, 0.0); //outside 'normal'
     float lendd = length(dd);
     float f = lendd + min(max(d.x, max(d.y, d.z)), 0.0); //one is always zero
     float vdf = dot(v, dd) / lendd; //<f',v>
     return CONVEXOPT(f, vdf);
 }
-// might be faster if simplifyed: 
-//vec2 box(vec3 p, vec3 v, vec3 size)
-//{
-//    vec3 p0 = min(size, abs(p));
-//    vec3 dd = p - p0 * (2 * vec3(p > 0) - 1);
-//    vec3 d = abs(p) - size;
-//    float lendd = length(dd);
-//    float f = min(max(d.x, max(d.y, d.z)), 0.0) + lendd;
-//    float vdf = dot(v, dd) / lendd;
-//    return CONVEXOPT(f, vdf);
-//}
-
 // ************************
 //      SET OPERATIONS
 // ________________________

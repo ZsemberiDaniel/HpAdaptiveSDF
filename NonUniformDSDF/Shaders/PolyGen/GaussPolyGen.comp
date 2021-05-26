@@ -85,7 +85,7 @@ float evalSDFIntegral(ivec3 degs, int polyDeg, int degId, int pointCount, vec3 i
 					gaussCoeffs1D[pointCount - 1][j];
 
 				// shift the quadratic point into the input integral
-				vec3 shiftedPoint = (point * 0.5 + 0.5) * intervalSize + intervalStarting;
+				vec3 shiftedPoint = (point * 0.5f + 0.5f) * intervalSize + intervalStarting;
 
 				value += coeff * SceneSDF(shiftedPoint) * shifedNormalizedLegendre(shiftedPoint, degs, intervalStarting, intervalEnding);
 			}

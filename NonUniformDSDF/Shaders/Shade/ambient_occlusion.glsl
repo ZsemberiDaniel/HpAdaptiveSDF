@@ -1,8 +1,8 @@
 //?#version 450
 
-uniform int gAOMaxIters;
-uniform float gAOStepSize;
-uniform float gAOStrength;
+const int gAOMaxIters = 5;
+const float gAOStepSize = 0.4f;
+const float gAOStrength = 0.7f;
 
 //?#include "../common.glsl"
 

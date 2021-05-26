@@ -8,18 +8,41 @@
 #include <Dragonfly/detail/Texture/Texture2DArray.h>
 #include "../constants.h"
 
+/// <summary>
+/// A base class for defining SDFs that have define directives and helper textures for the GUI.
+/// </summary>
 class SDFBase
 {
 private:
+	/// <summary>
+	/// Max SDF value stored in discreteSDFTexture and discreteSDFTexture2D.
+	/// </summary>
 	float maxSDFValue = -std::numeric_limits<float>::max();
 
 	bool discreteSDFInitialized = false;
+	/// <summary>
+	/// A 3D texture that stores raw SDF values. Used for showing heatmaps in the GUI.
+	/// Size is ERROR_HEATMAP_SIZE.
+	/// </summary>
 	std::shared_ptr<df::Texture3D<float>> discreteSDFTexture = nullptr;
+	/// <summary>
+	/// A 2D texture array that stores raw SDF values. Used for calculating errors
+	/// Size is ERROR_HEATMAP_SIZE.
+	/// </summary>
 	std::shared_ptr<df::Texture2DArray<float>> discreteSDFTexture2D = nullptr;
 
 protected:
+	/// <summary>
+	/// The min pos of the SDF in the world. Does not work currently.
+	/// </summary>
 	glm::vec3 _worldMinPos;
+	/// <summary>
+	/// The size of the SDF in the world. Does not work currently.
+	/// </summary>
 	float _worldSize;
+	/// <summary>
+	/// The path to this file.
+	/// </summary>
 	std::string _path;
 
 	std::string _sdfName = "Default SDF name";
@@ -32,22 +55,39 @@ protected:
 		}*/
 	}
 public:
+	/// <summary>
+	/// Initializes an SDF.
+	/// </summary>
+	/// <param name="sdfName">Name of the SDF. Should be unique for the UI to work properly.</param>
+	/// <param name="path">Path to the file/header that implements the SDF.</param>
+	/// <param name="worldMinPos">Does not work currently. The min pos of the SDF in the world.</param>
+	/// <param name="worldSize">Does not work currently. The size of the SDF in the world.</param>
 	SDFBase(std::string sdfName, std::string path, glm::vec3 worldMinPos = glm::vec3(0), float worldSize = 1.0f) :
 		_sdfName(sdfName), _worldMinPos(worldMinPos), _worldSize(worldSize) , _path(path)
 	{
 		
 	}
+	/// <summary>
+	/// Evaluates the SDF at the given point
+	/// </summary>
 	virtual float operator()(glm::vec3 p) const { return 0.0f; }
+	/// <summary>
+	/// Renders settings of this SDF to the GUI via ImGUI.
+	/// </summary>
 	virtual void renderGUI()
 	{
-		ImGui::InputFloat3("World min pos", &_worldMinPos.x, 1);
-		ImGui::InputFloat("World size", &_worldSize, 1);
+		// ImGui::InputFloat3("World min pos", &_worldMinPos.x, 1);
+		// ImGui::InputFloat("World size", &_worldSize, 1);
 	}
 	virtual ~SDFBase() 
 	{	
 		
 	}
 
+	/// <summary>
+	/// Writes attributes of this sdf to the given file as shader macros. Overwrites the given file.
+	/// </summary>
+	/// <param name="path">A relative path to the desired directive file.</param>
 	void writeAttributesToDefinesFile(const std::string& path) const
 	{
 		std::ofstream out(path);
@@ -60,6 +100,9 @@ public:
 		out.close();
 	}
 
+	/// <summary>
+	/// Initializes the discreteSDFTexture and discreteSDFTexture2D.
+	/// </summary>
 	void initializeSDFDiscreteValues()
 	{
 		std::vector<float> temp(ERROR_HEATMAP_SIZE * ERROR_HEATMAP_SIZE * ERROR_HEATMAP_SIZE);
@@ -93,6 +136,10 @@ public:
 	std::string name() const { return _sdfName; }
 	const std::string& path() const { return _path; }
 
+	/// <summary>
+	/// Initializes if not initialized and returns a 3D texture of size ERROR_HEATMAP_SIZE that store SDF values
+	/// in a uniform grid from this SDF.
+	/// </summary>
 	std::shared_ptr<df::Texture3D<float>> discreteSDFValuesTexture()
 	{
 		if (!discreteSDFInitialized)
@@ -102,6 +149,10 @@ public:
 		return discreteSDFTexture;
 	}
 
+	/// <summary>
+	/// Initializes if not initialized and returns a 2D texture array of size ERROR_HEATMAP_SIZE that store SDF values
+	/// in a uniform grid from this SDF.
+	/// </summary>
 	std::shared_ptr<df::Texture2DArray<float>> discreteSDFValuesTexture2D()
 	{
 		if (!discreteSDFInitialized)
@@ -111,6 +162,10 @@ public:
 		return discreteSDFTexture2D;
 	}
 
+	/// <summary>
+	/// Initializes if not initialized and returns the maximum of a texture of size ERROR_HEATMAP_SIZE that store SDF values
+	/// in a uniform grid from this SDF.
+	/// </summary>
 	float discreteMaxSDFValue() 
 	{
 		if (!discreteSDFInitialized)

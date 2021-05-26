@@ -320,6 +320,10 @@ namespace Evaluation
 			TestCase tc;
 
 			EvaluationResults evalResults(ostream);
+
+			auto param = df::Sample::FLAGS::WINDOW_BORDERLESS;
+			df::Sample sam("Non-uniform DSDF TESTS", 1920, 1080, param);
+
 			while (istream >> tc)
 			{
 				if (!std::filesystem::exists(tc.pathToSaveFile))
@@ -329,8 +333,6 @@ namespace Evaluation
 				}
 
 				try {
-					auto param = df::Sample::FLAGS::WINDOW_BORDERLESS;
-					df::Sample sam("Non-uniform DSDF TESTS", 1920, 1080, param);
 
 					// sam.AddHandlerClass<df::ImGuiHandler>(10);
 					App app(sam, frameCount,

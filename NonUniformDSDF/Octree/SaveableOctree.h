@@ -20,23 +20,51 @@ class SaveableOctree
 private:
 	SaveableOctree() { }
 
+	/// <summary>
+	/// Name of the octree, generated during initialization from the parameters.
+	/// </summary>
 	std::string name;
+	/// <summary>
+	/// Pointer to the underlying octree. Initialized in constructor, will not be null during lifetime of class.
+	/// </summary>
 	std::unique_ptr<Octree<Cell>> octree = nullptr;
 
+	/// <summary>
+	/// An SSBO object that stores the branch data in usigned integers, initialized in constructor.
+	/// </summary>
 	std::unique_ptr<eltecg::ogl::ShaderStorageBuffer> branchSSBO;
+	/// <summary>
+	/// An SSBO object that stores the leaves data in usigned integers, initialized in constructor.
+	/// </summary>
 	std::unique_ptr<eltecg::ogl::ShaderStorageBuffer> leavesSSBO;
 
+	/// <summary>
+	/// A Compute program that calculated SDF values to a 2D texture array
+	/// </summary>
 	std::unique_ptr<df::ComputeProgramEditor> texture2DArrayCalculator;
 
+	/// <summary>
+	/// A struct that contains all the necessary information for the lookup table of the octree.
+	/// </summary>
 	struct LookupTable
 	{
+		/// <summary>
+		/// The 3D texture of the lookup table
+		/// </summary>
 		std::shared_ptr<df::Texture3D<df::integral<uint32_t>>> texture;
+		/// <summary>
+		/// How big a cell is in the lookup table of the size of the octree in the world were 1x1x1.
+		/// </summary>
 		float lookupTableNormalizedCellSize;
-		// how many cells per side
+		/// <summary>
+		/// How many cells there are for each side of the lookup table.
+		/// </summary>
 		int lookupTableDim1Size;
 	} lookupTable;
 
-
+	/// <summary>
+	/// Used to initialize the texture2DArrayCalculator program.
+	/// </summary>
 	void initTexture2DArrayCalculator()
 	{
 		using namespace df;
@@ -64,20 +92,50 @@ private:
 	/// </summary>
 	struct FileData
 	{
+		/// <summary>
+		/// These are stored as raw binary data
+		/// </summary>
 		struct SavedToBinary
 		{
+			/// <summary>
+			/// The coefficient with which each polynomial coeff is divided before packing to normalize them to [0;1].
+			/// On the GPU side, each poly coeff needs to be multiplied by this.
+			/// </summary>
 			float compressCoefficient;
+			/// <summary>
+			/// How many branches there are in the octree alltogether.
+			/// </summary>
 			int branchCount;
+			/// <summary>
+			/// Which SDF was used to generate the octree in SDFHeader.sdfs.
+			/// </summary>
 			int sdfIndex;
+			/// <summary>
+			/// Which approximation method was used to generate the octree in PolynomialBases.approxTypes.
+			/// </summary>
 			int approxTypeIndex;
+			/// <summary>
+			/// The construction parameters used during octree generation.
+			/// </summary>
 			OctreeGenerator::ConstructionParameters constructionParams;
 		} dat;
 
 		// These also need to be saved to a file, but a vector cannot be stored as binary data
+		// So the underlying data is extracted and stored
+		/// <summary>
+		/// The branches GPU array of unsigned integers.
+		/// </summary>
 		std::vector<unsigned int> branchesGPU;
+		/// <summary>
+		/// The leaves GPU array of unsigned integers.
+		/// </summary>
 		std::vector<unsigned int> leavesGPU;
 	} fileData;
 
+	/// <summary>
+	/// Private function that makes a SaveableOctree and inits its' fields from the given FileData.
+	/// </summary>
+	/// <returns>The resulting SaveableOctree.</returns>
 	inline static std::shared_ptr<SaveableOctree> initFromFileData(FileData& data)
 	{
 		auto saveable = std::shared_ptr<SaveableOctree>(new SaveableOctree());
@@ -171,6 +229,7 @@ private:
 				}
 
 				leaf->value().poly = poly;
+				saveable->octree->maxDegreeInLeaves = std::max(saveable->octree->maxDegreeInLeaves, poly.getDegree());
 			}
 		}
 
@@ -287,9 +346,19 @@ public:
 		octree->print(getConstructionParams().minPos, getConstructionParams().minPos + getConstructionParams().sizeInWorld);
 	}
 
+	/// <summary>
+	/// Saves the octree to the given file path. It can later be loaded via the loadFrom method.
+	/// </summary>
+	/// <param name="path">An absolute path to a file where the otree should be saved. Can be a non-existing one.</param>
 	void saveTo(std::wstring path)
 	{
 		std::ofstream file(path, std::ios::out | std::ios::binary);
+
+		if (!file.is_open())
+		{
+			std::cerr << "File at give path could not be opened, save failed. " << std::string(path.begin(), path.end()) << std::endl;
+			return;
+		}
 
 		// write class itself
 		size_t size = sizeof(FileData::SavedToBinary);
@@ -308,6 +377,13 @@ public:
 		file.close();
 	}
 
+	/// <summary>
+	/// Loads and returns an octree from the given path. It throws invalid_argument if the file at the given path
+	/// does not exist. It will not check whether the given file is really an octree save file, just loads
+	/// whatever is inside the file so be aware!
+	/// </summary>
+	/// <param name="path">An absolute path to the file where the octree is saved.</param>
+	/// <returns>The loaded SaveableOctree.</returns>
 	inline static std::shared_ptr<SaveableOctree> loadFrom(std::wstring path)
 	{
 		std::ifstream file(path, std::ios::in | std::ios::binary);
@@ -340,6 +416,9 @@ public:
 		return out;
 	}
 
+	/// <summary>
+	/// Renders a static view of the construction parameters that were used when generating this octree.
+	/// </summary>
 	void renderConstructionParamsGUI()
 	{
 		ImGui::Text("Parameters:");
@@ -364,9 +443,13 @@ public:
 		}
 	}
 
-	/* Writes the given values in the map to a glsl file as define directives, the key of the map being
-	the identifier and the value being the token-string. Also writes additional directives for this octree.
-	*/
+	/// <summary>
+	/// Writes the given values in the map to a glsl file as define directives, the key of the map being
+	/// the identifierand the value being the token - string. Also writes additional directives for this octree
+	/// that come from its' data.
+	/// </summary>
+	/// <param name="additionalDefines">Addition defines that need to be added next to the octree's.</param>
+	/// <param name="path">A relative path to the defines file where the directives will be saved. It overwrites the file.</param>
 	void saveDefinesFile(std::map<std::string, std::string> additionalDefines, std::string path = "Shaders/defines.glsl")
 	{
 		std::map<std::string, std::string> defines{
@@ -375,6 +458,8 @@ public:
 
 			{ "MAX_DEGREE", std::to_string(getConstructionParams().maxDegree) },
 			{ "MAX_COEFF_SIZE", std::to_string(Polynomial::calculateCoeffCount(getConstructionParams().maxDegree)) },
+			{ "MAX_DEG_IN_LEAVES", std::to_string(octree->maxDegreeInLeaves) },
+			{ "MAX_COEFF_SIZE_IN_LEAVES", std::to_string(Polynomial::calculateCoeffCount(octree->maxDegreeInLeaves)) },
 			// used for the SDFs that work for both CPU and GPU
 			{ "GPU_SIDE", "" }
 		};
@@ -396,6 +481,9 @@ public:
 		out.close();
 	}
 
+	/// <summary>
+	/// Generates the lookup table of not generated and then returns it.
+	/// </summary>
 	LookupTable getLookupTable()
 	{
 		if (lookupTable.texture != nullptr) return lookupTable;
@@ -416,6 +504,9 @@ public:
 		return lookupTable;
 	}
 
+	/// <summary>
+	/// Sets some uniform parameters in the given program based on the underlying octree.
+	/// </summary>
 	template<typename S, typename U>
 	void SetOctreeUniforms(df::ProgramEditor<S, U>& program);
 
@@ -436,6 +527,10 @@ public:
 	const std::string& getName() { return name; }
 
 private:
+	/// <summary>
+	/// Private helper function used by calculateSdf0thOrderTexture and calculateSdf0thOrderTexture2D to generate
+	/// 0th order SDF 3D matrix.
+	/// </summary>
 	void calculateSdf0thOrderTempVector(int size, std::vector<float>& sdfValues) const
 	{
 		sdfValues.clear();
@@ -458,6 +553,11 @@ private:
 	}
 
 public:
+	/// <summary>
+	/// Calculates a 3D matrix of SDF values in a uniform size x size x size octree then stores it in a 3D texture.
+	/// </summary>
+	/// <param name="size">Size of the uniform grid</param>
+	/// <returns>The generated 3D texture.</returns>
 	std::shared_ptr<df::Texture3D<float>> calculateSdf0thOrderTexture(int size) const
 	{
 		std::shared_ptr<df::Texture3D<float>> out = std::make_shared<df::Texture3D<float>>(size, size, size);
@@ -470,6 +570,11 @@ public:
 		return out;
 	}
 
+	/// <summary>
+	/// Calculates a 3D matrix of SDF values in a uniform size x size x size octree then stores it in a 2D array texture.
+	/// </summary>
+	/// <param name="size">Size of the uniform grid</param>
+	/// <returns>The generated 2D array texture.</returns>
 	std::shared_ptr<df::Texture2DArray<float>> calculateSdf0thOrderTexture2D(int size)
 	{
 		std::shared_ptr<df::Texture2DArray<float>> out = std::make_shared<df::Texture2DArray<float>>(size, size, size);

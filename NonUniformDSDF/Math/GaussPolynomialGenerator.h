@@ -49,7 +49,7 @@ Polynomial GaussPolynomialGenerator::fitOnePoly(BoundingBox& bbox, int degree, s
 		{
 			for (int j = 0; i + k + j <= degree; j++, m++)
 			{
-				polynomial(m) = quadratureEvaluator->evaluateIntegral(20,
+				polynomial[m] = quadratureEvaluator->evaluateIntegral(20,
 					[&bbox, i, k, j, this, &sdfFunction](glm::vec3 p)
 					{
 						return sdfFunction(p) * shiftedNormalizedLegendre(bbox, glm::ivec3(i, k, j), p);

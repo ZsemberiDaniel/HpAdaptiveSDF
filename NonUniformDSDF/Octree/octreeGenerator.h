@@ -14,12 +14,19 @@ class OctreeGenerator
 public:
 	struct ConstructionParameters
 	{
+		// Min pos in the world of the octree. Currently not working
 		glm::vec3 minPos = glm::vec3(0);
+		// Size in the world of the octree. Currently not working
 		float sizeInWorld = 1.0f;
+		// Maximum degree reachable by algorithm
 		int maxDegree = 3;
+		// Maximum octree level reachable by algorithm
 		int maxLevel = 2;
+		// Maximum absolute error sum obtained by algorithm
 		float errorThreshold = 0.005f;
+		// Use subdivision in algorithm?
 		bool useHAdapt = true;
+		// Raise poly degree in algorithm?
 		bool usePAdapt = true;
 		// when calculating on GPU, how many to group together
 		int cellGroupSize = 1;
@@ -92,6 +99,7 @@ void OctreeGenerator::constructField(std::unique_ptr<Octree<Cell>>& octree, gene
 	}
 
 	octree->setBbox(params.minPos, params.sizeInWorld);
+	octree->maxDegreeInLeaves = params.startDegree;
 
 	int step = 0;
 	while (!pendingVector.empty() && error > params.errorThreshold)
@@ -208,6 +216,11 @@ void OctreeGenerator::constructField(std::unique_ptr<Octree<Cell>>& octree, gene
 				// pending.push(currentCell);
 				pendingVector.push_back(std::move(currentCell));
 				std::push_heap(pendingVector.begin(), pendingVector.end(), queueCellCompare);
+
+				if (octree->maxDegreeInLeaves > currentCell.poly.getDegree())
+				{
+					octree->maxDegreeInLeaves = currentCell.poly.getDegree();
+				}
 			}
 			// doing h-improvement otherwise
 			if (refineH/*pImprovement < hImprovement*/)

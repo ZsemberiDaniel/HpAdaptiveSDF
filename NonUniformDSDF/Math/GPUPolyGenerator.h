@@ -13,8 +13,26 @@ template<typename sdf>
 class GPUPolyGenerator : public PolynomialGenerator
 {
 protected:
+	/// <summary>
+	/// At once, 9 polynomials are returned per bounding box. This vector contains for each input polynomial degree
+	/// what is the size of the returned SSBO containing the 9 polynomials. E.g: id 0 contains if the input
+	/// is of degree 0, the output will have this many unsigned integers in the SSBO.
+	/// </summary>
 	std::vector<int> ssbosPerDegreesSize;
-	GLuint ssboShaderCompute, ssboPolyError, ssboPolyDescription;
+	/// <summary>
+	/// SSBOs of the output. 
+	/// </summary>
+	GLuint ssboPolyCoeff, ssboPolyError;
+	/// <summary>
+	/// Input SSBO
+	// 2 * k + 0 vec4: bboxStart.x, bboxStart.y, bboxStart.z, currentDeg of cell
+	// 2 * k + 1 vec4: bboxEnd.x, bboxEnd.y, bboxEnd.z, start in poly_coeffs array
+	/// </summary>
+	GLuint ssboPolyDescription;
+	/// <summary>
+	/// Shader that takes input ssboPolyDescription and outputs to ssboPolyCoeff and ssboPolyError.
+	/// Computes the polynomial coefficients if set up properly.
+	/// </summary>
 	df::ComputeProgramEditor compShader = df::ComputeProgramEditor("Polynomial compute shader");
 
 	virtual void addWhileShaderCompile() { }
@@ -56,8 +74,8 @@ public:
 		{
 			ssbosPerDegreesSize.push_back(Polynomial::calculateCoeffCount(i + 1) + 8 * Polynomial::calculateCoeffCount(i));
 		}
-		glGenBuffers(1, &ssboShaderCompute);
-		glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssboShaderCompute);
+		glGenBuffers(1, &ssboPolyCoeff);
+		glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssboPolyCoeff);
 		std::vector<float> container(maxK * ssbosPerDegreesSize.back(), 0.0f);
 		int bufferSize = static_cast<int>(container.size() * sizeof(float));
 		glBufferStorage(GL_SHADER_STORAGE_BUFFER, bufferSize, (GLvoid*)container.data(), GL_MAP_WRITE_BIT);
@@ -82,7 +100,7 @@ public:
 
 	virtual ~GPUPolyGenerator()
 	{
-		glDeleteBuffers(1, &ssboShaderCompute);
+		glDeleteBuffers(1, &ssboPolyCoeff);
 		glDeleteBuffers(1, &ssboPolyError);
 		glDeleteBuffers(1, &ssboPolyDescription);
 	}
@@ -126,7 +144,7 @@ std::vector<Polynomial> GPUPolyGenerator<sdf>::fitPolynomials(std::vector<std::p
 	glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, polyDesc.size() * sizeof(glm::vec4), (GLvoid*)polyDesc.data());
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 
-	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, ssboShaderCompute);
+	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, ssboPolyCoeff);
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, ssboPolyError);
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, ssboPolyDescription);
 	beforeCompShaderRun();
@@ -140,7 +158,7 @@ std::vector<Polynomial> GPUPolyGenerator<sdf>::fitPolynomials(std::vector<std::p
 
 	// getting data from GPU
 	std::vector<float> polyStorage(returnedSSBOSize), errorStorage(9 * data.size());
-	glGetNamedBufferSubData(ssboShaderCompute, 0, polyStorage.size() * sizeof(float), polyStorage.data());
+	glGetNamedBufferSubData(ssboPolyCoeff, 0, polyStorage.size() * sizeof(float), polyStorage.data());
 	glGetNamedBufferSubData(ssboPolyError, 0, errorStorage.size() * sizeof(float), errorStorage.data());
 
 

@@ -5,10 +5,10 @@ uniform float gTanPixelAngle;
 
 //uniform vec3 gCameraDir;
 
-uniform vec3 gAmbient;
-uniform vec3 gDiffuse;
-uniform vec3 gCookRoughness;
-uniform vec3 gCookIOR;
+const vec3 gAmbient = vec3(0.01f, 0.01f, 0.011f);
+const vec3 gDiffuse = vec3(84, 93, 47) / 255.f;
+const vec3 gCookRoughness = vec3(31, 31, 31) / 255.f;
+const vec3 gCookIOR = vec3(2.0f, 2.0f, 2.0f);
 
 uniform int refineRoot;
 
@@ -106,10 +106,6 @@ bool cube_main(vec3 in_vec, bool pos_or_dir, bool calc_t_min, out vec3 out_col, 
 	col = max(0.0.rrr, col - 0.004.rrr);
 	col = (col * (6.2f * col + 0.5f)) / (col * (6.2f * col + 1.7f) + 0.06f);
 
-//	if(debugDist.x < 0) debugDist = vec3(-debugDist.x, 0, 0);
-//	else debugDist = vec3(0,debugDist.x, 0);
-	// col = 10*debugDist;
-
 	// NORMAL VECTOR
 #ifdef SHOW_NORMALS
 	vec3 pp = cone.ray.Origin + tret.T * cone.ray.Direction;
@@ -188,7 +184,10 @@ TraceResult enhancedSphereTrace(in RayCone cone, SphereTraceDesc params)
 	float rp = 0, rc = 0, rn = 0; //prev, curr, next
 	float di = 0;
 	int i = 0;
+	float prevSign = 0;
+	float prevT = ret.T;
 	do {
+		prevSign = di;
 		di = rc + STEP_SIZE_REDUCTION * rc * max( (di - rp + rc) / (di + rp - rc), 0.6);
 		rn = sdfInside(cone.ray.Origin + cone.ray.Direction * (ret.T + di));
 
@@ -198,6 +197,7 @@ TraceResult enhancedSphereTrace(in RayCone cone, SphereTraceDesc params)
 			rn = sdfInside(cone.ray.Origin + cone.ray.Direction * (ret.T + di));
 		}
 		di = clamp(stepMultiplier * di, smallestStep, biggestStep);
+		prevT = ret.T;
 		ret.T += di;
 		rp = rc; rc = rn;
 		++i;
@@ -206,8 +206,7 @@ TraceResult enhancedSphereTrace(in RayCone cone, SphereTraceDesc params)
 		rn	  > params.epsilon * ret.T &&	// Stop if cone is close to surface
 		i     < params.maxiters);
 
-	// TODO: fix signature
-	//refineRoots( cone, prevT, prevSign, ret.T, dd );
+	refineRoots( cone, prevT, prevSign, ret.T, di );
 
 	ret.flags =  int(ret.T >= cone.ray.Tmax)
               | (int(rn <= params.epsilon)  << 1)
@@ -221,11 +220,14 @@ TraceResult relaxedSphereTracing(in RayCone cone, in SphereTraceDesc params)
 {
 	TraceResult ret = TraceResult(cone.ray.Tmin, 0);
 
-	float rc = 0, rn;
+	float rc = 0, rn = 0;
 	float di = 0;
 	int i = 0;
+	float prevSign = 0;
+	float prevT = ret.T;
 	do
 	{
+		prevSign = di;
 		di = rc * TRACE_OR;
 		rn = sdfInside(cone.ray.Origin + cone.ray.Direction * (ret.T + di)); 
 		if(di > rc + rn)
@@ -234,6 +236,7 @@ TraceResult relaxedSphereTracing(in RayCone cone, in SphereTraceDesc params)
 			rn = sdfInside(cone.ray.Origin + cone.ray.Direction * (ret.T + di));
 		}
 		di = stepMultiplier * di; // clamp( stepMultiplier * di, smallestStep, biggestStep );
+		prevT = ret.T;
 		ret.T += di;
 		rc = rn;
 		++i;
@@ -242,8 +245,7 @@ TraceResult relaxedSphereTracing(in RayCone cone, in SphereTraceDesc params)
 		rn	  > params.epsilon * (ret.T + di) &&	// Stop if cone is close to surface
 		i     < params.maxiters);
 
-	// TODO: fix signature
-	//refineRoots( cone, prevT, prevSign, ret.T, dd );
+	refineRoots( cone, prevT, prevSign, ret.T, di );
 
 	ret.flags =  int(ret.T >= cone.ray.Tmax)
               | (int(di <= params.epsilon * (ret.T + di))  << 1)

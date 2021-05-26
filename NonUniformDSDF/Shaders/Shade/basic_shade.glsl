@@ -7,7 +7,7 @@ vec3 cook_torrance(vec3 V, vec3 N, vec3 L, Material mat);
 
 
 uniform vec3 gLightPos;
-uniform vec3 gNormEps = vec3(0.001);
+const vec3 gNormEps = vec3(0.001);
 
 vec3 smart_normalize( vec3 v )
 {

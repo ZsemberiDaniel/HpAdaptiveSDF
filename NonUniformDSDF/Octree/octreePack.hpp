@@ -167,8 +167,8 @@ inline void Octree<Cell, 2>::packForGPU(std::vector<unsigned int>& branchGPU,
         for (int k = 0; k < coeffCount; k += 2)
         {
             glm::vec2 coeffVec2 = glm::vec2(0.0f);
-            if (k + 0 < coeffCount) coeffVec2.x = leaves[i]->value->poly(k + 0) / compressAmount;
-            if (k + 1 < coeffCount) coeffVec2.y = leaves[i]->value->poly(k + 1) / compressAmount;
+            if (k + 0 < coeffCount) coeffVec2.x = leaves[i]->value->poly[k + 0] / compressAmount;
+            if (k + 1 < coeffCount) coeffVec2.y = leaves[i]->value->poly[k + 1] / compressAmount;
 
             if (abs(coeffVec2.x) < 0.0001f) coeffVec2.x = 0.0f;
             if (abs(coeffVec2.y) < 0.0001f) coeffVec2.y = 0.0f;

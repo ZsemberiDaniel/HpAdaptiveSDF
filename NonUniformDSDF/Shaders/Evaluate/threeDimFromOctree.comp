@@ -13,6 +13,5 @@ void main()
 
 	vec4 toWrite = vec4(getSample(realPos));
 
-
 	imageStore(outputImage, storePos, toWrite);
 }

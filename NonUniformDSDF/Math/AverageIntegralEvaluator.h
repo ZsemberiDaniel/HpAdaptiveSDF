@@ -17,11 +17,6 @@ public:
 	virtual float evaluateIntegral(int pointCount, std::function<float(glm::vec3)> function,
 		glm::vec3 intervalStarting = glm::vec3(-1), glm::vec3 intervalEnding = glm::vec3(1)) override
 	{
-		//Create MATLAB data array factory
-		// matlab::data::ArrayFactory factory;
-		
-		
-
 		// simpson's rule only works for even numbers
 		if (pointCount % 2 == 1) pointCount++;
 

@@ -4,20 +4,20 @@
 //?#include "../Math/common.glsl"
 
 #ifndef USE_LOOKUP_TABLE
-readonly restrict layout(std430, binding = 0) buffer branches
-{
-	uint br_data[];
-	// level, pointer1, pointer2, ..., pointer8
-	// when these pointers are outside of the length of branches, it refers to a leaf
-	// last branch should be the one where the search starts (upper-most branch)
-};
-// size in uints of a branch in SSBO
-const int BR_SIZE = 1 + 8;
-uniform int branchCount = -1;
+	readonly restrict layout(std430, binding = 0) buffer branches
+	{
+		uint br_data[];
+		// level, pointer1, pointer2, ..., pointer8
+		// when these pointers are outside of the length of branches, it refers to a leaf
+		// last branch should be the one where the search starts (upper-most branch)
+	};
+	// size in uints of a branch in SSBO
+	const int BR_SIZE = 1 + 8;
+	uniform int branchCount = -1;
 #else
-// the lookup table
-uniform int lookupTableSize = 2;
-layout(binding = 2) uniform usampler3D lookupTable;
+	// the lookup table
+	uniform int lookupTableSize = 2;
+	layout(binding = 2) uniform usampler3D lookupTable;
 #endif
 
 uniform float coeffCompressAmount;
@@ -38,21 +38,21 @@ struct Branch {
 };
 
 #ifndef USE_LOOKUP_TABLE
-Branch getBranch(in uint branchId)
-{
-	Branch br;
-	uint branchIdInSSBO = branchId * BR_SIZE;
-	br.level = br_data[branchIdInSSBO];
-	for (int i = 0; i < 8; i++)
-		br.pointers[i] = br_data[branchIdInSSBO + 1 + i];
+	Branch getBranch(in uint branchId)
+	{
+		Branch br;
+		uint branchIdInSSBO = branchId * BR_SIZE;
+		br.level = br_data[branchIdInSSBO];
+		for (int i = 0; i < 8; i++)
+			br.pointers[i] = br_data[branchIdInSSBO + 1 + i];
 
-	return br;
-}
+		return br;
+	}
 
-uint getBranchLevel(in uint branchId)
-{
-	return br_data[branchId * BR_SIZE];
-}
+	uint getBranchLevel(in uint branchId)
+	{
+		return br_data[branchId * BR_SIZE];
+	}
 #endif
 
 Leaf getLeaf(in uint leafIndexInArray)
@@ -72,6 +72,7 @@ Leaf getLeaf(in uint leafIndexInArray)
 
 	for (int i = 0; i < poly.coeffCount; i += 2)
 	{
+		// packHalf2x16();
 		vec2 coeffs = unpackSnorm2x16(l_leaves[leafIndexInArray + 5 + i / 2]);
 		poly.coeffs[i + 0] = coeffs.x * coeffCompressAmount;
 		poly.coeffs[i + 1] = coeffs.y * coeffCompressAmount;
@@ -123,44 +124,6 @@ Leaf searchForLeaf(vec3 p, out vec3 boxMin, out vec3 boxMax)
 
 		boxMin += vec3( xG, yG, zG ) * halfBoxSize;
 		boxMax += ( vec3( xG, yG, zG ) - 1 ) * halfBoxSize;
-
-		/*
-		// the conditionals above replace these branches:
-		if (localP.z > 0.5f) 
-		{
-			localP.z -= 0.5f;
-			pointerId += 4;
-
-			boxMin.z += halfBoxSize.z;
-		}
-		else
-		{
-			boxMax.z -= halfBoxSize.z;
-		}
-
-		if (localP.y > 0.5f) 
-		{
-			localP.y -= 0.5f;
-			pointerId += 2;
-
-			boxMin.y += halfBoxSize.y;
-		}
-		else
-		{
-			boxMax.y -= halfBoxSize.y;
-		}
-
-		if (localP.x > 0.5f) 
-		{
-			localP.x -= 0.5f;
-			pointerId += 1;
-
-			boxMin.x += halfBoxSize.x;
-		}
-		else
-		{
-			boxMax.x -= halfBoxSize.x;
-		}*/
 
 		localP *= 2.0f;
 		currentBranchId = br.pointers[pointerId];

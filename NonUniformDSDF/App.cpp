@@ -1,5 +1,7 @@
 #include "App.h"
 
+#define TOOLTIP(msg) {if (ImGui::IsItemHovered()) {ImGui::SetTooltip(msg);}}
+
 using namespace df;
 
 const std::vector<glm::vec3> CUBE_COLORS = {
@@ -173,14 +175,6 @@ void App::Render()
 		<< "gCameraPos" << cam.GetEye()
 		<< "gCameraDir" << cam.GetDir()
 		<< "gLightPos" << settings.gLightPos
-		<< "gAOMaxIters" << settings.gAOMaxIters
-		<< "gAOStepSize" << settings.gAOStepSize
-		<< "gAOStrength" << settings.gAOStrength
-		<< "gAmbient" << settings.gAmbient
-		<< "gDiffuse" << settings.gDiffuse
-		<< "gCookRoughness" << settings.gCookRoughness
-		<< "gCookIOR" << settings.gCookIOR
-		<< "gNormEps" << glm::vec3(0.01f)
 		<< "maxStep" << settings.maxStep
 		<< "refineRoot" << state.settings.refineRoot
 		<< "epsilon" << state.settings.epsilonToSurface
@@ -228,34 +222,6 @@ void App::RenderGUI()
 		SDFHeatmapVisualizer::renderShaderEditor();
 	}
 
-	// MAIN MENU BAR
-	if (ImGui::BeginMainMenuBar())
-	{
-		if (ImGui::BeginMenu("File"))
-		{
-			if (ImGui::Button("Load"))
-			{
-				std::wstring path = FileSelector::OpenLoadDialog();
-				if (!path.empty())
-				{
-					currOctreeSet(SaveableOctree::loadFrom(path));
-				}
-			}
-
-			if (ImGui::Button("Save"))
-			{
-				std::wstring path = FileSelector::OpenSaveDialog();
-				if (!path.empty())
-				{
-					currOctree->saveTo(path);
-				}
-			}
-
-			ImGui::EndMenu();
-		}
-		ImGui::EndMainMenuBar();
-	}
-
 	ImGui::SetNextWindowSize({ 600,400 }, ImGuiCond_FirstUseEver);
 	if (ImGui::Begin("Program settings"))
 	{
@@ -264,15 +230,39 @@ void App::RenderGUI()
 		{
 			CalculateOctreeSendToGPU();
 		}
+		TOOLTIP("Calculates octree with current settings.");
+		if (ImGui::Button("Load from file", ImVec2(450, 20)))
+		{
+			std::wstring path = FileSelector::OpenLoadDialog();
+			if (!path.empty())
+			{
+				currOctreeSet(SaveableOctree::loadFrom(path));
+			}
+		}
+		TOOLTIP("Loads octree from selected file.");
+		if (ImGui::Button("Save to file", ImVec2(450, 20)))
+		{
+			std::wstring path = FileSelector::OpenSaveDialog();
+			if (!path.empty())
+			{
+				currOctree->saveTo(path);
+			}
+		}
+		TOOLTIP("Saves octree to selected file.");
 		if (ImGui::Button("Recenter camera", ImVec2(450, 20)))
 		{
 			SceneCameraRecenter();
 		}
+		TOOLTIP("Relocates camera to default position.");
 		if (ImGui::Button("Recenter light source", ImVec2(450, 20)))
 		{
 			SceneLightToCamera();
 		}
+		TOOLTIP("Relocates light source to camera.");
+		ImGui::Dummy(ImVec2(0.0f, 20.0f));
 
+		ImGui::Text("Current octree %s", currOctree->getName());
+		ImGui::Text("This list contains the inactive generated octrees in memory");
 		if (ImGui::ListBoxHeader("SDF History"))
 		{
 			static int selectedOctreeHistory = 0;
@@ -345,6 +335,7 @@ void App::RenderGUI()
 				SetClipboardData(CF_TEXT, hMem);
 				CloseClipboard();
 			}
+			TOOLTIP("Copies all the performance data to the clipboard.");
 		}
 
 		// ### Heatmaps
@@ -352,6 +343,7 @@ void App::RenderGUI()
 		{
 			SDFHeatmapVisualizer::renderToGUI(errorHeatmapSlice.x, errorHeatmapSlice.y, errorHeatmapSlice.z, currOctree, state.cam);
 			ImGui::DragInt3("Error heatmap slice", &errorHeatmapSlice.x, 0.5f, 0, ERROR_HEATMAP_SIZE - 1);
+			TOOLTIP("Changes the coord of planes that slice the SDF.");
 		}
 
 		// ### Debug settings
@@ -372,11 +364,11 @@ void App::RenderGUI()
 #endif
 			// Drawing octree attributes
 			ImGui::Checkbox("Draw octree grid", &state.drawOctreeGrid);
+			TOOLTIP("When checked, draws the wireframe of the octree grid.");
 			if (state.drawOctreeGrid)
 			{
 				ImGui::DragInt("Show level", &state.drawOctreeLevel, 0.1f, -1, state.constructionParams.maxLevel);
-				if (ImGui::IsItemHovered())
-					ImGui::SetTooltip("-1 = all levels. 0 = upper most level. Increasing for lower levels.");
+				TOOLTIP("-1 = all levels. 0 = upper most level. Increasing for lower levels.");
 
 				ImGui::Text("Level colors:");
 				ImVec2 rectSize = ImVec2(15, 15);
@@ -402,6 +394,7 @@ void App::RenderGUI()
 			{
 				CompileShaders();
 			}
+			TOOLTIP("When checked, shows surface normals. Recompiles shaders!");
 
 			if (ImGui::Checkbox("Print octree", &state.printOctree))
 			{
@@ -410,41 +403,55 @@ void App::RenderGUI()
 					PrintCurrentOctree();
 				}
 			}
+			TOOLTIP("When checked, prints the polys of the current octree (LONG OPERATION!)\nand prints all future octrees' polys when they are generated.");
 		}
 
 		if (ImGui::CollapsingHeader("Render settings"))
 		{
 			ImGui::Text("Sphere trace type:");
 			ImGui::RadioButton("Basic", &state.settings.sphereTraceType, 0); ImGui::SameLine();
+			TOOLTIP("Use basic sphere tracing to display the SDF.");
 			ImGui::RadioButton("Relaxed", &state.settings.sphereTraceType, 1); ImGui::SameLine();
+			TOOLTIP("Use relaxed sphere tracing to display the SDF.");
 			ImGui::RadioButton("Enhanced", &state.settings.sphereTraceType, 2);
+			TOOLTIP("Use enhanced sphere tracing to display the SDF.");
 
-			if (state.settings.sphereTraceType == 0)
-			{
-				ImGui::Text( "Root refinement type:" );
-				ImGui::RadioButton( "None", &state.settings.refineRoot, 0 ); ImGui::SameLine();
-				ImGui::RadioButton( "Bisection", &state.settings.refineRoot, 1 ); ImGui::SameLine();
-				ImGui::RadioButton( "Linear", &state.settings.refineRoot, 2 ); 
-			}
+			ImGui::Text( "Root refinement type:" );
+			ImGui::RadioButton( "None", &state.settings.refineRoot, 0 ); ImGui::SameLine();
+			TOOLTIP("Use no root refinement to display the SDF.");
+			ImGui::RadioButton( "Bisection", &state.settings.refineRoot, 1 ); ImGui::SameLine();
+			TOOLTIP("Use bisection based root refinement to display the SDF.");
+			ImGui::RadioButton( "Linear", &state.settings.refineRoot, 2 );
+			TOOLTIP("Use linear root refinement to display the SDF.");
+
 			ImGui::InputInt("Max step", &state.settings.maxStep);
 			ImGui::InputFloat("Epsilon to surface", &state.settings.epsilonToSurface, 0, 0, "%.7f");
+			TOOLTIP("At what distance the tracing algorithm should stop when close to the SDF surface.");
 			ImGui::InputFloat("Smallest allowed step", &state.settings.smallestStep, 0, 0, "%.7f");
+			TOOLTIP("The smallest allowed step for the tracing algorithm.");
 			ImGui::InputFloat("Biggest allowed step", &state.settings.biggestStep, 0, 0, "%.5f");
+			TOOLTIP("The highest allowed step for the tracing algorithm.");
 			ImGui::InputFloat("Step multiplier", &state.settings.stepMultiplier, 0, 0, "%.5f");
+			TOOLTIP("A multiplier for each step in the tracing algorithm.");
 
 			if (ImGui::Checkbox("Use lookup table", &state.useLookupTable))
 			{
 				CompileShaders();
 			}
+			TOOLTIP("Use lookup table to display the SDF?");
 		}
 
 		// Construction settings
 		if (ImGui::CollapsingHeader("Construction settings"))
 		{
 			ImGui::DragInt("Start degree", &state.constructionParams.startDegree, 0.3f, 0, 10);
+			TOOLTIP("The degree of the initial cells in the octree.");
 			ImGui::DragInt("Max degree", &state.constructionParams.maxDegree, 0.3f, 2, 10);
+			TOOLTIP("The maximum degree that can be reached for each cell.");
 			ImGui::DragInt("Max level", &state.constructionParams.maxLevel, 0.3f, 2, 10);
+			TOOLTIP("The maximum level in the octree that can be reached for each cell.");
 			ImGui::DragFloat("Error threshold", &state.constructionParams.errorThreshold, 0.000005f, 0.0000001f, 1.0f, "%.9f");
+			TOOLTIP("The absolute sum error below which octree generation should be halted.");
 
 			// make sure that at least one of the adapts is set to true
 			if (ImGui::Checkbox("Use h-adapt", &state.constructionParams.useHAdapt))
@@ -454,6 +461,7 @@ void App::RenderGUI()
 					state.constructionParams.usePAdapt = true;
 				}
 			}
+			TOOLTIP("Use subdivision step in octree generation?");
 			if (ImGui::Checkbox("Use p-adapt", &state.constructionParams.usePAdapt))
 			{
 				if (!state.constructionParams.useHAdapt && !state.constructionParams.usePAdapt)
@@ -461,10 +469,12 @@ void App::RenderGUI()
 					state.constructionParams.useHAdapt = true;
 				}
 			}
+			TOOLTIP("Use polynomial degree raise step in octree generation?");
 
 			if (state.activeApproxType().calculatedOnGPU)
 			{
 				ImGui::DragInt("Cell worker group size", &state.constructionParams.cellGroupSize, 0.3f, 1, 20);
+				TOOLTIP("How many refinements to execute at once during octree generation");
 			}
 		}
 
@@ -472,7 +482,9 @@ void App::RenderGUI()
 		if (ImGui::CollapsingHeader("Shader editors"))
 		{
 			ImGui::Checkbox("SDF octree shader", &state.enableSDFShadersEditor);
+			TOOLTIP("The editor of the main octree renderer");
 			ImGui::Checkbox("SDF heatmap shader", &state.enableHeatmapShaderEditor);
+			TOOLTIP("The editor for displaying the heatmaps");
 #ifdef USE_0th_ORDER
 			ImGui::Checkbox("SDF 0th order shader", &show0thOrderShaderEditor);
 #endif

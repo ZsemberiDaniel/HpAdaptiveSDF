@@ -117,6 +117,8 @@ public:
     void generate3DLookupTable(std::vector<df::integral<uint32_t>>& lookupTable, int& lookupTableDim1Size);
     void print(glm::vec3 bboxMin, glm::vec3 bboxMax);
 
+    int maxDegreeInLeaves = -1;
+
 private:
     // Recursive helper functions
     void initLeavesRecursive(std::shared_ptr<Node>& currNode, vector3d<T>& init, vector3d<std::shared_ptr<Leaf>>& generatedLeaves, int x, int y, int z);

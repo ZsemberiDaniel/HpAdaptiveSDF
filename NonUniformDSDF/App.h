@@ -112,9 +112,6 @@ private:
 			// 1 - relaxed
 			// 2 - enhanced
 			int sphereTraceType = 0;
-			int gAOMaxIters = 5;
-			float gAOStepSize = 0.4f;
-			float gAOStrength = 0.7f;
 
 			glm::vec3 gAmbient = glm::vec3(0.01f, 0.01f, 0.011f);
 			glm::vec3 gDiffuse = glm::vec3(84, 93, 47) / 255.f;
