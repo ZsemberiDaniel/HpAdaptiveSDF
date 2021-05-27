@@ -378,12 +378,7 @@
     <None Include="Shaders\SDFScenes\temple.glsl" />
     <None Include="Shaders\SDFScenes\torus.glsl" />
     <None Include="Shaders\SDFScenes\torus_pipes.glsl" />
-    <None Include="Shaders\SDF\sample3d.glsl" />
-    <None Include="Shaders\SDF\sdf0thOrder.glsl" />
-    <None Include="Shaders\SDF\sdf1stOrder.glsl" />
     <None Include="Shaders\SDF\sdfOctree.glsl" />
-    <None Include="Shaders\SDF\sdfProceduralScene.glsl" />
-    <None Include="Shaders\SDF\weightBlend.glsl" />
     <None Include="Shaders\Shade\ambient_occlusion.glsl" />
     <None Include="Shaders\Shade\basic_shade.glsl" />
     <None Include="Shaders\Shade\brdf.glsl" />

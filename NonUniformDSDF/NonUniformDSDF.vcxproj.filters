@@ -320,21 +320,6 @@
     <None Include="Shaders\Math\primitives.glsl">
       <Filter>Shaders\Math</Filter>
     </None>
-    <None Include="Shaders\SDF\weightBlend.glsl">
-      <Filter>Shaders\SDF</Filter>
-    </None>
-    <None Include="Shaders\SDF\sample3d.glsl">
-      <Filter>Shaders\SDF</Filter>
-    </None>
-    <None Include="Shaders\SDF\sdf0thOrder.glsl">
-      <Filter>Shaders\SDF</Filter>
-    </None>
-    <None Include="Shaders\SDF\sdf1stOrder.glsl">
-      <Filter>Shaders\SDF</Filter>
-    </None>
-    <None Include="Shaders\SDF\sdfProceduralScene.glsl">
-      <Filter>Shaders\SDF</Filter>
-    </None>
     <None Include="Octree\octree.hpp">
       <Filter>Octree</Filter>
     </None>

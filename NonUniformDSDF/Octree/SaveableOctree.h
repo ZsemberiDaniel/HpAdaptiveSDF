@@ -356,7 +356,7 @@ public:
 
 		if (!file.is_open())
 		{
-			std::cerr << "File at give path could not be opened, save failed. " << std::string(path.begin(), path.end()) << std::endl;
+			std::cerr << "File at give path could not be opened (no parent dir?), save failed. " << std::string(path.begin(), path.end()) << std::endl;
 			return;
 		}
 
@@ -452,6 +452,8 @@ public:
 	/// <param name="path">A relative path to the defines file where the directives will be saved. It overwrites the file.</param>
 	void saveDefinesFile(std::map<std::string, std::string> additionalDefines, std::string path = "Shaders/defines.glsl")
 	{
+		// WHEN CHANGING THIS change constructor as well
+		// GPUPolyGenerator(std::string pathToPolyGenShader, int maxDegree, int maxK, sdf& sdfFunction)
 		std::map<std::string, std::string> defines{
 			// which type of evalutaion to use for the polynomials
 			{ "evalPolynom", approxType().shaderEvalFunctionName },

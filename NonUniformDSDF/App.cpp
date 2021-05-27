@@ -221,17 +221,104 @@ void App::RenderGUI()
 	{
 		SDFHeatmapVisualizer::renderShaderEditor();
 	}
-
 	ImGui::SetNextWindowSize({ 600,400 }, ImGuiCond_FirstUseEver);
-	if (ImGui::Begin("Program settings"))
+	if (ImGui::Begin("Construction"))
 	{
-		// Scene Settings
 		if (ImGui::Button("Recalculate octree", ImVec2(450, 20)))
 		{
 			CalculateOctreeSendToGPU();
 		}
 		TOOLTIP("Calculates octree with current settings.");
-		if (ImGui::Button("Load from file", ImVec2(450, 20)))
+		ImGui::Dummy(ImVec2(0.0f, 20.0f));
+
+		// Construction settings
+		if (ImGui::CollapsingHeader("Construction settings"))
+		{
+			ImGui::DragInt("Start degree", &state.constructionParams.startDegree, 0.3f, 0, 10);
+			TOOLTIP("The degree of the initial cells in the octree.");
+			ImGui::DragInt("Max degree", &state.constructionParams.maxDegree, 0.3f, 2, 10);
+			TOOLTIP("The maximum degree that can be reached for each cell.");
+			ImGui::DragInt("Max level", &state.constructionParams.maxLevel, 0.3f, 2, 10);
+			TOOLTIP("The maximum level in the octree that can be reached for each cell.");
+			ImGui::DragFloat("Error threshold", &state.constructionParams.errorThreshold, 0.000005f, 0.0000001f, 1.0f, "%.9f");
+			TOOLTIP("The absolute sum error below which octree generation should be halted.");
+
+			// make sure that at least one of the adapts is set to true
+			if (ImGui::Checkbox("Use h-adapt", &state.constructionParams.useHAdapt))
+			{
+				if (!state.constructionParams.useHAdapt && !state.constructionParams.usePAdapt)
+				{
+					state.constructionParams.usePAdapt = true;
+				}
+			}
+			TOOLTIP("Use subdivision step in octree generation?");
+			if (ImGui::Checkbox("Use p-adapt", &state.constructionParams.usePAdapt))
+			{
+				if (!state.constructionParams.useHAdapt && !state.constructionParams.usePAdapt)
+				{
+					state.constructionParams.useHAdapt = true;
+				}
+			}
+			TOOLTIP("Use polynomial degree raise step in octree generation?");
+
+			if (state.activeApproxType().calculatedOnGPU)
+			{
+				ImGui::DragInt("Cell worker group size", &state.constructionParams.cellGroupSize, 0.3f, 1, 20);
+				TOOLTIP("How many refinements to execute at once during octree generation");
+			}
+		}
+		ImGui::Dummy(ImVec2(0.0f, 20.0f));
+
+		if (ImGui::BeginCombo("ApproxType", state.activeApproxType().name.c_str()))
+		{
+			for (int n = 0; n < sizeof(approxTypes) / sizeof(PolynomialBase); n++)
+			{
+				bool is_selected = n == state.activeApproxTypeIndex;
+
+				if (ImGui::Selectable(approxTypes[n].name.c_str(), is_selected))
+					state.activeApproxTypeIndex = n;
+
+				if (is_selected)
+					ImGui::SetItemDefaultFocus();
+			}
+			ImGui::EndCombo();
+		}
+
+		// SDF settings
+		if (ImGui::BeginCombo("##combo", state.activeSDF()->name().c_str()))
+		{
+			for (int n = 0; n < sdfs.size(); n++)
+			{
+				bool is_selected = n == state.activeSDFIndex;
+
+				if (ImGui::Selectable(sdfs[n]->name().c_str(), is_selected))
+					state.activeSDFIndex = n;
+
+				if (is_selected)
+					ImGui::SetItemDefaultFocus();
+			}
+			ImGui::EndCombo();
+		}
+
+		state.activeSDF()->renderGUI();
+	}
+	ImGui::End();
+
+	ImGui::SetNextWindowSize({ 600,400 }, ImGuiCond_FirstUseEver);
+	if (ImGui::Begin("Program settings"))
+	{
+		// Scene Settings
+		TOOLTIP("Saves octree to selected file.");
+		if (ImGui::Button("Recenter camera", ImVec2(450, 20)))
+		{
+			SceneCameraRecenter();
+		}
+		TOOLTIP("Relocates camera to default position.");
+		if (ImGui::Button("Recenter light source", ImVec2(450, 20)))
+		{
+			SceneLightToCamera();
+		}
+		TOOLTIP("Relocates light source to camera."); if (ImGui::Button("Load from file", ImVec2(450, 20)))
 		{
 			std::wstring path = FileSelector::OpenLoadDialog();
 			if (!path.empty())
@@ -248,18 +335,8 @@ void App::RenderGUI()
 				currOctree->saveTo(path);
 			}
 		}
-		TOOLTIP("Saves octree to selected file.");
-		if (ImGui::Button("Recenter camera", ImVec2(450, 20)))
-		{
-			SceneCameraRecenter();
-		}
-		TOOLTIP("Relocates camera to default position.");
-		if (ImGui::Button("Recenter light source", ImVec2(450, 20)))
-		{
-			SceneLightToCamera();
-		}
-		TOOLTIP("Relocates light source to camera.");
 		ImGui::Dummy(ImVec2(0.0f, 20.0f));
+
 
 		ImGui::Text("Current octree %s", currOctree->getName());
 		ImGui::Text("This list contains the inactive generated octrees in memory");
@@ -280,8 +357,6 @@ void App::RenderGUI()
 				currOctreeSetFromHistory(selectedOctreeHistory);
 			}
 		}
-		
-
 		ImGui::Dummy(ImVec2(0.0f, 20.0f));
 
 		// ### Current description
@@ -441,43 +516,6 @@ void App::RenderGUI()
 			TOOLTIP("Use lookup table to display the SDF?");
 		}
 
-		// Construction settings
-		if (ImGui::CollapsingHeader("Construction settings"))
-		{
-			ImGui::DragInt("Start degree", &state.constructionParams.startDegree, 0.3f, 0, 10);
-			TOOLTIP("The degree of the initial cells in the octree.");
-			ImGui::DragInt("Max degree", &state.constructionParams.maxDegree, 0.3f, 2, 10);
-			TOOLTIP("The maximum degree that can be reached for each cell.");
-			ImGui::DragInt("Max level", &state.constructionParams.maxLevel, 0.3f, 2, 10);
-			TOOLTIP("The maximum level in the octree that can be reached for each cell.");
-			ImGui::DragFloat("Error threshold", &state.constructionParams.errorThreshold, 0.000005f, 0.0000001f, 1.0f, "%.9f");
-			TOOLTIP("The absolute sum error below which octree generation should be halted.");
-
-			// make sure that at least one of the adapts is set to true
-			if (ImGui::Checkbox("Use h-adapt", &state.constructionParams.useHAdapt))
-			{
-				if (!state.constructionParams.useHAdapt && !state.constructionParams.usePAdapt)
-				{
-					state.constructionParams.usePAdapt = true;
-				}
-			}
-			TOOLTIP("Use subdivision step in octree generation?");
-			if (ImGui::Checkbox("Use p-adapt", &state.constructionParams.usePAdapt))
-			{
-				if (!state.constructionParams.useHAdapt && !state.constructionParams.usePAdapt)
-				{
-					state.constructionParams.useHAdapt = true;
-				}
-			}
-			TOOLTIP("Use polynomial degree raise step in octree generation?");
-
-			if (state.activeApproxType().calculatedOnGPU)
-			{
-				ImGui::DragInt("Cell worker group size", &state.constructionParams.cellGroupSize, 0.3f, 1, 20);
-				TOOLTIP("How many refinements to execute at once during octree generation");
-			}
-		}
-
 		// ### Shader editors
 		if (ImGui::CollapsingHeader("Shader editors"))
 		{
@@ -489,42 +527,6 @@ void App::RenderGUI()
 			ImGui::Checkbox("SDF 0th order shader", &show0thOrderShaderEditor);
 #endif
 		}
-
-		ImGui::Dummy(ImVec2(0.0f, 20.0f));
-
-
-		if (ImGui::BeginCombo("ApproxType", state.activeApproxType().name.c_str()))
-		{
-			for (int n = 0; n < sizeof(approxTypes) / sizeof(PolynomialBase); n++)
-			{
-				bool is_selected = n == state.activeApproxTypeIndex;
-
-				if (ImGui::Selectable(approxTypes[n].name.c_str(), is_selected))
-					state.activeApproxTypeIndex = n;
-
-				if (is_selected)
-					ImGui::SetItemDefaultFocus();
-			}
-			ImGui::EndCombo();
-		}
-		
-		// SDF settings
-		if (ImGui::BeginCombo("##combo", state.activeSDF()->name().c_str()))
-		{
-			for (int n = 0; n < sdfs.size(); n++)
-			{
-				bool is_selected = n == state.activeSDFIndex;
-
-				if (ImGui::Selectable(sdfs[n]->name().c_str(), is_selected))
-					state.activeSDFIndex = n;
-
-				if (is_selected)
-					ImGui::SetItemDefaultFocus();
-			}
-			ImGui::EndCombo();
-		}
-
-		state.activeSDF()->renderGUI();
 	}
 	ImGui::End();
 }

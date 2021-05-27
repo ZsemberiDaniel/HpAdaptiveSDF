@@ -2,11 +2,6 @@
 
 //?#include "../defines.glsl"
 
-float legenedref0(float p)
-{
-	return 1;
-}
-
 float legendref(in int deg, float p)
 {
 	if (deg == 0) return 1;
@@ -15,11 +10,13 @@ float legendref(in int deg, float p)
 	else if (deg == 3) return 0.5f * p * (5.0f * p * p - 3.0f);
 	else if (deg == 4) return 0.125f * (p * p * (35.0f * p * p - 30.0f) + 3.0f);
 	else if (deg == 5) return 0.125f * p * (p * p * (63.0f * p * p - 70.0f) + 15.0f);
-	else if (deg == 6) {
+	else if (deg == 6) 
+	{
 		float sq = p * p;
 		return 0.0625f * (sq * (sq * (231.0f * sq - 315.0f) + 105.0f) - 5.0f);
 	}
-	else if (deg == 7) {
+	else if (deg == 7) 
+	{
 		float sq = p * p;
 		return 0.0625f * p * (sq * (sq * (429.0f * sq - 693.0f) + 315.0f) - 35.0f);
 	}

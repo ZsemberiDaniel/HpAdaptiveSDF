@@ -53,9 +53,11 @@ public:
 		out << "#define GPU_SIDE " << std::endl;
 		out << "#define MAX_COEFF_SIZE " << std::to_string(Polynomial::calculateCoeffCount(maxDegree)) << std::endl;
 		out << "#define MAX_DEGREE " << std::to_string(maxDegree) << std::endl;
+		out << "#define MAX_COEFF_SIZE_IN_LEAVES " << std::to_string(Polynomial::calculateCoeffCount(maxDegree)) << std::endl;
+		out << "#define MAX_DEG_IN_LEAVES " << std::to_string(maxDegree) << std::endl;
 		out << "#define evalPolynom evalPolynom_lagrange" << std::endl;
 		out.close();
-
+		 
 		compShader
 			<< "Shaders/gpuGenDefines.glsl"_comp
 			<< "Shaders/octreeGenerateDefines.glsl"_comp
